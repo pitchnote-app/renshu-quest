@@ -351,7 +351,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.5.0';
+const APP_VERSION='0.5.1';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -453,7 +453,7 @@ KITS.push({id:'k7',name:'チームカラー',price:200,color:'#1d2a6b',color2:'#
 const ITEM_IMG={b0:'ball-1',b1:'ball-2',b2:'ball-3',b3:'ball-4',b4:'ball-5',b5:'ball-6',b6:'ball-7',b7:'ball-8',b8:'ball-9',b9:'ball-10',
   s0:'boot-1',s1:'boot-2',s2:'boot-3',s3:'boot-4',s4:'boot-5',s5:'boot-6',s6:'boot-7',s7:'boot-8',s8:'boot-9',s9:'boot-10',
   k1:'kit-2',k2:'kit-3',k3:'kit-4',k4:'kit-5',k5:'kit-6',k6:'kit-9',k7:'kit-1',k8:'kit-7',k9:'kit-8',k10:'kit-10'};
-[...BALLS,...BOOTS,...KITS].forEach(it=>{if(ITEM_IMG[it.id])it.img=`img/items/${ITEM_IMG[it.id]}.png`});
+[...BALLS,...BOOTS,...KITS].forEach(it=>{if(ITEM_IMG[it.id])it.img=`img/items/${ITEM_IMG[it.id]}.webp`});
 BOOTS.find(x=>x.id==='s1').name='ホワイト×ブルー';
 /* 月間チャレンジロードの 限定背景（毎月ちがう） */
 const MONTH_BG=[
@@ -641,7 +641,7 @@ const AVATARS=[
 function avatarView(c,L,i){
   const B=c.ballT||BALLS[0], u='av'+(UID++), O='stroke="#3d2b24" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"';
   const vb=B.fire?'100 150 80 76':'136 184 44 44';
-  const av=`<div class="avwrap"><img class="avimg" src="img/chars/${c.avatar}_${i+1}.png" onerror="this.onerror=null;this.src='img/chars/${c.avatar}.png'" alt="">`;
+  const av=`<div class="avwrap"><img class="avimg" src="img/chars/${c.avatar}_${i+1}.webp" onerror="this.onerror=null;this.src='img/chars/${c.avatar}.webp';this.parentNode.classList.add('base')" alt="">`;
   if(B.img)return av+`<img class="avball" src="${B.img}" alt=""></div>`;
   return av+
     `<svg class="avball ${B.fire?'fire':''}" viewBox="${vb}"><defs><filter id="${u}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>${ballSVG(B,u,O)}</svg></div>`;
@@ -874,7 +874,7 @@ function editView(){
   </div>
   <div class="wrap">
     ${edTab===0?`<div class="card"><h3>キャラクターを選ぶ</h3><p class="sub" style="margin:4px 0 10px">イラストのキャラから選ぶか、自分で作るかを選べるよ</p>
-      <div class="avgrid"><button class="avopt ${!ed.avatar?'on':''}" data-av="">${charSVG({...ed,avatar:''},1,0)}<span>自分で作る</span></button>${AVATARS.map(A=>`<button class="avopt ${ed.avatar===A.id?'on':''}" data-av="${A.id}"><img src="img/chars/${A.id}.png" alt=""><span>${A.name}</span></button>`).join('')}</div></div>`:''}
+      <div class="avgrid"><button class="avopt ${!ed.avatar?'on':''}" data-av="">${charSVG({...ed,avatar:''},1,0)}<span>自分で作る</span></button>${AVATARS.map(A=>`<button class="avopt ${ed.avatar===A.id?'on':''}" data-av="${A.id}"><img src="img/chars/${A.id}.webp" alt=""><span>${A.name}</span></button>`).join('')}</div></div>`:''}
     ${edTab>0&&ed.avatar?`<div class="card hint" style="margin-bottom:14px">イラストのキャラを選んでいるときは、顔・目・髪・小物の設定は使われません（ユニフォームの背番号はカードに使われます）。「体」タブで「自分で作る」を選ぶと使えるよ。</div>`:''}
     ${edTab===0?`<div class="card"><h3>名前</h3><input type="text" id="cname" maxlength="10" placeholder="名前を入力" value="${esc(ed.name||'')}" style="margin-top:8px"></div>`:''}
     <div class="card">${t.items.map(itemView).join('')}</div>

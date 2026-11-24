@@ -339,3 +339,5 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}
 .bigicon .itimg{width:100%;height:100%}
 .pc-char .avwrap img.avball,.avwrap img.avball{display:block;position:absolute;right:6%;bottom:0;width:24%!important;height:auto!important;max-width:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
 .pc.locked .avwrap img.avball{display:none}
+.avwrap .avball{visibility:hidden}
+.avwrap.base .avball{visibility:visible}

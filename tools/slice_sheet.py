@@ -1,4 +1,4 @@
-"""AIで作った「格子状のシート画像」を1つずつのPNGに切り出す（Pillow が必要：pip install pillow）
+"""AIで作った「格子状のシート画像」を1つずつの画像（WebP）に切り出す（Pillow が必要：pip install pillow）
 - 背景（四すみとつながった単色部分）だけを透明にする → イラストの中の似た色は消さない
 - 余白を切り落とし、正方形に整える
 使い方:
@@ -87,8 +87,8 @@ def main():
             if cell.width > a.size:
                 cell = cell.resize((a.size, a.size), Image.LANCZOS)
             name = names[k] if k < len(names) else f'item-{k+1}'
-            cell.save(os.path.join(a.out, name + '.png'), optimize=True)
-            print(f'{name}.png  {cell.width}px')
+            cell.save(os.path.join(a.out, name + '.webp'), 'WEBP', quality=86, method=6)  # 軽い WebP で保存
+            print(f'{name}.webp  {cell.width}px')
             k += 1
 
 if __name__ == '__main__':
