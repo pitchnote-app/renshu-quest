@@ -1,0 +1,3 @@
+# Android のシェルスクリプトは LF のまま保つ
+android/gradlew text eol=lf
+*.sh text eol=lf
