@@ -78,88 +78,113 @@ const MENUS=[
   M('team','game','チーム練習',1,{iq:.4,stamina:.4,dribble:.3,kick:.3,touch:.3},'g_team',['チームの練習に参加','コーチの話をよく聞く','仲間と声をかけ合う']),
 ];
 
-/* ===== 図解イラスト ===== */
-function diag(k,u){
+/* ===== 図解イラスト（自分のキャラの色で描く・詳しい画面ではボールが動く） ===== */
+function diag(k,u,anim){
   u=u||('d'+(UID++));
-  const W='#eaf2ff', Y='#ffd84a', C='#00d4ff';
-  const mk=`<defs><marker id="${u}w" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${W}"/></marker><marker id="${u}y" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${Y}"/></marker></defs>`;
-  const ar=(d,c,dash,both)=>`<path d="${d}" fill="none" stroke="${c==='y'?Y:W}" stroke-width="2.2" ${dash?'stroke-dasharray="4 3"':''} stroke-linecap="round" marker-end="url(#${u}${c})" ${both?`marker-start="url(#${u}${c})"`:''}/>`;
-  const ball=(x,y,r=5)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="#222" stroke-width="1.2"/><circle cx="${x}" cy="${y}" r="${r*.38}" fill="#222"/>`;
-  const cone=(x,y)=>`<path d="M${x} ${y-6} L${x+5} ${y+4} L${x-5} ${y+4}Z" fill="#ff8a00" stroke="#7a3d00" stroke-width="1"/>`;
-  const pl=(x,y)=>`<circle cx="${x}" cy="${y}" r="6" fill="${C}" stroke="#fff" stroke-width="2"/>`;
-  const field=`<rect width="160" height="100" rx="8" fill="#1d6b3a"/><path d="M0 50H160M80 0V100" stroke="rgba(255,255,255,.08)" stroke-width="2"/>`;
-  const dark=`<rect width="160" height="100" rx="8" fill="#13224a"/><path d="M10 89H150" stroke="rgba(255,255,255,.25)" stroke-width="2"/>`;
-  const foot=(x,y,r)=>`<g transform="rotate(${r||0} ${x} ${y})"><path d="M${x} ${y-15} C${x+8} ${y-15} ${x+8} ${y+2} ${x+6} ${y+10} C${x+5} ${y+15} ${x-5} ${y+15} ${x-6} ${y+10} C${x-8} ${y+2} ${x-8} ${y-15} ${x} ${y-15}Z" fill="#cfd9ee" stroke="#6b7a99" stroke-width="1.2"/></g>`;
-  const feet=foot(62,72,-6)+foot(98,72,6);
-  // 横から見た人（棒人間）
-  const L=(a)=>a.map(([x1,y1,x2,y2])=>`<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${W}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
-  const P=(poly)=>`<path d="${poly}" fill="none" stroke="${W}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-  const hd=(x,y)=>`<circle cx="${x}" cy="${y}" r="5.5" fill="${W}"/>`;
+  const C0=(typeof S!=='undefined'&&S&&S.c)?norm(S.c):norm({});
+  const sk=C0.skin, jer=C0.color, j2=C0.color2, hair=C0.hairColor, boot=C0.bootCol==='#2d2d35'?'#1d1d26':C0.bootCol;
+  const OL='#1a1020', Y='#ffd84a', W='#ffffff';
+  let mp=null; // ボールが動く道すじ
+  const defs=`<defs>
+    <marker id="${u}w" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${W}"/></marker>
+    <marker id="${u}y" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${Y}"/></marker>
+    <pattern id="${u}g" width="32" height="100" patternUnits="userSpaceOnUse"><rect width="16" height="100" fill="#2f8a47"/><rect x="16" width="16" height="100" fill="#2a7c40"/></pattern>
+    <radialGradient id="${u}b" cx="35%" cy="30%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#c9d1e2"/></radialGradient>
+    <radialGradient id="${u}v" cx="50%" cy="45%" r="70%"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient>
+    <linearGradient id="${u}d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2f5e"/><stop offset="1" stop-color="#0f1a38"/></linearGradient></defs>`;
+  // 矢印：ボール＝黄色（太い・ふち取り）、人＝白の点線
+  const ar=(d,c,dash,both)=>{if(c==='y'&&!mp)mp=d;
+    return (c==='y'?`<path d="${d}" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="5" stroke-linecap="round"/>`:'')+
+      `<path d="${d}" fill="none" stroke="${c==='y'?Y:W}" stroke-width="${c==='y'?3:2.4}" ${dash||c!=='y'?'stroke-dasharray="5 4"':''} stroke-linecap="round" marker-end="url(#${u}${c})" ${both?`marker-start="url(#${u}${c})"`:''}/>`};
+  const ball=(x,y,r=5)=>`<g transform="translate(${x} ${y})"><ellipse cx="1" cy="${r*.9}" rx="${r*.9}" ry="${r*.3}" fill="#000" opacity=".25"/><circle r="${r}" fill="url(#${u}b)" stroke="#1a1a22" stroke-width="1"/><path d="M0 ${-r*.42} l${r*.4} ${r*.29} -${r*.15} ${r*.47} h-${r*.5} l-${r*.15} -${r*.47}z" fill="#1a1a22"/><path d="M${-r*.95} ${-r*.1} l${r*.3} ${r*.05} M${r*.95} ${-r*.1} l-${r*.3} ${r*.05} M${-r*.5} ${r*.85} l${r*.15} -${r*.3} M${r*.5} ${r*.85} l-${r*.15} -${r*.3}" stroke="#1a1a22" stroke-width="${r*.22}" stroke-linecap="round"/></g>`;
+  const cone=(x,y)=>`<g transform="translate(${x} ${y})"><ellipse cy="5" rx="7" ry="2.6" fill="#000" opacity=".3"/><path d="M-6.5 4 L-1.6 -9 Q0 -11 1.6 -9 L6.5 4 Q0 6.5 -6.5 4Z" fill="#ff8a1a" stroke="#7a3300" stroke-width="1"/><path d="M-4 -2.5 Q0 -1 4 -2.5 L4.9 0 Q0 1.8 -4.9 0Z" fill="#fff"/><path d="M-1 -8 L-3.5 3" stroke="#ffd2a0" stroke-width="1.2" stroke-linecap="round"/></g>`;
+  // 上から見た選手（自分のキャラの色）
+  const pl=(x,y,c)=>`<g transform="translate(${x} ${y})"><ellipse cy="2" rx="10" ry="6.5" fill="#000" opacity=".25"/><ellipse rx="10" ry="6" fill="${c||jer}" stroke="${OL}" stroke-width="1.4"/><path d="M-10 0 h20" stroke="${j2}" stroke-width="1.5" opacity=".8"/><circle r="5.6" fill="${hair}" stroke="${OL}" stroke-width="1.4"/><path d="M-3 -2 Q0 -4 3 -2" stroke="#fff" stroke-opacity=".35" stroke-width="1.2" fill="none"/></g>`;
+  const num=(x,y,n)=>`<g transform="translate(${x} ${y})"><circle r="6.5" fill="#f3dc8f" stroke="#7a5a10" stroke-width="1.2"/><text y="3.6" text-anchor="middle" font-size="9.5" font-weight="900" fill="#1c1405" font-family="sans-serif">${n}</text></g>`;
+  const lbl=(x,y,t,c)=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="9" font-weight="900" fill="${c||W}" stroke="rgba(0,0,0,.55)" stroke-width="2.4" paint-order="stroke" font-family="sans-serif">${t}</text>`;
+  const field=`<rect width="160" height="100" rx="10" fill="url(#${u}g)"/><rect x="4" y="4" width="152" height="92" rx="7" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/><rect width="160" height="100" rx="10" fill="url(#${u}v)"/>`;
+  const dark=`<rect width="160" height="100" rx="10" fill="url(#${u}d)"/><path d="M0 90 H160 V100 H0Z" fill="#2a7c40"/><path d="M0 90 H160" stroke="#3f9e58" stroke-width="2"/>`;
+  const room=`<rect width="160" height="100" rx="10" fill="url(#${u}d)"/><path d="M0 90 H160 V100 H0Z" fill="#6b4f3a"/><rect x="34" y="86" width="92" height="6" rx="2" fill="#8a5a9a"/>`;
+  // 上から見たスパイク（ひも・ポイント付き）
+  const shoe=(x,y,r,flip)=>`<g transform="translate(${x} ${y}) rotate(${r||0}) ${flip?'scale(-1 1)':''}"><path d="M0 -17 C9 -17 9 2 7 11 C6 17 -6 17 -7 11 C-9 2 -9 -17 0 -17Z" fill="${boot}" stroke="${OL}" stroke-width="1.4"/><path d="M-7 -2 C-3 0 3 0 7 -2" stroke="${j2}" stroke-width="2"/><path d="M-3 -12 h6 M-3.5 -8 h7 M-3.5 -4 h7" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/></g>`;
+  const feet=shoe(60,74,-6)+shoe(100,74,6,1);
+  // 横から見た選手（太い手足・ユニフォームの色）
+  const line=(d,col,w)=>`<path d="${d}" fill="none" stroke="${OL}" stroke-width="${w+2.6}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const FIG=f=>{let g='';
+    f.l.forEach(d=>g+=line(d,sk,6.5));
+    (f.sh||[]).forEach(([x,y,r])=>g+=`<ellipse cx="${x}" cy="${y}" rx="6" ry="3.4" transform="rotate(${r||0} ${x} ${y})" fill="${boot}" stroke="${OL}" stroke-width="1.4"/>`);
+    (f.sp||[]).forEach(d=>g+=line(d,C0.pants,8));
+    g+=line(f.t,jer,12);
+    f.a.forEach(d=>g+=line(d,sk,5.5));
+    const [hx,hy]=f.h;
+    g+=`<circle cx="${hx}" cy="${hy}" r="7.6" fill="${sk}" stroke="${OL}" stroke-width="1.6"/><path d="M${hx-7.8} ${hy-.5} C${hx-8} ${hy-11} ${hx+8} ${hy-11} ${hx+7.8} ${hy-.5} C${hx+5} ${hy-4} ${hx-5} ${hy-4} ${hx-7.8} ${hy-.5}Z" fill="${hair}" stroke="${OL}" stroke-width="1.2"/><circle cx="${hx+(f.e||3)}" cy="${hy+1}" r="1.2" fill="${OL}"/>`;
+    return g};
   const fig={
-    kick:hd(72,36)+P('M73 43 L75 63')+P('M74 47 L62 55')+P('M74 47 L86 52')+P('M75 63 L71 88')+P('M75 63 L88 72 L95 69'),
-    thigh:hd(72,36)+P('M73 43 L75 63')+P('M74 47 L63 56')+P('M74 47 L85 56')+P('M75 63 L72 88')+P('M75 63 L90 62 L90 78'),
-    head:hd(76,38)+P('M76 45 L76 64')+P('M76 49 L64 54')+P('M76 49 L88 54')+P('M76 64 L71 88')+P('M76 64 L81 88'),
-    walk:hd(70,36)+P('M71 43 L73 63')+P('M72 47 L61 55')+P('M72 47 L84 52')+P('M73 63 L64 87')+P('M73 63 L86 72 L93 69'),
-    plank:hd(40,60)+P('M47 63 L120 80')+P('M48 64 L48 84 L60 84')+P('M120 80 L122 86'),
-    side:hd(40,54)+P('M46 58 L120 84')+P('M46 58 L46 86')+P('M52 60 L52 38'),
-    squat:hd(74,40)+P('M74 47 L70 65')+P('M73 51 L94 55')+P('M70 65 L88 68 L84 88'),
-    jump:hd(56,30)+P('M57 37 L60 56')+P('M58 41 L48 26')+P('M58 41 L70 28')+P('M60 56 L54 70')+P('M60 56 L68 70'),
-    one:hd(80,32)+P('M80 39 L80 62')+P('M80 44 L60 44')+P('M80 44 L100 44')+P('M80 62 L80 88')+P('M80 62 L90 72 L86 80'),
-    stretch:hd(96,62)+P('M58 84 L90 66')+P('M58 86 L118 86')+P('M88 68 L112 82'),
-    run:hd(78,36)+P('M78 43 L76 63')+P('M77 47 L66 56')+P('M77 47 L89 53')+P('M76 63 L88 75 L86 88')+P('M76 63 L65 72 L56 75'),
-    rope:hd(80,30)+P('M80 37 L80 58')+P('M80 42 L70 54')+P('M80 42 L90 54')+P('M80 58 L76 78')+P('M80 58 L84 78'),
+    kick:{h:[70,30],t:'M71 39 L74 58',sp:['M74 58 L73 63','M74 58 L79 62'],a:['M72 44 L60 52','M72 44 L86 48'],l:['M74 60 L70 87','M74 60 L88 70 L96 66'],sh:[[71,89],[99,66,-20]]},
+    thigh:{h:[70,30],t:'M71 39 L74 58',sp:['M74 58 L73 63','M74 58 L80 60'],a:['M72 44 L61 53','M72 44 L84 53'],l:['M74 60 L71 87','M74 60 L90 59 L90 76'],sh:[[72,89],[92,78]]},
+    head:{h:[76,32],e:2,t:'M76 41 L76 60',sp:['M76 60 L73 65','M76 60 L79 65'],a:['M76 46 L63 52','M76 46 L89 52'],l:['M76 62 L71 87','M76 62 L81 87'],sh:[[70,89],[83,89]]},
+    walk:{h:[68,30],t:'M69 39 L72 58',sp:['M72 58 L69 63','M72 58 L78 62'],a:['M70 44 L59 52','M70 44 L83 49'],l:['M72 60 L63 86','M72 60 L86 70 L94 66'],sh:[[62,88],[97,66,-20]]},
+    plank:{h:[40,58],t:'M48 63 L98 73',sp:['M96 72 L104 75'],a:['M50 65 L50 84 L62 84'],l:['M104 75 L126 84'],sh:[[129,86]]},
+    side:{h:[40,48],t:'M47 55 L96 72',sp:['M94 71 L102 75'],a:['M48 57 L48 86','M53 58 L53 34'],l:['M102 75 L126 86'],sh:[[129,88]]},
+    squat:{h:[74,34],t:'M74 43 L70 60',sp:['M70 60 L78 63'],a:['M73 49 L96 53'],l:['M76 63 L89 66 L85 86'],sh:[[87,89]]},
+    jump:{h:[60,22],t:'M60 31 L61 49',sp:['M61 49 L57 54','M61 49 L66 54'],a:['M60 35 L49 22','M60 35 L72 23'],l:['M58 53 L53 68','M64 53 L69 68'],sh:[[52,70],[71,70]]},
+    one:{h:[80,24],t:'M80 33 L80 54',sp:['M80 54 L77 59','M80 54 L84 59'],a:['M80 39 L60 41','M80 39 L100 41'],l:['M78 59 L79 86','M84 59 L92 69 L86 78'],sh:[[79,89],[84,80]]},
+    stretch:{h:[98,58],t:'M62 82 L92 65',sp:['M60 84 L70 84'],a:['M88 68 L114 82'],l:['M70 85 L122 86'],sh:[[125,85,90]]},
+    run:{h:[78,28],t:'M78 37 L76 56',sp:['M76 56 L80 61','M76 56 L71 61'],a:['M77 42 L66 52','M77 42 L90 48'],l:['M80 61 L88 72 L86 86','M71 61 L64 70 L55 72'],sh:[[87,89],[52,72,-30]]},
+    rope:{h:[80,24],t:'M80 33 L80 52',sp:['M80 52 L77 57','M80 52 L83 57'],a:['M80 38 L68 50','M80 38 L92 50'],l:['M77 57 L76 76','M83 57 L84 76'],sh:[[75,79],[85,79]]},
   };
   let g='';
   switch(k){
-    case 'f_roll': g=dark+feet+ball(80,46,8)+ar('M80 30 L80 33','y')+ar('M80 62 L80 65','y')+ar('M80 34 L80 58','y',0,1); break;
-    case 'f_tap': g=dark+feet+ball(80,44,8)+ar('M64 56 L74 48','w',1)+ar('M96 56 L86 48','w',1); break;
-    case 'f_lr': g=dark+feet+ball(80,50,8)+ar('M62 40 L98 40','y',0,1); break;
-    case 'f_inout': g=dark+feet+ball(98,44,7)+ar('M86 32 L110 32','y',0,1); break;
-    case 'f_l': g=dark+feet+ball(98,34,7)+ar('M98 42 L98 56 L72 56','y'); break;
-    case 'f_v': g=dark+feet+ball(98,30,7)+ar('M98 38 L98 54 L120 30','y'); break;
-    case 'f_sc': g=dark+feet+ball(80,40,8)+ar('M100 60 C110 30 70 20 64 36','w',1)+ar('M80 40 L40 24','y'); break;
-    case 'f_cr': g=dark+feet+ball(96,40,7)+ar('M96 48 C90 70 58 66 40 50','y')+'<text x="112" y="30" fill="#ffd84a" font-size="11" font-weight="700">ける ふり</text>'; break;
-    case 'f_dt': g=dark+feet+ball(98,36,7)+ar('M90 36 L64 36','y')+ar('M62 30 L62 12','y'); break;
-    case 'f_el': g=dark+feet+ball(98,36,7)+ar('M104 36 L126 30','y')+ar('M126 30 C116 20 92 14 70 22','y',1); break;
-    case 'c_zig': g=field+[34,54,74,94,114,134].map((x,i)=>cone(x,50)).join('')+pl(14,50)+ar('M20 50 C28 30 40 30 44 50 C48 70 60 70 64 50 C68 30 80 30 84 50 C88 70 100 70 104 50 C108 30 120 30 124 50 C128 70 140 70 146 54','y',1); break;
-    case 'c_8': g=field+cone(56,50)+cone(104,50)+pl(30,50)+ar('M56 32 C36 32 36 68 56 68 C76 68 84 32 104 32 C124 32 124 68 104 68 C84 68 76 32 58 32','y',1); break;
-    case 'c_line': g=field+cone(20,40)+cone(20,60)+cone(140,40)+cone(140,60)+pl(12,50)+ball(26,50,4)+ar('M32 50 L134 50','y',1)+'<text x="72" y="44" fill="#fff" font-size="11" font-weight="700">20m</text>'; break;
-    case 'c_stop': g=field+[50,90,130].map(x=>cone(x,30)).join('')+pl(14,62)+ar('M22 62 L46 62','y',1)+ar('M58 62 L86 62','y',1)+ar('M98 62 L130 62','y',1)+'<g fill="#ff6b6b" font-size="10" font-weight="900"><text x="44" y="80">STOP</text><text x="84" y="80">STOP</text></g>'; break;
-    case 'c_turn': g=field+cone(128,50)+pl(18,44)+ar('M26 44 L116 44 C130 44 130 58 116 58 L30 58','y',1); break;
-    case 'c_1v1': g=field+`<path d="M86 36 L100 64 L72 64Z" fill="#ff8a00" stroke="#7a3d00"/>`+pl(22,50)+ar('M30 50 L66 50 C72 50 70 24 90 24 L136 26','y',1)+'<text x="66" y="84" fill="#fff" font-size="10">あいて</text>'; break;
-    case 'l_foot': g=dark+fig.kick+ball(98,44,6)+ar('M98 64 L98 54','y'); break;
-    case 'l_bounce': g=dark+fig.kick+ball(104,40,6)+ar('M96 66 L102 86 L106 52','y',1); break;
-    case 'l_thigh': g=dark+fig.thigh+ball(92,44,6)+ar('M92 56 L92 52','y'); break;
-    case 'l_head': g=dark+fig.head+ball(76,18,6)+ar('M76 30 L76 26','y'); break;
-    case 'l_walk': g=dark+fig.walk+ball(98,44,6)+ar('M40 92 L140 92','w',1); break;
-    case 'k_wall': g=field+`<rect x="140" y="10" width="10" height="80" fill="#9aa7bd"/>`+pl(30,50)+ball(40,50,4)+ar('M46 46 L136 40','y')+ar('M136 58 L48 56','y',1); break;
-    case 'k_trap': g=field+pl(40,50)+ball(48,50,4)+ar('M140 30 L56 48','y',1)+ar('M56 56 L120 76','y')+'<text x="40" y="74" fill="#ffd84a" font-size="10" font-weight="700">止めて</text>'; break;
-    case 'k_air': g=dark+fig.thigh+ball(92,44,6)+ar('M140 10 C120 0 100 10 94 34','y',1); break;
-    case 'k_goal': g=field+`<rect x="128" y="22" width="22" height="56" fill="none" stroke="#fff" stroke-width="3"/><path d="M132 26h16M132 34h16M132 42h16M132 50h16M132 58h16M132 66h16M132 74h16" stroke="rgba(255,255,255,.25)"/>`+pl(40,50)+ball(50,50,4)+ar('M56 50 L124 44','y'); break;
-    case 'k_target': g=field+`<rect x="128" y="22" width="22" height="56" fill="none" stroke="#fff" stroke-width="3"/>`+[[134,28],[144,28],[134,72],[144,72]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4" fill="none" stroke="#ff4d4d" stroke-width="2"/>`).join('')+pl(40,50)+ar('M52 48 L130 30','y')+ar('M52 52 L130 70','y',1); break;
-    case 'k_long': g=field+pl(16,70)+ball(24,70,4)+ar('M28 66 C60 0 110 0 148 66','y')+'<text x="78" y="88" fill="#fff" font-size="11" font-weight="700">遠くへ！</text>'; break;
-    case 'a_dash': g=field+'<path d="M20 10V90M140 10V90" stroke="#fff" stroke-width="3"/>'+pl(12,50)+ar('M24 50 L136 50','w')+'<text x="66" y="40" fill="#fff" font-size="11" font-weight="700">50m</text>'; break;
-    case 'a_side': g=field+'<path d="M40 14V86M80 14V86M120 14V86" stroke="#fff" stroke-width="3"/>'+pl(80,50)+ar('M44 66 L116 66','w',0,1)+'<text x="52" y="30" fill="#fff" font-size="10">1m</text><text x="96" y="30" fill="#fff" font-size="10">1m</text>'; break;
-    case 'a_ladder': g=field+'<rect x="14" y="36" width="132" height="28" fill="none" stroke="#ffd84a" stroke-width="2.5"/>'+[36,58,80,102,124].map(x=>`<path d="M${x} 36V64" stroke="#ffd84a" stroke-width="2.5"/>`).join('')+[25,47,69,91,113,135].map((x,i)=>`<ellipse cx="${x+(i%2?3:-3)}" cy="${i%2?56:44}" rx="3" ry="5" fill="#fff"/>`).join('')+ar('M14 78 L146 78','w'); break;
-    case 'a_react': g=field+pl(80,50)+ar('M88 50 L130 50','w')+ar('M72 50 L30 50','w')+ar('M80 42 L80 14','w')+ar('M80 58 L80 86','w')+'<text x="96" y="30" fill="#ffd84a" font-size="16" font-weight="900">！</text>'; break;
-    case 'a_shuttle': g=field+[20,60,100,140].map(x=>cone(x,30)).join('')+pl(20,60)+ar('M26 60 L56 60','w')+ar('M56 68 L26 68','w',1)+ar('M26 76 L96 76','w')+'<text x="34" y="92" fill="#fff" font-size="10">5mずつ</text>'; break;
-    case 'p_rope': g=dark+fig.rope+`<ellipse cx="80" cy="56" rx="16" ry="36" fill="none" stroke="${Y}" stroke-width="2" stroke-dasharray="5 3"/>`; break;
-    case 'p_squat': g=dark+fig.squat+ar('M110 40 L110 74','w',0,1); break;
-    case 'p_jump': g=dark+fig.jump+ar('M70 80 C90 40 110 40 126 80','w',1)+'<path d="M48 89H66M120 89H138" stroke="#ffd84a" stroke-width="3"/>'; break;
-    case 'p_hop': g=dark+fig.one+ar('M100 80 C112 60 124 60 136 80','w',1); break;
-    case 's_run': g=`<rect width="160" height="100" rx="8" fill="#1d6b3a"/><rect x="18" y="18" width="124" height="64" rx="32" fill="none" stroke="#c9634a" stroke-width="10"/>`+pl(80,18)+ar('M96 12 L120 14','w'); break;
-    case 's_interval': g=`<rect width="160" height="100" rx="8" fill="#1d6b3a"/><path d="M50 18 H110 A32 32 0 0 1 110 82 H50 A32 32 0 0 1 50 18Z" fill="none" stroke="#c9634a" stroke-width="10"/><path d="M50 18 H110" stroke="#ffd84a" stroke-width="4"/><path d="M110 82 H50" stroke="#ffd84a" stroke-width="4"/>`+'<text x="60" y="44" fill="#fff" font-size="11" font-weight="700">ダッシュ</text><text x="64" y="66" fill="#cfe0ff" font-size="11">ジョグ</text>'; break;
-    case 'b_plank': g=dark+fig.plank+'<path d="M44 52 L124 70" stroke="#ffd84a" stroke-width="1.5" stroke-dasharray="4 3"/>'; break;
-    case 'b_side': g=dark+fig.side; break;
-    case 'b_one': g=dark+fig.one; break;
-    case 'b_stretch': g=dark+fig.stretch+ar('M100 52 L118 70','y'); break;
-    case 'i_note': g=dark+'<rect x="52" y="16" width="56" height="70" rx="4" fill="#f4f6fb"/><path d="M60 30H100M60 42H100M60 54H96M60 66H90" stroke="#9aa7bd" stroke-width="2"/><path d="M104 74 L124 40 L130 44 L110 78Z" fill="#ffd84a" stroke="#7a5a00"/>'; break;
-    case 'i_tv': g=dark+'<rect x="34" y="16" width="92" height="60" rx="6" fill="#0a1124" stroke="#9aa7bd" stroke-width="3"/><rect x="40" y="22" width="80" height="48" fill="#1d6b3a"/><path d="M80 22V70" stroke="rgba(255,255,255,.4)"/><circle cx="62" cy="40" r="3" fill="#ff4d4d"/><circle cx="96" cy="54" r="3" fill="#00d4ff"/><circle cx="80" cy="46" r="2" fill="#fff"/><path d="M70 76 L64 86 M90 76 L96 86" stroke="#9aa7bd" stroke-width="3"/>'; break;
-    case 'i_image': g=dark+`<circle cx="60" cy="58" r="20" fill="${W}"/><circle cx="92" cy="40" r="4" fill="${W}" opacity=".7"/><circle cx="102" cy="30" r="6" fill="${W}" opacity=".8"/><ellipse cx="124" cy="22" rx="22" ry="14" fill="${W}"/>`+ball(124,22,7); break;
-    case 'g_game': g=field+'<rect x="6" y="38" width="6" height="24" fill="#fff"/><rect x="148" y="38" width="6" height="24" fill="#fff"/><circle cx="80" cy="50" r="12" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>'+[[40,30],[50,64],[70,44]].map(([x,y])=>pl(x,y)).join('')+[[110,34],[100,64],[124,50]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="6" fill="#ff4d4d" stroke="#fff" stroke-width="2"/>`).join('')+ball(84,52,4); break;
-    case 'g_team': g=field+[[40,30],[40,70],[80,50],[120,30],[120,70]].map(([x,y])=>pl(x,y)).join('')+ar('M46 32 L74 46','y')+ar('M86 48 L114 34','y')+cone(140,50); break;
+    case 'f_roll': g=field+feet+ar('M80 26 L80 58','y',0,1)+ball(80,44,8)+num(100,30,1)+num(100,58,2)+lbl(80,12,'足の裏で 前後にコロコロ',Y); break;
+    case 'f_tap': g=field+feet+ball(80,46,9)+ar('M62 54 L72 47','w')+ar('M98 54 L88 47','w')+num(52,46,1)+num(108,46,2)+lbl(80,14,'右・左・右・左と 交互にタッチ',Y); break;
+    case 'f_lr': g=field+feet+ar('M64 40 L96 40','y',0,1)+ball(80,40,8)+num(48,40,1)+num(112,40,2)+lbl(80,14,'インサイドで 左右に パス交換',Y); break;
+    case 'f_inout': g=field+feet+ar('M88 36 L114 36','y',0,1)+ball(100,36,7)+lbl(80,14,'片足の イン ⇄ アウト',Y)+lbl(88,54,'イン')+lbl(118,54,'アウト'); break;
+    case 'f_l': g=field+feet+ar('M100 30 L100 52 L66 52','y')+ball(100,30,7)+num(112,40,1)+num(82,64,2)+lbl(80,14,'①足裏で引く → ②横へ',Y); break;
+    case 'f_v': g=field+feet+ar('M100 26 L100 50 L126 24','y')+ball(100,26,7)+num(90,40,1)+num(124,42,2)+lbl(70,14,'①引いて ②ななめ前へ',Y); break;
+    case 'f_sc': g=field+feet+ar('M102 60 C116 30 76 18 66 34','w',1)+ar('M80 40 L40 26','y')+ball(80,40,8)+num(118,40,1)+num(48,40,2)+lbl(80,94,'①足でまたぐ ②反対へ運ぶ',Y); break;
+    case 'f_cr': g=field+feet+ar('M100 40 C96 66 60 66 38 48','y')+ball(100,40,7)+num(116,30,1)+num(70,72,2)+lbl(124,22,'けるふり',Y)+lbl(70,94,'軸足のうしろを通す',Y); break;
+    case 'f_dt': g=field+feet+ar('M98 34 L66 34 L66 10','y')+ball(98,34,7)+num(84,24,1)+num(56,18,2)+lbl(108,94,'右イン→左イン',Y); break;
+    case 'f_el': g=field+feet+ar('M104 34 L128 28 C118 16 92 12 70 22','y')+ball(100,34,7)+num(128,40,1)+num(82,12,2)+lbl(80,94,'①外へ ②すぐ内へ',Y); break;
+    case 'c_zig': g=field+[36,56,76,96,116,136].map(x=>cone(x,52)).join('')+ar('M24 50 C30 30 40 30 46 50 C52 70 60 70 66 50 C72 30 80 30 86 50 C92 70 100 70 106 50 C112 30 120 30 126 50 C132 70 142 70 148 56','y')+pl(14,50)+ball(24,50,4)+num(46,26,1)+num(146,74,2)+lbl(80,94,'コーンの間を ジグザグに',Y); break;
+    case 'c_8': g=field+cone(56,52)+cone(104,52)+ar('M56 32 C34 32 34 70 56 70 C78 70 82 32 104 32 C126 32 126 70 104 70 C82 70 78 32 58 32','y')+pl(30,24)+ball(56,32,4)+lbl(80,94,'8の字を えがく',Y); break;
+    case 'c_line': g=field+cone(22,38)+cone(22,64)+cone(140,38)+cone(140,64)+ar('M34 52 L130 52','y')+pl(12,52)+ball(28,52,4)+'<path d="M22 46 V58 M140 46 V58" stroke="#fff" stroke-width="2"/>'+lbl(80,40,'20m',W)+lbl(22,86,'スタート')+lbl(140,86,'ゴール'); break;
+    case 'c_stop': g=field+[52,92,132].map(x=>cone(x,30)).join('')+ar('M26 62 L48 62','y')+ar('M60 62 L88 62','y')+ar('M100 62 L136 62','y')+pl(14,62)+ball(24,62,4)+lbl(54,80,'ピタッ',Y)+lbl(94,80,'ピタッ',Y)+lbl(80,94,'止まる → すぐダッシュ'); break;
+    case 'c_turn': g=field+cone(130,52)+ar('M28 44 L116 44 C134 44 134 60 116 60 L30 60','y')+pl(16,44)+ball(26,44,4)+num(70,34,1)+num(140,52,2)+num(70,72,3)+lbl(80,94,'行って ターンして 戻る',Y); break;
+    case 'c_1v1': g=field+`<g transform="translate(88 50)"><ellipse cy="14" rx="15" ry="4" fill="#000" opacity=".3"/><path d="M-13 12 L-3 -14 Q0 -18 3 -14 L13 12 Q0 16 -13 12Z" fill="#ff8a1a" stroke="#7a3300"/><path d="M-8 -1 Q0 2 8 -1 L10 4 Q0 7 -10 4Z" fill="#fff"/></g>`+ar('M32 52 L66 52 C74 52 72 24 92 24 L140 26','y')+pl(22,52)+ball(30,52,4)+lbl(88,80,'あいて役')+num(66,62,1)+num(120,16,2); break;
+    case 'l_foot': g=dark+FIG(fig.kick)+ar('M99 60 L99 38','y',0,1)+ball(99,34,6)+lbl(128,28,'足の甲で',Y)+lbl(128,40,'インステップ',Y); break;
+    case 'l_bounce': g=dark+FIG(fig.kick)+ar('M96 62 L104 88 L108 46','y')+ball(108,40,6)+num(92,80,1)+num(120,60,2)+lbl(132,20,'1回バウンド',Y); break;
+    case 'l_thigh': g=dark+FIG(fig.thigh)+ar('M91 52 L91 30','y',0,1)+ball(91,26,6)+lbl(122,52,'もも',Y); break;
+    case 'l_head': g=dark+FIG(fig.head)+ar('M76 20 L76 6','y',0,1)+ball(76,14,6)+lbl(108,20,'おでこ',Y); break;
+    case 'l_walk': g=dark+FIG(fig.walk)+ar('M97 60 L97 40','y',0,1)+ball(97,36,6)+ar('M30 96 L140 96','w')+lbl(128,84,'前へ進む',W); break;
+    case 'k_wall': g=field+`<rect x="142" y="8" width="12" height="84" rx="2" fill="#b9c3d6" stroke="#5b6680"/><path d="M142 20 h12 M142 36 h12 M142 52 h12 M142 68 h12 M142 84 h12" stroke="#8a95ab"/>`+ar('M44 46 L138 38','y')+ar('M138 60 L46 56','y',1)+pl(30,52)+ball(40,52,4)+num(90,32,1)+num(90,68,2)+lbl(70,92,'①ける ②止める',Y); break;
+    case 'k_trap': g=field+ar('M142 28 L52 50','y')+ar('M54 58 L124 80','y')+pl(40,52)+ball(48,52,4)+num(100,30,1)+num(44,72,2)+num(108,84,3)+lbl(36,30,'止めて',Y)+lbl(130,62,'けりだす',Y); break;
+    case 'k_air': g=dark+FIG(fig.thigh)+ar('M146 6 C126 -2 104 8 94 26','y')+ball(91,44,6)+lbl(130,28,'高いボールを',Y)+lbl(130,40,'やさしく止める',Y); break;
+    case 'k_goal': g=field+`<rect x="128" y="20" width="24" height="60" fill="rgba(255,255,255,.12)" stroke="#fff" stroke-width="3"/><path d="M134 20 V80 M140 20 V80 M146 20 V80 M128 32 H152 M128 44 H152 M128 56 H152 M128 68 H152" stroke="rgba(255,255,255,.35)"/>`+ar('M54 52 L124 44','y')+pl(36,52)+ball(48,52,4)+lbl(80,92,'インステップで シュート',Y); break;
+    case 'k_target': g=field+`<rect x="128" y="20" width="24" height="60" fill="rgba(255,255,255,.12)" stroke="#fff" stroke-width="3"/>`+[[134,27],[146,27],[134,73],[146,73]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="5" fill="none" stroke="#ff4d4d" stroke-width="2.2"/><circle cx="${x}" cy="${y}" r="1.6" fill="#ff4d4d"/>`).join('')+ar('M54 50 L128 30','y')+ar('M54 54 L128 70','y',1)+pl(36,52)+ball(48,52,4)+lbl(80,94,'四すみを ねらう',Y); break;
+    case 'k_long': g=field+ar('M30 72 C62 -4 112 -4 146 68','y')+pl(16,72)+ball(26,72,4)+lbl(84,92,'遠くへ高く！',Y); break;
+    case 'a_dash': g=field+'<path d="M24 8 V92 M140 8 V92" stroke="#fff" stroke-width="3"/>'+ar('M30 52 L134 52','w')+pl(16,52)+lbl(24,98,'スタート')+lbl(140,98,'ゴール')+lbl(82,44,'全力ダッシュ',Y); break;
+    case 'a_side': g=field+'<path d="M40 12 V88 M80 12 V88 M120 12 V88" stroke="#fff" stroke-width="3"/>'+ar('M46 66 L114 66','w',0,1)+pl(80,46)+lbl(60,28,'1m')+lbl(100,28,'1m')+num(30,66,1)+num(130,66,2)+lbl(80,94,'線を またいで 左右に',Y); break;
+    case 'a_ladder': g=field+'<rect x="16" y="38" width="128" height="26" fill="none" stroke="#ffd84a" stroke-width="2.6"/>'+[37,58,80,101,122].map(x=>`<path d="M${x} 38V64" stroke="#ffd84a" stroke-width="2.6"/>`).join('')+[26,47,69,90,111,133].map((x,i)=>`<ellipse cx="${x+(i%2?3:-3)}" cy="${i%2?57:45}" rx="3.2" ry="5" fill="#fff" stroke="${OL}" stroke-width=".8"/>`).join('')+ar('M16 78 L144 78','w')+lbl(80,94,'1マスに1歩ずつ すばやく',Y)+lbl(80,26,'ラダー'); break;
+    case 'a_react': g=field+ar('M92 50 L132 50','w')+ar('M68 50 L28 50','w')+ar('M80 38 L80 12','w')+ar('M80 62 L80 88','w')+pl(80,50)+`<g transform="translate(118 22)"><circle r="10" fill="#ffd84a" stroke="#7a5a10"/><text y="5" text-anchor="middle" font-size="14" font-weight="900" fill="#1c1405">!</text></g>`+lbl(32,24,'合図で',Y)+lbl(32,36,'ダッシュ',Y); break;
+    case 'a_shuttle': g=field+[22,62,102,142].map(x=>cone(x,26)).join('')+ar('M28 54 L58 54','w')+ar('M58 62 L28 62','w')+ar('M28 72 L98 72','w')+pl(16,62)+num(44,44,1)+num(44,84,2)+num(84,84,3)+lbl(80,98,'タッチして 往復'); break;
+    case 'p_rope': g=room+FIG(fig.rope)+`<ellipse cx="80" cy="50" rx="17" ry="40" fill="none" stroke="${Y}" stroke-width="2.2" stroke-dasharray="5 3"/>`+lbl(124,30,'リズムよく',Y); break;
+    case 'p_squat': g=room+FIG(fig.squat)+ar('M120 30 L120 78','w',0,1)+lbl(136,56,'上下',Y)+lbl(44,30,'いすに座る',Y)+lbl(44,42,'ように',Y); break;
+    case 'p_jump': g=dark+FIG(fig.jump)+ar('M74 80 C92 40 112 40 128 80','w')+'<path d="M44 90 H70 M118 90 H144" stroke="#ffd84a" stroke-width="3"/>'+lbl(56,98,'ふみきり')+lbl(130,98,'着地'); break;
+    case 'p_hop': g=dark+FIG(fig.one)+ar('M102 80 C112 60 124 60 136 80','w')+ar('M136 80 C142 66 150 66 156 80','w')+lbl(40,30,'片足で',Y)+lbl(40,42,'ケンケン',Y); break;
+    case 's_run': g=`<rect width="160" height="100" rx="10" fill="url(#${u}g)"/><rect x="16" y="16" width="128" height="68" rx="34" fill="none" stroke="#c9634a" stroke-width="12"/><rect x="16" y="16" width="128" height="68" rx="34" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="3 3"/>`+ar('M92 16 L124 18','w')+pl(80,16)+lbl(80,54,'話せるくらいの',Y)+lbl(80,66,'ペースで15分',Y); break;
+    case 's_interval': g=`<rect width="160" height="100" rx="10" fill="url(#${u}g)"/><path d="M50 16 H110 A34 34 0 0 1 110 84 H50 A34 34 0 0 1 50 16Z" fill="none" stroke="#c9634a" stroke-width="12"/><path d="M50 16 H110" stroke="#ffd84a" stroke-width="5"/><path d="M110 84 H50" stroke="#ffd84a" stroke-width="5"/>`+lbl(80,40,'ダッシュ30秒',Y)+lbl(80,64,'ジョグ30秒')+lbl(80,52,'⇅ くり返す'); break;
+    case 'b_plank': g=room+FIG(fig.plank)+'<path d="M40 50 L126 72" stroke="#ffd84a" stroke-width="1.6" stroke-dasharray="4 3"/>'+lbl(84,40,'頭からかかとまで まっすぐ',Y); break;
+    case 'b_side': g=room+FIG(fig.side)+lbl(104,40,'横向きで',Y)+lbl(104,52,'体を一直線に',Y); break;
+    case 'b_one': g=room+FIG(fig.one)+lbl(124,64,'片足で',Y)+lbl(124,76,'ぐらぐらしない',Y); break;
+    case 'b_stretch': g=room+FIG(fig.stretch)+ar('M102 48 L120 66','y')+lbl(40,40,'ゆっくり',Y)+lbl(40,52,'20秒のばす',Y); break;
+    case 'i_note': g=`<rect width="160" height="100" rx="10" fill="#f2e8d0"/><rect x="40" y="12" width="70" height="80" rx="4" fill="#fffdf6" stroke="#b9a77a" stroke-width="1.5"/><path d="M48 28H102M48 40H102M48 52H98M48 64H92M48 76H96" stroke="#c9d4e8" stroke-width="2"/>`+lbl(70,26,'できたこと','#2b59c3')+`<path d="M108 82 L134 40 L142 45 L116 87Z" fill="#ffd84a" stroke="#7a5a00" stroke-width="1.2"/><path d="M116 87 L112 92 L108 82Z" fill="#3a2a10"/>`; break;
+    case 'i_tv': g=`<rect width="160" height="100" rx="10" fill="#2a2140"/><rect x="28" y="12" width="104" height="66" rx="8" fill="#0a1124" stroke="#9aa7bd" stroke-width="3"/><rect x="34" y="18" width="92" height="54" fill="url(#${u}g)"/><path d="M80 18V72" stroke="rgba(255,255,255,.5)"/><circle cx="80" cy="45" r="9" fill="none" stroke="rgba(255,255,255,.5)"/>`+pl(58,36)+pl(100,56,'#e63946')+ball(78,48,3)+'<path d="M66 78 L58 92 M94 78 L102 92" stroke="#9aa7bd" stroke-width="3"/>'+lbl(80,98,'1人の選手を 目で追う',Y); break;
+    case 'i_image': g=dark+`<g transform="translate(52 62)"><circle r="18" fill="${sk}" stroke="${OL}" stroke-width="1.6"/><path d="M-18 -2 C-18 -24 18 -24 18 -2 C12 -9 -12 -9 -18 -2Z" fill="${hair}" stroke="${OL}" stroke-width="1.2"/><path d="M-8 4 q3 -3 6 0 M2 4 q3 -3 6 0" stroke="${OL}" stroke-width="1.6" fill="none"/></g><circle cx="80" cy="40" r="3.5" fill="#fff" opacity=".7"/><circle cx="90" cy="30" r="5" fill="#fff" opacity=".85"/><ellipse cx="122" cy="26" rx="30" ry="20" fill="#fff"/><g transform="translate(108 20)">${'<path d="M0 10 L20 10" stroke="#2f8a47" stroke-width="6"/>'}</g>`+ball(116,24,6)+`<path d="M126 20 L138 14" stroke="#ffd84a" stroke-width="2"/>`+lbl(110,94,'ゴールを決める自分を想像',Y); break;
+    case 'g_game': g=field+'<rect x="4" y="36" width="8" height="28" fill="#fff"/><rect x="148" y="36" width="8" height="28" fill="#fff"/><path d="M80 4V96" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/><circle cx="80" cy="50" r="13" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/>'+[[40,28],[48,66],[68,46]].map(([x,y])=>pl(x,y)).join('')+[[110,32],[100,66],[126,50]].map(([x,y])=>pl(x,y,'#e63946')).join('')+ball(84,52,4); break;
+    case 'g_team': g=field+[[36,28],[36,72],[80,50],[124,28],[124,72]].map(([x,y])=>pl(x,y)).join('')+ar('M44 32 L72 46','y')+ar('M88 46 L116 32','y')+cone(146,50)+lbl(80,96,'声をかけ合って パス',Y); break;
   }
-  return `<svg viewBox="0 0 160 100" class="diag">${mk}${g}</svg>`;
+  if(anim&&mp) g+=`<g>${ball(0,0,4.6)}<animateMotion dur="${k.startsWith('l_')?'1.2s':'3s'}" repeatCount="indefinite" path="${mp}"/></g>`;
+  return `<svg viewBox="0 0 160 100" class="diag">${defs}${g}</svg>`;
 }
 
 /* ===== サッカーの 能力（スポーツ科学の 体力要素で 分類） ===== */
@@ -326,7 +351,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.3.0';
+const APP_VERSION='0.3.1';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -967,7 +992,7 @@ function practiceView(){
   </div>`;
   return `<div class="wrap">
     <button class="chip mini" id="mback" style="margin:4px 0 12px">‹ メニュー一覧</button>
-    <div class="mdetail"><div class="mbig">${diag(m.d)}</div>
+    <div class="mdetail"><div class="mbig">${diag(m.d,null,true)}</div>
       <h2 style="margin:14px 0 6px">${m.name} ${stars(m.lv)}</h2>
       <ol class="how">${m.how.map(h=>`<li>${h}</li>`).join('')}</ol>
       <div class="legend"><span><i style="background:#ffd84a"></i>ボールの動き</span><span><i style="background:#eaf2ff"></i>人の動き</span><span><i style="background:#ff8a00"></i>コーン</span></div>
