@@ -26,7 +26,7 @@ def main():
     for d in DIRS:
         src = os.path.join(ROOT, d)
         if os.path.isdir(src) and os.listdir(src):
-            shutil.copytree(src, os.path.join(DIST, d))
+            shutil.copytree(src, os.path.join(DIST, d), ignore=shutil.ignore_patterns('sheets'))  # 元のシート画像は公開しない
     ver = re.search(r"APP_VERSION='([^']+)'", open(os.path.join(ROOT, 'app.js'), encoding='utf-8').read()).group(1)
     tag = f'rq-{ver}-{h.hexdigest()[:8]}'
     sw = os.path.join(DIST, 'sw.js')

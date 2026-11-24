@@ -113,5 +113,12 @@ test('ショップのアイテムは すべてアイコンが描ける', c => {
   eq(run(c, "SHOP.flatMap(x=>x.items.map(it=>itemIcon(x.cat,it))).filter(h=>!h||h.length<40).length"), 0);
 });
 
+test('イラストのキャラを選ぶと カードはイラストで表示（自分で作るときはコードの絵）', c => {
+  run(c, newPlayer + "S.c.avatar='idea-3';");
+  ok(run(c, "cardView(S,1,0).includes('img/chars/idea-3_1.png')"), 'イラスト');
+  run(c, "S.c.avatar='';"); ok(run(c, `cardView(S,1,0).includes('<svg class="char"')`), 'コードの絵');
+  eq(run(c, 'AVATARS.length'), 10);
+});
+
 console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
 process.exit(fail ? 1 : 0);

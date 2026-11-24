@@ -320,3 +320,17 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}
 .confetti i{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{top:105%;transform:rotate(720deg) translateX(40px)}}
 .edtop>.chips{flex-wrap:nowrap;overflow-x:auto;gap:5px}.edtop>.chips .chip.mini{padding:4px 9px;flex:none}
+.avwrap{position:relative;height:100%;width:100%;display:flex;justify-content:center;align-items:flex-end}
+.pc-char .avwrap img.avimg,.avimg{display:block;height:100%;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.5))}
+.avball{position:absolute;right:10%;bottom:1%;width:19%;height:auto;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4))}
+.avball.fire{width:34%;right:2%}
+.edprev .avwrap{height:100%}
+.avgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.avopt{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:4px 2px 6px;cursor:pointer;font:inherit;color:var(--ink);font-size:11px;font-weight:700}
+.avopt.on{border-color:var(--gold);background:var(--on);box-shadow:0 0 10px rgba(212,175,55,.35)}
+.avopt img,.avopt svg{width:100%;aspect-ratio:1;object-fit:contain;display:block}
+.avwrap svg.avball{width:19%!important;height:auto!important;margin:0}
+.avwrap svg.avball.fire{width:34%!important}
+.avopt svg.char,.avopt svg{width:100%!important;height:auto!important;aspect-ratio:1;margin:0}
+.pc.locked .avwrap img.avimg{filter:brightness(0) opacity(.6)!important}
+.pc.locked .avball{display:none}

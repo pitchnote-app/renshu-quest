@@ -351,7 +351,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.3.2';
+const APP_VERSION='0.4.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -590,7 +590,7 @@ const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 
 /* ===== キャラクター ===== */
 const HAIRSTYLES=['さっぱり','ツンツン','マッシュ','ぼうず','ポニーテール','ツインテール','ボブ','ロング'];
-const DEF={age:10,sex:'m',skin:'#ffe0c2',build:1,face:0,brow:0,mouth:0,cheek:0,eye:0,eyeCol:'#5a3522',eyeSize:1,lash:0,
+const DEF={avatar:'',age:10,sex:'m',skin:'#ffe0c2',build:1,face:0,brow:0,mouth:0,cheek:0,eye:0,eyeCol:'#5a3522',eyeSize:1,lash:0,
   hair:0,hairColor:'#2b1d16',tip:'',color:'#2b59c3',color2:'#ffffff',pattern:0,num:10,pants:'#ffffff',sock:'',bootCol:'#2d2d35',acc:0};
 function norm(c){
   c=c||{};
@@ -614,7 +614,22 @@ const STAGES=[
 const POSE_OF=[0,0,1,1,2,3,3,4];
 function stageOf(L){let r=0;STAGES.forEach((x,i)=>{if(L>=x.lv)r=i});return r}
 /* 画像（img/m1_3.png など）が あれば それを、なければ コードの イラストを ひょうじ */
+/* ===== AIイラストのキャラ（選んで使う） ===== */
+const AVATARS=[
+  {id:'idea-1',name:'ツンツン',sex:'m'},{id:'idea-2',name:'ブロンド',sex:'m'},{id:'idea-3',name:'メガネ',sex:'m'},
+  {id:'idea-4',name:'あか髪',sex:'m'},{id:'idea-5',name:'ぎん髪',sex:'m'},
+  {id:'idea-6',name:'ポニーテール',sex:'f'},{id:'idea-7',name:'ロング',sex:'f'},{id:'idea-8',name:'ふわふわ',sex:'f'},
+  {id:'idea-9',name:'みつあみ',sex:'f'},{id:'idea-10',name:'おだんご',sex:'f'},
+];
+/* ステージ別の絵（img/chars/idea-1_3.png など）があればそれを、なければ基本の絵を使う。足元に装備中のボール */
+function avatarView(c,L,i){
+  const B=c.ballT||BALLS[0], u='av'+(UID++), O='stroke="#3d2b24" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"';
+  const vb=B.fire?'100 150 80 76':'136 184 44 44';
+  return `<div class="avwrap"><img class="avimg" src="img/chars/${c.avatar}_${i+1}.png" onerror="this.onerror=null;this.src='img/chars/${c.avatar}.png'" alt="">`+
+    `<svg class="avball ${B.fire?'fire':''}" viewBox="${vb}"><defs><filter id="${u}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>${ballSVG(B,u,O)}</svg></div>`;
+}
 function charView(c,L,i){
+  if(c.avatar)return avatarView(c,L,i);
   const a=(c.sex==='f'?'f':'m')+'1';
   return `<img src="img/${a}_${i+1}.png" alt="" onload="this.style.display='block';if(this.nextElementSibling)this.nextElementSibling.remove()" onerror="this.remove()">${charSVG(c,L,POSE_OF[i])}`;
 }
@@ -830,14 +845,18 @@ const ED=[
   ]},
 ];
 let ed=null, edTab=0, edPose=0;
+function edPreview(){return ed.avatar?avatarView(norm(ed),STAGES[edPose].lv,edPose):charSVG(ed,STAGES[edPose].lv,POSE_OF[edPose])}
 function editView(){
   const t=ED[edTab];
   return `<div class="edtop">
-    <div class="edprev">${charSVG(ed,STAGES[edPose].lv,POSE_OF[edPose])}</div>
+    <div class="edprev">${edPreview()}</div>
     <div class="chips" style="margin-bottom:6px"><span class="sub" style="align-self:center">進化の姿：</span>${STAGES.map((r,i)=>`<button class="chip mini ${i===edPose?'on':''}" data-ep="${i}">${i+1}</button>`).join('')}</div>
     <div class="tabs">${ED.map((x,i)=>`<button class="chip ${i===edTab?'on':''}" data-et="${i}">${x.tab}</button>`).join('')}</div>
   </div>
   <div class="wrap">
+    ${edTab===0?`<div class="card"><h3>キャラクターを選ぶ</h3><p class="sub" style="margin:4px 0 10px">イラストのキャラから選ぶか、自分で作るかを選べるよ</p>
+      <div class="avgrid"><button class="avopt ${!ed.avatar?'on':''}" data-av="">${charSVG({...ed,avatar:''},1,0)}<span>自分で作る</span></button>${AVATARS.map(A=>`<button class="avopt ${ed.avatar===A.id?'on':''}" data-av="${A.id}"><img src="img/chars/${A.id}.png" alt=""><span>${A.name}</span></button>`).join('')}</div></div>`:''}
+    ${edTab>0&&ed.avatar?`<div class="card hint" style="margin-bottom:14px">イラストのキャラを選んでいるときは、顔・目・髪・小物の設定は使われません（ユニフォームの背番号はカードに使われます）。「体」タブで「自分で作る」を選ぶと使えるよ。</div>`:''}
     ${edTab===0?`<div class="card"><h3>名前</h3><input type="text" id="cname" maxlength="10" placeholder="名前を入力" value="${esc(ed.name||'')}" style="margin-top:8px"></div>`:''}
     <div class="card">${t.items.map(itemView).join('')}</div>
     <div class="row"><button class="btn ghost" id="rand" style="flex:1">おまかせ</button><button class="btn gold" id="edok" style="flex:2">${S?'決定':'このキャラで始める'}</button></div>
@@ -855,8 +874,9 @@ function itemView(it){
 function bindEdit(){
   const app=document.getElementById('app');
   const re=()=>{const y=window.scrollY;render();window.scrollTo(0,y)};
-  const pv=()=>{app.querySelector('.edprev').innerHTML=charSVG(ed,STAGES[edPose].lv,POSE_OF[edPose])};
+  const pv=()=>{app.querySelector('.edprev').innerHTML=edPreview()};
   app.querySelectorAll('[data-et]').forEach(b=>b.onclick=()=>{edTab=+b.dataset.et;re()});
+  app.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{const v=b.dataset.av;ed.avatar=v;if(v)ed.sex=AVATARS.find(x=>x.id===v).sex;re()});
   app.querySelectorAll('[data-ep]').forEach(b=>b.onclick=()=>{edPose=+b.dataset.ep;re()});
   app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ed[b.dataset.k]=b.dataset.n==='1'?+b.dataset.v:b.dataset.v;re()});
   app.querySelectorAll('[data-ck]').forEach(i=>i.oninput=()=>{ed[i.dataset.ck]=i.value;pv()});
