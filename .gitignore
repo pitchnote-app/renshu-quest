@@ -10,3 +10,4 @@ android/app/build/
 ios/App/Pods/
 # バックアップファイル（個人の記録が入るため）
 renshu-quest-backup-*.json
+dist/

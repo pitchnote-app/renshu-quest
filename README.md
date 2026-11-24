@@ -22,13 +22,22 @@ python -m http.server 8000
 ブラウザで http://localhost:8000 を開く。
 同じWi-Fiのスマホからは `http://（PCのIPアドレス）:8000` で開ける。
 
+## 公開用ファイルの作成とテスト
+```
+python tools/build.py      # dist/ に公開用ファイルをまとめる（これをアップロード）
+node tools/test_logic.js   # 計算ロジックの自動テスト
+```
+
 ## 中身を変えたいとき（app.js の主な場所）
 - 能力：`SPORT.stats`
 - 練習メニュー：`MENUS`（図解は `diag()`）
 - 職業：`JOBS`／称号：`TITLES`／スキル：`SKILLS`
 - 成長ステージ：`STAGES`
 - クエスト：`QPOOL`／ライバル：`BOSSES`
-- ショップのアイテム：`BALLS`・`BOOTS`・`KITS`・`BGS`
+- ショップのアイテム：`BALLS`・`BOOTS`・`KITS`・`BGS`（`price:-1` は非売品。宝箱・月間ロード限定）
+- 宝箱：`openChest()`／月間チャレンジロード：`ROAD_STEP`・`roadReward()`・`MONTH_BG`
+- 相棒ボルトのセリフ：`buddyLines()`
+- お守り・週のふりかえり：`dailyCheck()`
 
 ## データ
 記録はブラウザの localStorage（キー `renshu-quest-v1`）に保存。外部送信なし。

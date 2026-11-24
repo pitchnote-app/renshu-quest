@@ -294,3 +294,28 @@ body{padding-top:env(safe-area-inset-top)}
 textarea{width:100%;font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);resize:vertical}
 .pmsgcard{border:1px solid rgba(212,175,55,.6);background:linear-gradient(135deg,rgba(212,175,55,.16),rgba(255,255,255,.02))}
 input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.buddycard{display:flex;gap:10px;align-items:center;margin-bottom:14px;cursor:pointer}
+.buddy{width:64px;height:64px;flex:none;animation:bob 2.6s ease-in-out infinite;filter:drop-shadow(0 4px 10px rgba(212,175,55,.35))}
+.bubble{position:relative;flex:1;background:#f6f1e3;color:#1c1405;border-radius:14px;padding:10px 12px;font-size:14px;font-weight:700;line-height:1.6}
+.bubble::before{content:"";position:absolute;left:-8px;top:22px;border:6px solid transparent;border-right-color:#f6f1e3}
+.chestcard .chestic{font-size:40px;display:inline-block}
+.shake{animation:shake 1.4s ease-in-out infinite}
+@keyframes shake{0%,70%,100%{transform:rotate(0)}75%{transform:rotate(-12deg)}80%{transform:rotate(12deg)}85%{transform:rotate(-8deg)}90%{transform:rotate(8deg)}}
+.chestopen{font-size:64px;animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+.bigcoin{font-size:56px}
+.rare{font-weight:900;color:#ff8ad8;letter-spacing:.2em;text-shadow:0 0 10px rgba(255,138,216,.6)}
+.road{display:flex;gap:4px;margin-top:10px}
+.road i{flex:1;height:22px;border-radius:5px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;border:1px solid var(--line)}
+.road i.on{background:linear-gradient(180deg,#f3dc8f,#b8901f);border-color:#f3dc8f}
+.road i.goal{flex:1.4}
+.recap{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+.recap div{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:8px 2px}
+.recap b{display:block;font-size:22px;color:var(--gold2)}
+.recap span{font-size:10px;color:var(--sub)}
+.tprog{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:5px;overflow:hidden}
+.tprog i{display:block;height:100%;background:linear-gradient(90deg,#b8901f,#f3dc8f)}
+.t.lock{filter:none;opacity:.75}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:20;overflow:hidden}
+.confetti i{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{top:105%;transform:rotate(720deg) translateX(40px)}}

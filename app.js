@@ -326,7 +326,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.2.0';
+const APP_VERSION='0.3.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -390,6 +390,143 @@ async function importData(){
     }catch(e){dialog({icon:'⚠️',title:'読みこめませんでした',msg:'れんしゅうクエストのバックアップファイルを選んでね。'})}
   };
   inp.click();
+}
+
+/* ===== 効果音・振動（音声ファイルなし。Web Audio で その場で鳴らす） ===== */
+let AC=null;
+function sfx(kind){
+  if(!S||S.sound===false)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const N={ok:[[660,.08],[880,.12]],coin:[[988,.06],[1319,.14]],level:[[523,.1],[659,.1],[784,.1],[1047,.3]],stage:[[392,.12],[523,.12],[659,.12],[784,.12],[1047,.45]]}[kind]||[[880,.05]];
+    let t=AC.currentTime;
+    N.forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.16,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d+.03);t+=d*.9});
+    if(navigator.vibrate)navigator.vibrate(kind==='level'||kind==='stage'?[30,40,70]:15);
+  }catch(e){}
+}
+async function openPrivacy(){if(await parentGate())location.href='privacy.html'}
+
+/* ===== 宝箱でしか手に入らない レアアイテム ===== */
+BALLS.push({id:'b6',name:'レインボーボール',price:-1,rare:1,base:'#ff8ad8',pat:'#ffffff',glow:'#7be3ff'});
+BOOTS.push({id:'s6',name:'クリスタル',price:-1,rare:1,col:'#a8e6ff',acc:'#ffffff'});
+KITS.push({id:'k6',name:'レジェンド',price:-1,rare:1,color:'#0b0b0b',color2:'#f5b301',pattern:6,pants:'#0b0b0b'});
+BGS.push({id:'g7',name:'オーロラ',price:-1,rare:1,bg:'radial-gradient(1.5px 1.5px at 25% 20%,#fff,transparent),radial-gradient(1.5px 1.5px at 75% 30%,#fff,transparent),linear-gradient(170deg,#04101f 0%,#0b4d4a 35%,#3ee08f 50%,#7b5cff 70%,#04101f 100%)'});
+const CHEST_ITEMS=[['ball','b6'],['boot','s6'],['kit','k6'],['bg','g7']];
+/* 月間チャレンジロードの 限定背景（毎月ちがう） */
+const MONTH_BG=[
+  ['お正月','linear-gradient(180deg,#b3001b,#ffcf5a 55%,#7a0010)'],['ゆきぐに','linear-gradient(180deg,#a9c9ff,#ffffff 60%,#c7d7ef)'],
+  ['ひなまつり','linear-gradient(180deg,#ffb3d1,#fff0f5 55%,#7bbf6a)'],['はるかぜ','linear-gradient(180deg,#9fe0ff,#fff7c2 55%,#8fd36b)'],
+  ['しんりょく','linear-gradient(180deg,#5fd38b,#e6ffd9 55%,#2e8b57)'],['あじさい','linear-gradient(180deg,#6a7bd8,#c9a7ff 55%,#3c4a99)'],
+  ['なつまつり','radial-gradient(circle at 50% 30%,#ffd84a 0,#ff6a00 35%,#2b0a3d 75%)'],['はなび','radial-gradient(circle at 30% 30%,#ff5fd2 0,transparent 25%),radial-gradient(circle at 70% 25%,#7be3ff 0,transparent 25%),linear-gradient(180deg,#05061a,#1b1450)'],
+  ['おつきみ','radial-gradient(circle at 70% 25%,#fff6c2 0,#ffd84a 10%,transparent 12%),linear-gradient(180deg,#0b1030,#27306b 60%,#3a2a10)'],['ハロウィン','radial-gradient(circle at 50% 35%,#ff8a00 0,#5a1a6b 55%,#0b0410)'],
+  ['もみじ','linear-gradient(180deg,#ffb347,#e2532d 55%,#5a1a0b)'],['クリスマス','radial-gradient(1.5px 1.5px at 20% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 20%,#fff,transparent),linear-gradient(180deg,#0b3d1f,#c1121f 70%,#f5f5f5)'],
+];
+MONTH_BG.forEach(([n,bg],i)=>BGS.push({id:'m'+(i+1),name:`${i+1}月限定：${n}`,price:-1,season:1,bg}));
+const ROAD_STEP=120, ROAD_TIERS=10;
+function roadReward(n){return n===ROAD_TIERS?{bg:'m'+(new Date().getMonth()+1)}:n===5?{chest:1}:{coin:10+n*10}}
+function season(){const m=today().slice(0,7);if(!S.season||S.season.m!==m)S.season={m,xp:0,tier:0};return S.season}
+
+/* ===== 相棒キャラ「ボルト」 ===== */
+function buddySVG(){return `<svg viewBox="0 0 60 60" class="buddy"><defs><radialGradient id="bdg" cx="35%" cy="30%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#cfd8ea"/></radialGradient></defs>
+  <path d="M10 26 Q2 18 6 10 Q12 18 16 20Z M50 26 Q58 18 54 10 Q48 18 44 20Z" fill="#f3dc8f" stroke="#8a6a1b" stroke-width="1.5"/>
+  <circle cx="30" cy="32" r="20" fill="url(#bdg)" stroke="#2d2d35" stroke-width="2"/><path d="M30 18 l6 4.4 -2.3 7 h-7.4 l-2.3 -7z" fill="#2d2d35"/>
+  <ellipse cx="23" cy="36" rx="3.2" ry="4" fill="#1a1020"/><ellipse cx="37" cy="36" rx="3.2" ry="4" fill="#1a1020"/><circle cx="24" cy="34.5" r="1.2" fill="#fff"/><circle cx="38" cy="34.5" r="1.2" fill="#fff"/>
+  <path d="M25 44 Q30 48 35 44" stroke="#1a1020" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="18" cy="42" rx="3" ry="1.8" fill="#ff8a8a" opacity=".6"/><ellipse cx="42" cy="42" rx="3" ry="1.8" fill="#ff8a8a" opacity=".6"/></svg>`}
+let buddyIdx=0;
+function buddyLines(){
+  const L=[], hp=Math.round(S.hp??100), td=S.logs.filter(l=>l.date===today()&&!l.rest), wd=weekDays(), st=streak(), nm=esc(norm(S.c).name);
+  const q=quests(today()).find(x=>!((S.qd&&S.qd[today()])||[]).includes(x.id));
+  if(S.charmUsed===today()) L.push('きのうはお休みだったけど、お守りが連続記録を守ってくれたよ！');
+  if(hp<25) L.push('つかれてるみたい…。今日は宿屋でゆっくり休もう。休むのも練習だよ！');
+  if(td.length) L.push(`今日もナイス練習、${nm}！ 明日もいっしょにがんばろう！`);
+  else L.push(q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}、今日はどんな練習をする？`);
+  if(wd<WEEK_GOAL&&wd>0) L.push(`あと${WEEK_GOAL-wd}日で今週の目標達成だよ！`);
+  if(st>=3) L.push(`${st}日連続！ その調子！`);
+  const sp=season(), nxt=Math.min(ROAD_TIERS,sp.tier+1);
+  if(sp.tier<ROAD_TIERS) L.push(`チャレンジロードの次の報酬まで、あと${nxt*ROAD_STEP-sp.xp} EXP！`);
+  const pend=chestsPending(); if(pend) L.push(`宝箱が${pend}個あるよ！ 開けてみて！`);
+  L.push('ボクはボルト。キミの練習をずっと応援してるよ！');
+  return L;
+}
+function buddyCard(){const L=buddyLines();return `<div class="buddycard" onclick="buddyIdx++;document.querySelector('.bubble').textContent=buddyLines()[buddyIdx%buddyLines().length]">${buddySVG()}<div class="bubble">${L[buddyIdx%L.length]}</div></div>`}
+
+/* ===== 宝箱（練習60分ごとに1個。中身はランダム） ===== */
+const totalMin=()=>S.logs.filter(l=>!l.rest).reduce((a,l)=>a+(l.min||0),0);
+const chestsPending=()=>Math.max(0,Math.floor(totalMin()/60)+(S.bonusChest||0)-(S.chestOpened||0));
+function chestCard(){
+  const p=chestsPending(), rest=60-totalMin()%60;
+  return `<div class="card chestcard"><div class="row"><span class="chestic ${p?'shake':''}">🎁</span><div style="flex:1"><h3>${p?`宝箱が ${p}個 あるよ！`:'宝箱'}</h3><p class="sub" style="margin:4px 0 0">${p?'タップして開けよう':`練習あと${rest}分で 宝箱をゲット`}</p></div>${p?'<button class="btn gold" id="chestopen" style="width:auto;padding:10px 18px">開ける</button>':''}</div></div>`;
+}
+function openChest(){
+  if(!chestsPending())return;
+  S.chestOpened=(S.chestOpened||0)+1; S.inv=S.inv||[];
+  const r=Math.random(), notOwned=CHEST_ITEMS.filter(([c,id])=>!S.inv.includes(id));
+  let html;
+  if(r<.12&&notOwned.length){const [cat,id]=notOwned[Math.floor(Math.random()*notOwned.length)], it=SHOP.find(x=>x.cat===cat).items.find(x=>x.id===id);
+    S.inv.push(id); html=`<div class="rare">★ レアアイテム ★</div><div class="bigicon">${itemIcon(cat,it)}</div><p><b>${it.name}</b> を手に入れた！</p><p class="sub">宝箱でしか手に入らないよ。着せ替えで使ってみよう</p>`; sfx('stage')}
+  else {const c=r<.45?30+Math.floor(Math.random()*4)*10:r<.85?60+Math.floor(Math.random()*5)*10:150;
+    S.coin=(S.coin||0)+c; html=`<div class="bigcoin">🪙</div><p style="font-size:26px;font-weight:900;margin:6px 0">${c} コイン</p>${c>=150?'<p class="rare">大当たり！</p>':''}`; sfx('coin')}
+  save();
+  const box=document.getElementById('ovbox');
+  box.innerHTML=`<div class="chestopen">🎁</div><h2>宝箱を開けた！</h2>${html}<button class="btn gold" id="chestok">${chestsPending()?'次の宝箱を開ける':'やったね！'}</button>`;
+  document.getElementById('ov').classList.add('show');
+  document.getElementById('chestok').onclick=()=>{if(chestsPending())openChest();else{closeOv();render()}};
+}
+
+/* ===== 月間チャレンジロード（毎月リセット。報酬は練習で必ずもらえる） ===== */
+function roadCard(){
+  const sp=season(), d=new Date(), left=new Date(d.getFullYear(),d.getMonth()+1,0).getDate()-d.getDate();
+  const nxt=Math.min(ROAD_TIERS,sp.tier+1), rw=roadReward(nxt), bgi=BGS.find(x=>x.id==='m'+(d.getMonth()+1));
+  return `<div class="card roadcard"><h3>🛣️ ${d.getMonth()+1}月のチャレンジロード <span class="sub">${sp.tier}/${ROAD_TIERS}</span></h3>
+    <div class="road">${Array.from({length:ROAD_TIERS},(_,i)=>`<i class="${i<sp.tier?'on':''} ${i===ROAD_TIERS-1?'goal':''}">${i===ROAD_TIERS-1?'👑':i===4?'🎁':''}</i>`).join('')}</div>
+    ${sp.tier<ROAD_TIERS?`<p class="sub" style="margin:8px 0 0">次の報酬：<b style="color:var(--gold2)">${rw.bg?'限定背景「'+bgi.name+'」':rw.chest?'宝箱':'🪙'+rw.coin}</b>（あと${nxt*ROAD_STEP-sp.xp} EXP）</p>`:'<p class="sub" style="margin:8px 0 0">🎉 今月のロード完走！ 来月も新しい限定背景が待ってるよ</p>'}
+    <p class="sub" style="margin:2px 0 0">ゴールの報酬：限定背景「${bgi.name}」　（今月はあと${left}日）</p></div>`;
+}
+function roadGain(xp,notes){
+  const sp=season(); sp.xp+=xp; let c=0;
+  while(sp.tier<ROAD_TIERS&&sp.xp>=(sp.tier+1)*ROAD_STEP){
+    sp.tier++; const r=roadReward(sp.tier);
+    if(r.coin)c+=r.coin;
+    if(r.chest){S.bonusChest=(S.bonusChest||0)+1;notes.push('🛣️ チャレンジロード報酬：宝箱 ×1')}
+    if(r.bg){S.inv=S.inv||[];if(!S.inv.includes(r.bg))S.inv.push(r.bg);notes.push(`🛣️ ロード完走！ 限定背景「${BGS.find(x=>x.id===r.bg).name}」をゲット`)}
+  }
+  if(c)notes.push(`🛣️ チャレンジロード報酬：🪙${c}`);
+  return c;
+}
+
+/* ===== お守り（1日休んでも 連続記録を守る。週の目標を達成すると +1） ===== */
+function dailyCheck(){
+  if(S.dcheck===today())return; S.dcheck=today();
+  if(S.charm==null)S.charm=1;
+  const y=new Date();y.setDate(y.getDate()-1);const y2=new Date();y2.setDate(y2.getDate()-2);
+  const days=new Set([...S.logs.map(l=>l.date),...(S.frozen||[])]);
+  if(!days.has(ds(y))&&days.has(ds(y2))&&S.charm>0){S.charm--;S.frozen=[...(S.frozen||[]),ds(y)];S.charmUsed=today()}
+  // 週のふりかえり（月曜はじめに 先週のまとめ）
+  const lastW=new Date(mondayOf(new Date()));lastW.setDate(lastW.getDate()-7);const a=ds(lastW),e=new Date(lastW);e.setDate(e.getDate()+6);const b=ds(e);
+  const L=S.logs.filter(l=>l.date>=a&&l.date<=b);
+  if(S.recapWeek!==weekKey()&&L.length){S.recapWeek=weekKey();S.recapPending={a,b,days:new Set(L.filter(l=>!l.rest).map(l=>l.date)).size,min:L.reduce((t,l)=>t+(l.min||0),0),xp:L.reduce((t,l)=>t+(l.xp||0),0),pb:L.filter(l=>l.pb).length,rest:L.filter(l=>l.rest).length}}
+  save();
+}
+function showRecap(){
+  const R=S.recapPending; if(!R)return; S.recapPending=null; save();
+  const msg=R.days>=WEEK_GOAL?'目標の週4日を達成！ 最高の1週間だったね！':R.days>=2?'しっかり練習できたね。今週はもう1日ふやしてみよう！':'今週はクエストをひとつずつクリアしていこう！';
+  const box=document.getElementById('ovbox');
+  box.innerHTML=`<div class="star">📊</div><h2 style="font-size:22px">先週のふりかえり</h2><p class="sub">${R.a.slice(5).replace('-','/')} 〜 ${R.b.slice(5).replace('-','/')}</p>
+    <div class="recap"><div><b>${R.days}</b><span>練習した日</span></div><div><b>${R.min}</b><span>練習（分）</span></div><div><b>${R.xp}</b><span>EXP</span></div><div><b>${R.pb}</b><span>自己ベスト</span></div></div>
+    <p style="line-height:1.7">${msg}</p><button class="btn gold" id="rcok">今週もがんばる！</button>`;
+  document.getElementById('ov').classList.add('show');
+  document.getElementById('rcok').onclick=closeOv;
+}
+
+/* ===== 紙吹雪（レベルアップの演出） ===== */
+function confetti(){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=document.createElement('div');c.className='confetti';
+  const cols=['#f3dc8f','#d4af37','#7be3ff','#ff8ad8','#7be3a6','#fff'];
+  c.innerHTML=Array.from({length:40},(_,i)=>`<i style="left:${Math.random()*100}%;background:${cols[i%cols.length]};animation-delay:${Math.random()*.5}s;animation-duration:${1.6+Math.random()*1.2}s;transform:rotate(${Math.random()*360}deg)"></i>`).join('');
+  document.body.appendChild(c); setTimeout(()=>c.remove(),3500);
 }
 
 /* ===== データ保存 ===== */
@@ -736,6 +873,7 @@ function render(){
   if(tab==='shop')bindShop();
   if(tab==='wardrobe')bindWardrobe();
   if(tab==='report')bindReport();
+  if(tab==='home'){const co=document.getElementById('chestopen');if(co)co.onclick=openChest;if(S.recapPending&&!document.getElementById('ov').classList.contains('show'))setTimeout(showRecap,300)}
   if(tab==='home'){const pr=document.getElementById('pread');if(pr)pr.onclick=()=>{const g=S.pmsg.gift||0;S.pmsg.read=true;if(g)S.coin=(S.coin||0)+g;save();render();if(g)dialog({icon:'🪙',title:`コイン +${g}`,msg:'おうちの人からのごほうび！'})}}
   if(tab==='log')app.querySelectorAll('[data-cal]').forEach(b=>b.onclick=()=>{calOff=Math.min(0,calOff+ +b.dataset.cal);const y=window.scrollY;render();window.scrollTo(0,y)});
   if(tab==='practice')bindPractice();
@@ -774,7 +912,7 @@ function bossCard(){
     <p class="sub" style="margin:8px 0 0">${B.beaten?'🎉 撃破済み！ 来週は新しいライバルが登場するよ':'ほうしゅう：100 EXP・🪙150'}</p></div>`;
 }
 function homeView(){
-  recoverHP();
+  recoverHP();dailyCheck();
   const {L,r,n}=lv(S.xp);
   const restedToday=S.logs.some(l=>l.date===today()&&l.rest);
   const next=GEAR.find(g=>g.lv>L), ns=STAGES[stageOf(L)+1];
@@ -791,10 +929,13 @@ function homeView(){
   </div>
   <div class="wrap">
     <div class="row" style="margin:4px 0 16px"><button class="btn gold" onclick="go('practice')" style="flex:2">練習を記録する</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
+    ${buddyCard()}
     ${parentMsgCard()}
     ${hp<25?`<div class="card warn">⚠ HPが少なくなっています。疲れがたまるとケガをしやすくなるよ。今日は宿屋で休もう。</div>`:''}
+    ${chestCard()}
     ${weekCard()}
     ${questCard()}
+    ${roadCard()}
     ${bossCard()}
     ${bp?`<div class="card" style="border:2px solid var(--gold)"><h3>育成ポイント：${bp}</h3>
       <p class="sub" style="margin:4px 0 8px">好きな能力に振り分けよう（1ポイントで+1）</p>
@@ -889,7 +1030,7 @@ function doPractice(){
   S.hp=Math.max(0,S.hp-draft.min/2);
   const q=checkQuests(); xp+=q.xp; coin+=q.coin; notes.push(...q.notes);
   const bb=checkBoss(m,rec); xp+=bb.xp; coin+=bb.coin; notes.push(...bb.notes);
-  if(weekDays()>=WEEK_GOAL&&S.wgoal!==weekKey()){S.wgoal=weekKey();xp+=50;coin+=100;notes.push('📅 今週の目標（4日）達成！ 50 EXP・🪙100')}
+  if(weekDays()>=WEEK_GOAL&&S.wgoal!==weekKey()){S.wgoal=weekKey();xp+=50;coin+=100;S.charm=Math.min(3,(S.charm??1)+1);notes.push('📅 今週の目標（4日）達成！ 50 EXP・🪙100・お守り+1')}
   S.logs[0].xp=xp;
   const tmin=S.logs.filter(l=>l.date===today()&&!l.rest).reduce((a,l)=>a+l.min,0);
   if(S.hp<25) notes.push('⚠ HPが少ないよ。疲れがたまっています。明日は宿屋で休もう');
@@ -921,6 +1062,8 @@ function gain(xp,notes,coin=0){
   const {newT,newS}=unlocks();
   const gear=GEAR.filter(g=>g.lv>before&&g.lv<=after);
   coin+=newT.length*30+(stageOf(after)>stageOf(before)?200:0);
+  coin+=roadGain(xp,notes);
+  if(Math.floor((totalMin())/60)>Math.floor((totalMin()-(S.logs[0]&&!S.logs[0].rest?S.logs[0].min:0))/60)&&S.logs[0]&&!S.logs[0].rest)notes.push('🎁 宝箱をゲット！ ホームで開けよう');
   if(coin){S.coin=(S.coin||0)+coin;notes.push(`🪙 コイン +${coin}`)}
   save();tab='home';render();
   showResult(xp,before,after,newT,gear,notes,newS);
@@ -935,6 +1078,8 @@ function allot(id){
 }
 function showResult(xp,b,a,newT,gear,notes,newS=[]){
   const up=a>b, awk=stageOf(a)>stageOf(b);
+  sfx(awk?'stage':up?'level':'ok');
+  if(up)confetti();
   let items=notes.map(n=>`<li>${n}</li>`).join('');
   gear.forEach(g=>items+=`<li>新しい装備：${g.name}</li>`);
   newS.forEach(k=>items+=`<li>スキル習得：${k.name}</li>`);
@@ -948,9 +1093,22 @@ function showResult(xp,b,a,newT,gear,notes,newS=[]){
   document.getElementById('ov').classList.add('show');
 }
 
+const TP={lift1:s=>(s.best.lift||0)/10,lift2:s=>(s.best.lift||0)/50,lift3:s=>(s.best.lift||0)/100,
+  drib1:s=>(rt(s,'dribble')-40)/20,drib2:s=>(rt(s,'dribble')-40)/35,speed1:s=>(rt(s,'speed')-40)/20,agi1:s=>(rt(s,'agility')-40)/20,pow1:s=>(rt(s,'power')-40)/20,
+  run1:s=>(rt(s,'stamina')-40)/20,bal1:s=>(rt(s,'balance')-40)/20,kick1:s=>(rt(s,'kick')-40)/20,iq1:s=>(rt(s,'iq')-40)/20,shoot2:s=>(s.best.shoot||0)/8,
+  ovr70:s=>(ovr(s)-40)/30,days7:s=>practiceDays(s)/7,days30:s=>practiceDays(s)/30,rest:s=>s.logs.filter(l=>l.rest).length/3,quest10:s=>(s.qcount||0)/10,
+  boss1:s=>(s.bossWins||0),boss5:s=>(s.bossWins||0)/5,ace:s=>lv(s.xp).L/10,legend:s=>lv(s.xp).L/20};
+function collection(){
+  const items=SHOP.flatMap(c=>c.items);const L=lv(S.xp).L;
+  const have=S.titles.length+(S.skills||[]).length+STAGES.filter(x=>L>=x.lv).length+items.filter(x=>(S.inv||[]).includes(x.id)).length;
+  const all=TITLES.length+SKILLS.length+STAGES.length+items.length;
+  return {have,all,p:Math.round(have/all*100)};
+}
 function titlesView(){
-  const got=S.titles.length;
+  const got=S.titles.length, C=collection();
   return `<div class="wrap">
+    <div class="card collcard"><h3>📚 コレクション率</h3><div class="row" style="margin-top:6px"><div class="xpbar" style="flex:1;margin:0"><i style="width:${C.p}%"></i></div><b style="color:var(--gold2);font-size:20px">${C.p}%</b></div>
+      <p class="sub" style="margin:6px 0 0">称号・スキル・カード・アイテム　${C.have} / ${C.all}</p></div>
     <h2 style="margin:8px 0 4px">職業（転職）</h2>
     <p class="sub" style="margin:0 0 12px">職業に合った能力が伸びやすくなるよ（基本職×1.1・上級職×1.25）。上級職は条件を満たすと転職できる。</p>
     <div class="tlist">${JOBS.map(j=>{const ok=!j.ok||j.ok(S), on=(S.job||'none')===j.id;
@@ -968,7 +1126,7 @@ function titlesView(){
     <p class="sub" style="margin:0 0 12px">${got} / ${TITLES.length}  獲得。タップでカードに表示する称号を選べるよ。</p>
     <div class="tlist">${TITLES.map(t=>{const g=has(S,t.id);
       return g?`<button class="t ${S.eq===t.id?'eq':''}" data-eq="${t.id}" style="font:inherit;text-align:left;cursor:pointer;color:inherit"><span class="ic">${t.ic}</span><span><b>${t.name}</b><span class="sub">${S.eq===t.id?'✔ 表示中':t.how}</span></span></button>`
-      :`<div class="t lock"><span class="ic">🔒</span><span><b>？？？</b><span class="sub">${t.how}</span></span></div>`}).join('')}</div>
+      :`<div class="t lock"><span class="ic">🔒</span><span style="flex:1"><b>？？？</b><span class="sub">${t.how}</span>${TP[t.id]?`<span class="tprog"><i style="width:${Math.max(0,Math.min(100,TP[t.id](S)*100))}%"></i></span>`:''}</span></div>`}).join('')}</div>
     <h2 style="margin:20px 0 10px">装備</h2>
     <div class="tlist">${GEAR.map(g=>{const ok=lv(S.xp).L>=g.lv;return `<div class="t ${ok?'':'lock'}"><span class="ic">${ok?'🎁':'🔒'}</span><span><b>${ok?g.name:'？？？'}</b><span class="sub">Lv.${g.lv}でゲット</span></span></div>`}).join('')}</div>
   </div>`;
@@ -978,14 +1136,14 @@ const WEEK_GOAL=4;
 const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 function weekDays(){const w=weekKey(), t=today();return new Set(S.logs.filter(l=>!l.rest&&l.date>=w&&l.date<=t).map(l=>l.date)).size}
 function streak(){ // 練習か 宿屋の日が 続いた日数（休養日でも 途切れない）
-  const days=new Set(S.logs.map(l=>l.date)); const d=new Date(); if(!days.has(ds(d)))d.setDate(d.getDate()-1);
+  const days=new Set([...S.logs.map(l=>l.date),...(S.frozen||[])]); const d=new Date(); if(!days.has(ds(d)))d.setDate(d.getDate()-1);
   let n=0; while(days.has(ds(d))){n++;d.setDate(d.getDate()-1)} return n;
 }
 function weekCard(){
   const n=weekDays();
   return `<div class="card"><h3>📅 今週の目標：${WEEK_GOAL}日練習する</h3>
     <div class="wdots">${Array.from({length:WEEK_GOAL},(_,i)=>`<i class="${i<n?'on':''}">${i<n?'⚽':''}</i>`).join('')}<span>${Math.min(n,WEEK_GOAL)}/${WEEK_GOAL}日</span></div>
-    <p class="sub" style="margin:6px 0 0">${n>=WEEK_GOAL?'🎉 今週の目標達成！':'達成すると 50 EXP・🪙100'}　🔥 継続 ${streak()}日（宿屋の日もOK）</p></div>`;
+    <p class="sub" style="margin:6px 0 0">${n>=WEEK_GOAL?'🎉 今週の目標達成！':'達成すると 50 EXP・🪙100'}　🔥 継続 ${streak()}日（宿屋の日もOK）　🧿 お守り ${S.charm??1}個</p></div>`;
 }
 let calOff=0;
 function calendarCard(){
@@ -1060,7 +1218,7 @@ function bindShop(){
     const g=document.getElementById('ovgo');
     if(g) g.onclick=()=>{
       if(own){document.getElementById('ov').classList.remove('show');wardCat=shopCat;go('wardrobe');return}
-      S.coin-=it.price;S.inv.push(it.id);save();
+      S.coin-=it.price;S.inv.push(it.id);save();sfx('coin');
       box.innerHTML=`<div class="star">🛍️</div><h2>交換完了！</h2><div class="bigicon">${itemIcon(C.cat,it)}</div><p><b>${it.name}</b> を手に入れた！</p>
         <button class="btn" id="ovwear">さっそく着せ替える</button><button class="btn ghost" id="ovno2" style="margin-top:10px">ショップに戻る</button>`;
       document.getElementById('ovwear').onclick=()=>{S.wear[C.cat]=it.id;save();document.getElementById('ov').classList.remove('show');wardCat=shopCat;go('wardrobe')};
@@ -1150,6 +1308,10 @@ function settingsView(){
     </div>
     <div class="card"><h3>保護者の方へ</h3>
       <button class="setrow" onclick="openReport()"><span>保護者レポート・応援メッセージ</span><span class="arr">›</span></button>
+      <button class="setrow" onclick="openPrivacy()"><span>プライバシーポリシー</span><span class="arr">›</span></button>
+    </div>
+    <div class="card"><h3>サウンド</h3>
+      <button class="setrow" onclick="S.sound=S.sound===false;save();render();sfx('ok')"><span>効果音・振動</span><span class="arr">${S.sound===false?'オフ':'オン'}</span></button>
     </div>
     <div class="card"><h3>遊び方</h3>
       <button class="setrow" onclick="showTutorial()"><span>遊び方をもう一度見る</span><span class="arr">›</span></button>
