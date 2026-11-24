@@ -50,7 +50,8 @@ def drop_fragments(im, keep_ratio=0.03):
     big = max(len(c) for c in comps)
     px = im.load()
     for c in comps:
-        if len(c) < big * keep_ratio:
+        edge = any(x == 0 or x == w-1 or y == 0 or y == h-1 for x, y in c)   # マスの端に接している＝隣からのはみ出し
+        if len(c) < big * keep_ratio or (edge and len(c) < big * 0.15):
             for x, y in c:
                 px[x, y] = (0, 0, 0, 0)
     return im
@@ -72,6 +73,7 @@ def main():
     ap.add_argument('out'); ap.add_argument('names')
     ap.add_argument('--size', type=int, default=512); ap.add_argument('--tol', type=int, default=40)
     ap.add_argument('--pad', type=float, default=0.0, help='外側の余白（割合）')
+    ap.add_argument('--keep', type=float, default=0.03, help='これより小さい かけら（本体比）を消す。記号を残したいときは小さく')
     a = ap.parse_args()
     names = [n.strip() for n in a.names.split(',') if n.strip()]
     sheet = Image.open(a.src).convert('RGBA')
@@ -83,7 +85,7 @@ def main():
     for j in range(a.rows):
         for i in range(a.cols):
             box = (round(x0+i*cw), round(y0+j*ch), round(x0+(i+1)*cw), round(y0+(j+1)*ch))
-            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol)))
+            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol), a.keep))
             if cell.width > a.size:
                 cell = cell.resize((a.size, a.size), Image.LANCZOS)
             name = names[k] if k < len(names) else f'item-{k+1}'

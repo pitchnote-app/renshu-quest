@@ -351,7 +351,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.5.1';
+const APP_VERSION='0.6.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -379,15 +379,15 @@ function parentGate(){
 
 /* ===== はじめての人向けの 遊び方 ===== */
 const TUT=[
-  {ic:'⚽',t:'練習を記録しよう',m:'練習したら「れんしゅう」から記録。経験値（EXP）がたまってレベルが上がり、能力が伸びていくよ。'},
-  {ic:'🏟️',t:'カードが進化する',m:'レベルが上がると、おうちの庭 → 公園 → チーム → トレセン …そしてワールドクラスへ！'},
-  {ic:'📜',t:'クエストとライバル',m:'毎日3つのクエストと、週替わりのライバルに挑戦。クリアするとボーナスがもらえるよ。'},
-  {ic:'🪙',t:'コインでショップ',m:'練習するとコインがたまる。ショップでボールやスパイクと交換して、着せ替えしよう。'},
-  {ic:'🏨',t:'休むのも練習',m:'HPが減ったら宿屋で休もう。体は休んでいる間に強くなる。目標は週4日の練習だよ。'},
+  {ic:'⚽',b:'smile',t:'練習を記録しよう',m:'ボクは相棒のボルト！ 練習したら「れんしゅう」から記録。経験値（EXP）がたまってレベルが上がり、能力が伸びていくよ。'},
+  {ic:'🏟️',b:'joy',t:'カードが進化する',m:'レベルが上がると、おうちの庭 → 公園 → チーム → トレセン …そしてワールドクラスへ！'},
+  {ic:'📜',b:'serious',t:'クエストとライバル',m:'毎日3つのクエストと、週替わりのライバルに挑戦。クリアするとボーナスがもらえるよ。'},
+  {ic:'🪙',b:'chest',t:'コインでショップ',m:'練習するとコインがたまる。ショップでボールやスパイクと交換して、着せ替えしよう。'},
+  {ic:'🏨',b:'sleep',t:'休むのも練習',m:'HPが減ったら宿屋で休もう。体は休んでいる間に強くなる。目標は週4日の練習だよ。'},
 ];
 function showTutorial(i=0){
   const T=TUT[i], box=document.getElementById('ovbox');
-  box.innerHTML=`<div class="star">${T.ic}</div><h2 style="font-size:22px">${T.t}</h2><p style="line-height:1.8">${T.m}</p>
+  box.innerHTML=`<div class="star">${boltImg(T.b,'big')}</div><h2 style="font-size:22px">${T.ic} ${T.t}</h2><p style="line-height:1.8">${T.m}</p>
     <div class="tutdots">${TUT.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>
     <button class="btn gold" id="tutnext">${i<TUT.length-1?'つぎへ':'はじめる！'}</button>`;
   document.getElementById('ov').classList.add('show');
@@ -476,22 +476,36 @@ function buddySVG(){return `<svg viewBox="0 0 60 60" class="buddy"><defs><radial
   <ellipse cx="23" cy="36" rx="3.2" ry="4" fill="#1a1020"/><ellipse cx="37" cy="36" rx="3.2" ry="4" fill="#1a1020"/><circle cx="24" cy="34.5" r="1.2" fill="#fff"/><circle cx="38" cy="34.5" r="1.2" fill="#fff"/>
   <path d="M25 44 Q30 48 35 44" stroke="#1a1020" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="18" cy="42" rx="3" ry="1.8" fill="#ff8a8a" opacity=".6"/><ellipse cx="42" cy="42" rx="3" ry="1.8" fill="#ff8a8a" opacity=".6"/></svg>`}
 let buddyIdx=0;
+/* ボルトの表情イラスト（img/bolt/bolt-1〜10）。f＝表情番号 */
+const BOLT={smile:1,joy:2,wink:3,cheer:4,wow:5,sleep:6,worry:7,serious:8,chest:9,trophy:10};
+const boltImg=(f,cls)=>`<img class="boltimg ${cls||''}" src="img/bolt/bolt-${BOLT[f]||f}.webp" alt="ボルト">`;
 function buddyLines(){
   const L=[], hp=Math.round(S.hp??100), td=S.logs.filter(l=>l.date===today()&&!l.rest), wd=weekDays(), st=streak(), nm=esc(norm(S.c).name);
+  const rested=S.logs.some(l=>l.date===today()&&l.rest);
   const q=quests(today()).find(x=>!((S.qd&&S.qd[today()])||[]).includes(x.id));
-  if(S.charmUsed===today()) L.push('きのうはお休みだったけど、お守りが連続記録を守ってくれたよ！');
-  if(hp<25) L.push('つかれてるみたい…。今日は宿屋でゆっくり休もう。休むのも練習だよ！');
-  if(td.length) L.push(`今日もナイス練習、${nm}！ 明日もいっしょにがんばろう！`);
-  else L.push(q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}、今日はどんな練習をする？`);
-  if(wd<WEEK_GOAL&&wd>0) L.push(`あと${WEEK_GOAL-wd}日で今週の目標達成だよ！`);
-  if(st>=3) L.push(`${st}日連続！ その調子！`);
+  if(S.charmUsed===today()) L.push({f:'wink',t:'きのうはお休みだったけど、お守りが連続記録を守ってくれたよ！'});
+  if(hp<25) L.push({f:'worry',t:'つかれてるみたい…。今日は宿屋でゆっくり休もう。休むのも練習だよ！'});
+  if(rested) L.push({f:'sleep',t:'今日は宿屋でおやすみ…。しっかり休んで、明日またがんばろう。'});
+  const pend=chestsPending(); if(pend) L.push({f:'chest',t:`宝箱が${pend}個あるよ！ 開けてみて！`});
+  if(td.length) L.push({f:'joy',t:`今日もナイス練習、${nm}！ 明日もいっしょにがんばろう！`});
+  else if(!rested) L.push({f:'serious',t:q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}、今日はどんな練習をする？`});
+  if(S.boss&&!S.boss.beaten) L.push({f:'wow',t:`今週のライバル「${BOSSES[S.boss.idx].name}」が待ってるよ！`});
+  if(wd>=WEEK_GOAL) L.push({f:'trophy',t:'今週の目標達成！ キミは最高だ！'});
+  else if(wd>0) L.push({f:'cheer',t:`あと${WEEK_GOAL-wd}日で今週の目標達成だよ！`});
+  if(st>=3) L.push({f:'cheer',t:`${st}日連続！ その調子！`});
   const sp=season(), nxt=Math.min(ROAD_TIERS,sp.tier+1);
-  if(sp.tier<ROAD_TIERS) L.push(`チャレンジロードの次の報酬まで、あと${nxt*ROAD_STEP-sp.xp} EXP！`);
-  const pend=chestsPending(); if(pend) L.push(`宝箱が${pend}個あるよ！ 開けてみて！`);
-  L.push('ボクはボルト。キミの練習をずっと応援してるよ！');
+  if(sp.tier<ROAD_TIERS) L.push({f:'smile',t:`チャレンジロードの次の報酬まで、あと${nxt*ROAD_STEP-sp.xp} EXP！`});
+  L.push({f:'smile',t:'ボクはボルト。キミの練習をずっと応援してるよ！'});
   return L;
 }
-function buddyCard(){const L=buddyLines();return `<div class="buddycard" onclick="buddyIdx++;document.querySelector('.bubble').textContent=buddyLines()[buddyIdx%buddyLines().length]">${buddySVG()}<div class="bubble">${L[buddyIdx%L.length]}</div></div>`}
+function buddyNext(){
+  buddyIdx++; const L=buddyLines(), x=L[buddyIdx%L.length];
+  document.querySelector('.buddycard .bubble').textContent=x.t;
+  const im=document.querySelector('.buddycard .boltimg'); im.src=`img/bolt/bolt-${BOLT[x.f]}.webp`;
+  im.classList.remove('hop'); void im.offsetWidth; im.classList.add('hop');
+}
+function buddyCard(){const L=buddyLines(), x=L[buddyIdx%L.length];
+  return `<div class="buddycard" onclick="buddyNext()">${boltImg(x.f,'hop')}<div class="bubble">${x.t}</div></div>`}
 
 /* ===== 宝箱（練習60分ごとに1個。中身はランダム） ===== */
 const totalMin=()=>S.logs.filter(l=>!l.rest).reduce((a,l)=>a+(l.min||0),0);
@@ -511,7 +525,7 @@ function openChest(){
     S.coin=(S.coin||0)+c; html=`<div class="bigcoin">🪙</div><p style="font-size:26px;font-weight:900;margin:6px 0">${c} コイン</p>${c>=150?'<p class="rare">大当たり！</p>':''}`; sfx('coin')}
   save();
   const box=document.getElementById('ovbox');
-  box.innerHTML=`<div class="chestopen">🎁</div><h2>宝箱を開けた！</h2>${html}<button class="btn gold" id="chestok">${chestsPending()?'次の宝箱を開ける':'やったね！'}</button>`;
+  box.innerHTML=`<div class="chestopen">${boltImg('chest','big')}</div><h2>宝箱を開けた！</h2>${html}<button class="btn gold" id="chestok">${chestsPending()?'次の宝箱を開ける':'やったね！'}</button>`;
   document.getElementById('ov').classList.add('show');
   document.getElementById('chestok').onclick=()=>{if(chestsPending())openChest();else{closeOv();render()}};
 }
@@ -554,7 +568,7 @@ function showRecap(){
   const R=S.recapPending; if(!R)return; S.recapPending=null; save();
   const msg=R.days>=WEEK_GOAL?'目標の週4日を達成！ 最高の1週間だったね！':R.days>=2?'しっかり練習できたね。今週はもう1日ふやしてみよう！':'今週はクエストをひとつずつクリアしていこう！';
   const box=document.getElementById('ovbox');
-  box.innerHTML=`<div class="star">📊</div><h2 style="font-size:22px">先週のふりかえり</h2><p class="sub">${R.a.slice(5).replace('-','/')} 〜 ${R.b.slice(5).replace('-','/')}</p>
+  box.innerHTML=`<div class="star">${boltImg(R.days>=WEEK_GOAL?'trophy':'cheer','big')}</div><h2 style="font-size:22px">先週のふりかえり</h2><p class="sub">${R.a.slice(5).replace('-','/')} 〜 ${R.b.slice(5).replace('-','/')}</p>
     <div class="recap"><div><b>${R.days}</b><span>練習した日</span></div><div><b>${R.min}</b><span>練習（分）</span></div><div><b>${R.xp}</b><span>EXP</span></div><div><b>${R.pb}</b><span>自己ベスト</span></div></div>
     <p style="line-height:1.7">${msg}</p><button class="btn gold" id="rcok">今週もがんばる！</button>`;
   document.getElementById('ov').classList.add('show');
@@ -1149,7 +1163,7 @@ function showResult(xp,b,a,newT,gear,notes,newS=[]){
   newS.forEach(k=>items+=`<li>スキル習得：${k.name}</li>`);
   newT.forEach(t=>items+=`<li>称号ゲット：${t.ic} ${t.name}</li>`);
   document.getElementById('ovbox').innerHTML=`
-    <div class="star">${up?'🎉':'⭐'}</div>
+    <div class="star">${boltImg(awk?'trophy':up?'joy':newT.length||newS.length?'wow':'cheer','big')}</div>
     <h2>${awk?'ステージアップ！':up?'レベルアップ！':xp?'+'+xp+' EXP':'習得！'}</h2>
     ${up?`<p style="font-size:22px;font-weight:800;margin:0">Lv.${b} → <span style="color:var(--gold)">Lv.${a}</span></p><p class="sub">+${xp} EXP</p>`:'<p class="sub">よくがんばったね！</p>'}
     <ul>${items}</ul>

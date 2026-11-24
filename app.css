@@ -341,3 +341,9 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}
 .pc.locked .avwrap img.avball{display:none}
 .avwrap .avball{visibility:hidden}
 .avwrap.base .avball{visibility:visible}
+.boltimg{width:72px;height:72px;object-fit:contain;flex:none;filter:drop-shadow(0 4px 10px rgba(212,175,55,.35))}
+.boltimg.big{width:120px;height:120px;display:block;margin:0 auto}
+.boltimg.hop{animation:hop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes hop{0%{transform:scale(.6) translateY(10px)}100%{transform:none}}
+.buddycard .boltimg{animation:hop .5s cubic-bezier(.2,1.6,.4,1),bob 2.6s ease-in-out .5s infinite}
+.ov .star .boltimg{animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
