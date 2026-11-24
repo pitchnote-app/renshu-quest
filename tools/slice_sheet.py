@@ -15,6 +15,7 @@ def remove_bg(im, tol):
     # 四すみ＋四辺の中点から、背景を塗りつぶして透明にする（つながっている部分だけ）
     seeds = [(0, 0), (w-1, 0), (0, h-1), (w-1, h-1), (w//2, 0), (w//2, h-1), (0, h//2), (w-1, h//2)]
     marker = (255, 0, 255, 0)
+    bgs = [im.getpixel(s) for s in seeds]   # 塗りつぶす前に 背景の色を記録
     for s in seeds:
         r, g, b, a = im.getpixel(s)
         if a == 0:
@@ -25,10 +26,59 @@ def remove_bg(im, tol):
         for x in range(w):
             if px[x, y] == marker:
                 px[x, y] = (0, 0, 0, 0)
-    # ふちを少しなめらかに（アルファを1px ぼかして、元の不透明部分は保つ）
-    alpha = im.getchannel('A')
-    soft = alpha.filter(ImageFilter.GaussianBlur(0.6))
-    im.putalpha(Image.eval(soft, lambda v: v))
+    return defringe(im, bgs)
+
+def defringe(im, seed_colors, band=3, full=60):
+    """ふちの色戻し：背景（灰色）と混ざった ふちの画素から背景の色を取りのぞき、
+    本来の絵の色と なめらかな透明度に戻す（白っぽいフチ・ガビガビを消す）"""
+    cols = [c[:3] for c in seed_colors if c[3] and c[:3] != (255, 0, 255)]
+    if not cols:
+        return im
+    B = tuple(sum(c[k] for c in cols) / len(cols) for k in range(3))
+    w, h = im.size
+    px = im.load()
+    # ① 輪郭線の外側にある「白っぽい無彩色のふち」（AIのシール風のフチ）を背景として消す。数回くり返して内側へ
+    Bl = sum(B) / 3
+    for _ in range(10):
+        trans = im.getchannel('A').point(lambda v: 255 if v == 0 else 0)
+        edge = trans.filter(ImageFilter.MaxFilter(3)).load()
+        hit = 0
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = px[x, y]
+                if a and edge[x, y] and max(r, g, b) - min(r, g, b) < 28 and min(r, g, b) > Bl - 18:
+                    px[x, y] = (0, 0, 0, 0); hit += 1
+        if not hit:
+            break
+    # ② 残ったふちの画素から 背景の色を取りのぞく
+    trans = im.getchannel('A').point(lambda v: 255 if v == 0 else 0)
+    near = trans.filter(ImageFilter.MaxFilter(band*2 + 1)).load()   # 透明部分から band px 以内
+    src = im.copy().load()
+    def dist2(c):
+        return (c[0]-B[0])**2 + (c[1]-B[1])**2 + (c[2]-B[2])**2
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = src[x, y]
+            if a == 0 or near[x, y] == 0:
+                continue
+            # すぐ内側の「背景から一番遠い色」（＝輪郭線などの本来の色）を探す
+            F, fd = None, 0
+            for yy in range(max(0, y-2), min(h, y+3)):
+                for xx in range(max(0, x-2), min(w, x+3)):
+                    c = src[xx, yy]
+                    if c[3]:
+                        d2 = dist2(c)
+                        if d2 > fd:
+                            fd, F = d2, c
+            if F is None or fd < 400:
+                continue
+            # 背景と本来の色が どれだけ混ざっているか（アルファ）を計算して、本来の色＋透明度に置きかえる
+            al = ((r-B[0])*(F[0]-B[0]) + (g-B[1])*(F[1]-B[1]) + (b-B[2])*(F[2]-B[2])) / fd
+            al = max(0.0, min(1.0, al))
+            if al < 0.12:
+                px[x, y] = (0, 0, 0, 0)
+            elif al < 0.97:
+                px[x, y] = (F[0], F[1], F[2], round(al*255))
     return im
 
 def drop_fragments(im, keep_ratio=0.03):
