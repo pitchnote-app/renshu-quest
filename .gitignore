@@ -1,0 +1,12 @@
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+# Python
+__pycache__/
+# 将来のネイティブ化（Capacitor）
+node_modules/
+android/app/build/
+ios/App/Pods/
+# バックアップファイル（個人の記録が入るため）
+renshu-quest-backup-*.json
