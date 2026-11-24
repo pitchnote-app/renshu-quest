@@ -334,3 +334,8 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}
 .avopt svg.char,.avopt svg{width:100%!important;height:auto!important;aspect-ratio:1;margin:0}
 .pc.locked .avwrap img.avimg{filter:brightness(0) opacity(.6)!important}
 .pc.locked .avball{display:none}
+.itimg{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}
+.gicon .itimg{padding:2px}
+.bigicon .itimg{width:100%;height:100%}
+.pc-char .avwrap img.avball,.avwrap img.avball{display:block;position:absolute;right:6%;bottom:0;width:24%!important;height:auto!important;max-width:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
+.pc.locked .avwrap img.avball{display:none}

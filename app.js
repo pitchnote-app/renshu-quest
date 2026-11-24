@@ -351,7 +351,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.4.0';
+const APP_VERSION='0.5.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -439,6 +439,22 @@ BOOTS.push({id:'s6',name:'クリスタル',price:-1,rare:1,col:'#a8e6ff',acc:'#f
 KITS.push({id:'k6',name:'レジェンド',price:-1,rare:1,color:'#0b0b0b',color2:'#f5b301',pattern:6,pants:'#0b0b0b'});
 BGS.push({id:'g7',name:'オーロラ',price:-1,rare:1,bg:'radial-gradient(1.5px 1.5px at 25% 20%,#fff,transparent),radial-gradient(1.5px 1.5px at 75% 30%,#fff,transparent),linear-gradient(170deg,#04101f 0%,#0b4d4a 35%,#3ee08f 50%,#7b5cff 70%,#04101f 100%)'});
 const CHEST_ITEMS=[['ball','b6'],['boot','s6'],['kit','k6'],['bg','g7']];
+/* AIイラストの新商品（img/items/ に画像） */
+BALLS.push({id:'b7',name:'ナイトスカイ',price:600,base:'#2a1f6b',pat:'#ffd84a',glow:'#8a7bff'},
+           {id:'b8',name:'サンダーボール',price:600,base:'#1d2540',pat:'#7be3ff',glow:'#3ad6ff'},
+           {id:'b9',name:'アイスクリスタル',price:700,base:'#bfe9ff',pat:'#5aa8d8',glow:'#bfe9ff'});
+BOOTS.push({id:'s7',name:'ブルーフレイム',price:600,col:'#1f5fd6',acc:'#7be3ff'},
+           {id:'s8',name:'サンダー',price:600,col:'#1d2540',acc:'#7be3ff'},
+           {id:'s9',name:'レインボー',price:800,col:'#ff5fd2',acc:'#ffd84a'});
+KITS.push({id:'k7',name:'チームカラー',price:200,color:'#1d2a6b',color2:'#5fb3ff',pattern:4},
+          {id:'k8',name:'白×赤たすき',price:300,color:'#ffffff',color2:'#e63946',pattern:4},
+          {id:'k9',name:'赤白ストライプ',price:300,color:'#e63946',color2:'#ffffff',pattern:1},
+          {id:'k10',name:'グリーンボーダー',price:300,color:'#21a366',color2:'#ffffff',pattern:2});
+const ITEM_IMG={b0:'ball-1',b1:'ball-2',b2:'ball-3',b3:'ball-4',b4:'ball-5',b5:'ball-6',b6:'ball-7',b7:'ball-8',b8:'ball-9',b9:'ball-10',
+  s0:'boot-1',s1:'boot-2',s2:'boot-3',s3:'boot-4',s4:'boot-5',s5:'boot-6',s6:'boot-7',s7:'boot-8',s8:'boot-9',s9:'boot-10',
+  k1:'kit-2',k2:'kit-3',k3:'kit-4',k4:'kit-5',k5:'kit-6',k6:'kit-9',k7:'kit-1',k8:'kit-7',k9:'kit-8',k10:'kit-10'};
+[...BALLS,...BOOTS,...KITS].forEach(it=>{if(ITEM_IMG[it.id])it.img=`img/items/${ITEM_IMG[it.id]}.png`});
+BOOTS.find(x=>x.id==='s1').name='ホワイト×ブルー';
 /* 月間チャレンジロードの 限定背景（毎月ちがう） */
 const MONTH_BG=[
   ['お正月','linear-gradient(180deg,#b3001b,#ffcf5a 55%,#7a0010)'],['ゆきぐに','linear-gradient(180deg,#a9c9ff,#ffffff 60%,#c7d7ef)'],
@@ -625,7 +641,9 @@ const AVATARS=[
 function avatarView(c,L,i){
   const B=c.ballT||BALLS[0], u='av'+(UID++), O='stroke="#3d2b24" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"';
   const vb=B.fire?'100 150 80 76':'136 184 44 44';
-  return `<div class="avwrap"><img class="avimg" src="img/chars/${c.avatar}_${i+1}.png" onerror="this.onerror=null;this.src='img/chars/${c.avatar}.png'" alt="">`+
+  const av=`<div class="avwrap"><img class="avimg" src="img/chars/${c.avatar}_${i+1}.png" onerror="this.onerror=null;this.src='img/chars/${c.avatar}.png'" alt="">`;
+  if(B.img)return av+`<img class="avball" src="${B.img}" alt=""></div>`;
+  return av+
     `<svg class="avball ${B.fire?'fire':''}" viewBox="${vb}"><defs><filter id="${u}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>${ballSVG(B,u,O)}</svg></div>`;
 }
 function charView(c,L,i){
@@ -707,7 +725,7 @@ function charSVG(cIn,L,poseIdx){
   if(L>=15) h+=`<path d="M78 36 L80 10 L90 22 L100 4 L110 22 L120 10 L122 36Z" fill="#f5b301" stroke="#9a6d00" stroke-width="2.5" stroke-linejoin="round"/><circle cx="100" cy="24" r="4" fill="#e63946"/><circle cx="86" cy="30" r="2.5" fill="#4dabf7"/><circle cx="114" cy="30" r="2.5" fill="#4dabf7"/>`;
   h+=`</g></g>`;
   const [bx,by]=P.ball;
-  h+=`<g transform="translate(${bx-158} ${by-206})">${ballSVG(c.ballT||BALLS[0],u,O)}</g>`;
+  h+=`<g transform="translate(${bx-158} ${by-206})">${(c.ballT||BALLS[0]).img?`<image href="${(c.ballT||BALLS[0]).img}" x="132" y="180" width="52" height="52"/>`:ballSVG(c.ballT||BALLS[0],u,O)}</g>`;
   return `<svg class="char" viewBox="0 -10 200 246" aria-label="マイキャラ">${h}</svg>`;
 }
 function patSVG(c,u,col,c2){return [``,
@@ -741,6 +759,7 @@ function itemSVG(cat,it){
   return '';
 }
 function itemIcon(cat,it){
+  if(it.img)return `<img class="itimg" src="${it.img}" alt="${esc(it.name)}">`;
   if(cat==='bg'){const L=lv(S.xp).L;return `<div class="bgicon" style="background:${it.bg||STAGES[stageOf(L)].bg}">${it.bg?'':'<span>ステージ</span>'}</div>`}
   return itemSVG(cat,it);
 }

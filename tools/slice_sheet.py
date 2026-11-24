@@ -31,6 +31,30 @@ def remove_bg(im, tol):
     im.putalpha(Image.eval(soft, lambda v: v))
     return im
 
+def drop_fragments(im, keep_ratio=0.03):
+    """本体から離れた小さなかけら（隣のマスからはみ出した炎など）を消す"""
+    a = im.getchannel('A'); w, h = im.size; ap = a.load()
+    seen = bytearray(w*h); comps = []
+    for y in range(h):
+        for x in range(w):
+            if ap[x, y] > 12 and not seen[y*w+x]:
+                stack = [(x, y)]; seen[y*w+x] = 1; pts = []
+                while stack:
+                    cx, cy = stack.pop(); pts.append((cx, cy))
+                    for nx, ny in ((cx+1, cy), (cx-1, cy), (cx, cy+1), (cx, cy-1)):
+                        if 0 <= nx < w and 0 <= ny < h and not seen[ny*w+nx] and ap[nx, ny] > 12:
+                            seen[ny*w+nx] = 1; stack.append((nx, ny))
+                comps.append(pts)
+    if not comps:
+        return im
+    big = max(len(c) for c in comps)
+    px = im.load()
+    for c in comps:
+        if len(c) < big * keep_ratio:
+            for x, y in c:
+                px[x, y] = (0, 0, 0, 0)
+    return im
+
 def trim_square(im, margin=0.04):
     bbox = im.getchannel('A').point(lambda v: 255 if v > 12 else 0).getbbox()
     if not bbox:
@@ -59,7 +83,7 @@ def main():
     for j in range(a.rows):
         for i in range(a.cols):
             box = (round(x0+i*cw), round(y0+j*ch), round(x0+(i+1)*cw), round(y0+(j+1)*ch))
-            cell = trim_square(remove_bg(sheet.crop(box), a.tol))
+            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol)))
             if cell.width > a.size:
                 cell = cell.resize((a.size, a.size), Image.LANCZOS)
             name = names[k] if k < len(names) else f'item-{k+1}'
