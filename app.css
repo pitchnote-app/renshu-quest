@@ -319,3 +319,4 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:20;overflow:hidden}
 .confetti i{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{top:105%;transform:rotate(720deg) translateX(40px)}}
+.edtop>.chips{flex-wrap:nowrap;overflow-x:auto;gap:5px}.edtop>.chips .chip.mini{padding:4px 9px;flex:none}
