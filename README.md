@@ -13,7 +13,9 @@
 | `manifest.webmanifest` | ホーム画面に追加したときのアプリ情報 |
 | `icons/` | アプリアイコン（`python tools/make_icons.py` で再生成） |
 | `img/` | AIで作ったキャラ・背景画像を置く場所（`キャラ画像の作り方.md` 参照） |
-| `docs/` | リリース手順・プライバシーポリシー案・ストア掲載文案 |
+| `docs/` | リリース手順・プライバシーポリシー案・ストア掲載文案・Android版の作り方 |
+| `fonts/` | 同梱フォント（Noto Sans JP・Dela Gothic One、SIL OFL） |
+| `android/` | Android アプリのプロジェクト（Capacitor） |
 
 ## 動かし方（PC）
 ```

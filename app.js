@@ -603,7 +603,7 @@ const MIR=x=>`<g transform="translate(200 0) scale(-1 1)">${x}</g>`;
 /* 成長ステージ：レベルで かいほう。ステージが上がるほど 舞台と ポーズが かっこよくなる */
 const STAGES=[
   {lv:1,  name:'おうちの庭',  bg:'linear-gradient(180deg,#5fb3ff 0%,#bfe6ff 52%,#58b04a 52%,#2f7d2a 100%)'},
-  {lv:3,  name:'公園デビュー', bg:'linear-gradient(180deg,#ff9a5a 0%,#ffd9a8 50%,#7cc35b 50%,#3f8a3a 100%)'},
+  {lv:3,  name:'公園', bg:'linear-gradient(180deg,#ff9a5a 0%,#ffd9a8 50%,#7cc35b 50%,#3f8a3a 100%)'},
   {lv:6,  name:'チーム入団', bg:'linear-gradient(180deg,#2a6fdb 0%,#9ccaff 48%,#c9a46a 48%,#8b6a3a 100%)'},
   {lv:10, name:'トレセン',       bg:'linear-gradient(180deg,#0e2a5a 0%,#2d5fa8 48%,#2fa84f 48%,#1d6b33 100%)'},
   {lv:15, name:'県代表',  bg:'linear-gradient(180deg,#050b1f 0%,#14306b 50%,#2f9e4f 50%,#155c2b 100%)'},

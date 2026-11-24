@@ -1,0 +1,19 @@
+{
+  "name": "renshu-quest",
+  "version": "0.3.2",
+  "private": true,
+  "description": "れんしゅうクエスト：練習するほど強くなる サッカー育成アプリ",
+  "scripts": {
+    "test": "node tools/test_logic.js",
+    "build": "python tools/build.py",
+    "android:sync": "python tools/build.py && npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/core": "^7.6.10"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.6.10"
+  }
+}
