@@ -310,7 +310,8 @@ async function nativeTests() {
   try {
     run(c, newPlayer + "S.remind='23:59';");
     await run(c, 'remindSchedule()');
-    ok(scheduled.length === 7, `7件のはず（${scheduled.length}件）`);
+    const d = new Date(), late = d.getHours() === 23 && d.getMinutes() >= 59;   // 23:59 を過ぎていたら今日の分は出ない
+    ok(scheduled.length === (late ? 6 : 7), `${late ? 6 : 7}件のはず（${scheduled.length}件）`);
     scheduled.length = 0;
     run(c, "S.logs.unshift({date:today(),menu:'x',min:10,xp:5})");
     await run(c, 'remindSchedule()');
