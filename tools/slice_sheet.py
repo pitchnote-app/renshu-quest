@@ -217,6 +217,10 @@ def main():
     names = [n.strip() for n in a.names.split(',') if n.strip()]
     sheet = Image.open(a.src).convert('RGBA')
     W, H = sheet.size
+    # 四すみが透明なら「背景が透明な画像」（ChatGPT に透明で作ってもらったもの）→ 背景消しをしない
+    clear_bg = all(sheet.getpixel(p)[3] <= 8 for p in ((0, 0), (W-1, 0), (0, H-1), (W-1, H-1)))
+    if clear_bg and not a.raw:
+        print('背景が透明な画像なので、背景消しはせずに切り分けます')
     x0, y0 = W*a.pad, H*a.pad
     cw, ch = (W-2*x0)/a.cols, (H-2*y0)/a.rows
     os.makedirs(a.out, exist_ok=True)
@@ -231,7 +235,10 @@ def main():
                 if cell.width > a.size:
                     cell = cell.resize((a.size, round(cell.height * a.size / cell.width)), Image.LANCZOS)
             else:
-                cut = remove_bg(sheet.crop(box), a.tol, [(x, y) for no, x, y in holes if no in (0, k+1)], a.shadow, a.band, a.auto_holes, a.hole_area)
+                if clear_bg:  # もともと背景が透明な画像は、背景を消さずにそのまま使う
+                    cut = sheet.crop(box)
+                else:
+                    cut = remove_bg(sheet.crop(box), a.tol, [(x, y) for no, x, y in holes if no in (0, k+1)], a.shadow, a.band, a.auto_holes, a.hole_area)
                 for no, *rect, everything in clears:
                     if no in (0, k+1):
                         clear_rect(cut, rect, everything)
