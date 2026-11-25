@@ -216,6 +216,20 @@ test('兄弟で使える：選手ごとに別々に保存され、切りかえ�
   eq(run(c, 'profMeta().list.map(x=>x.name)'), ['テスト','いもうと']);
 });
 
+test('場所のライバル：その場所で練習を重ね、能力が届くと勝てる。勝つとトロフィー', c => {
+  run(c, newPlayer);
+  eq(run(c, 'PLACE_RIVALS.length'), run(c, 'STAGES.length'));
+  eq(run(c, 'placeRival().R.name'), '庭に来たネコ「ミケ」');
+  const notes = [];
+  run(c, "for(let i=0;i<3;i++)S.logs.unshift({date:'2026-01-01',menu:'sole_roll',min:10,xp:5})");
+  eq(run(c, 'placeCheck([])'), 0, 'ボールタッチが足りない');
+  run(c, "S.stats.touch=(45-40)*3");
+  eq(run(c, 'placeCheck([])'), 200, '勝てる');
+  eq(run(c, 'S.placeWins'), [0]);
+  ok(run(c, "roomItems(S).trophies.some(t=>t.ic==='🎖️')"), '部屋にトロフィー');
+  eq(run(c, 'placeCheck([])'), 0, '2回は勝たない');
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();

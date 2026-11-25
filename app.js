@@ -400,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.14.0';
+const APP_VERSION='0.15.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1191,10 +1191,50 @@ function bossCard(){
     <p class="sub" style="margin:4px 0 0">撃破条件：${m.name}の記録で <b style="color:var(--ink)">${B.target}${m.unit}${m.lower?' 以内':' 以上'}</b></p></div></div>
     <p class="sub" style="margin:8px 0 0">${B.beaten?'🎉 撃破済み！ 来週は新しいライバルが登場するよ':'ほうしゅう：100 EXP・🪙150'}</p></div>`;
 }
+/* ===== 練習場所ごとのライバルとストーリー =====
+   新しい場所に着くとライバルが登場。その場所で練習を重ね、能力を上げると勝てる（勝つとトロフィー） */
+const PLACE_RIVALS=[
+  {name:'庭に来たネコ「ミケ」',ic:'🐈',need:3,stat:'touch',v:45,intro:'庭にネコのミケがやってきた！ ボールにじゃれついて離れない…。やさしいボールタッチで、ミケからボールを守ろう！',win:'ミケはボールをあきらめて、日なたでお昼寝を始めた。「庭の練習はばっちりだね！」とボルト。'},
+  {name:'公園のヌシ「ケンタ」',ic:'🧢',need:5,stat:'dribble',v:50,intro:'近所の公園には、年上のケンタがいる。「ここでボールをけりたいなら、オレを抜いてみな！」',win:'「…やるじゃん。また一緒にやろうぜ！」ケンタが笑って手を出した。初めてのサッカー仲間だ！'},
+  {name:'芝生のスピード王「ハヤテ」',ic:'💨',need:6,stat:'speed',v:55,intro:'大きな公園の芝生で、風のように走る子がいる。ハヤテだ。「かけっこで勝負しよう！」',win:'ゴールまで競り合って、ついにハヤテに勝った！「次は負けないからな！」'},
+  {name:'河川敷のキャノン「ゴウ」',ic:'🎯',need:7,stat:'kick',v:58,intro:'夕焼けの河川敷。ドーン！と土手まで届くシュートを打つゴウ。「キック勝負だ。オレより強いボールをけってみろ！」',win:'キミのシュートがゴウのシュートより遠くへ！「…すげえ。オマエ、本物だな」'},
+  {name:'6年生キャプテン「タイガ」',ic:'🐯',need:8,stat:'iq',v:60,intro:'小学校のグラウンドには、チームをまとめる6年生のタイガ。「サッカーは頭も使うんだ。オレの守備、読めるか？」',win:'タイガの動きを読んで、スルーパスが通った！「いい判断だ。チームに必要な選手だよ」'},
+  {name:'ナイターの魔術師「ルカ」',ic:'🌙',need:9,stat:'agility',v:64,intro:'照明に照らされたフットサルコート。くるくると相手をかわすルカ。「ボクのステップについてこられる？」',win:'ルカの切り返しに、最後までついていけた！「キミとならもっとうまくなれそう」'},
+  {name:'トレセンのエース「ソラ」',ic:'⭐',need:10,stat:'balance',v:66,intro:'きれいな天然芝のピッチ。選ばれた選手だけが集まる場所で、エースのソラが待っていた。「ここからが本当の勝負だよ」',win:'ぶつかり合いでも倒れずに、ソラからボールをうばった！「…キミが新しいエースだ」'},
+  {name:'世界の壁「レオン」',ic:'👑',need:12,stat:'ovr',v:72,intro:'満員のスタジアム。大歓声の中、世界中で活躍するレオンが立ちはだかる。「キミの全部を見せてくれ」',win:'スタジアムがゆれるほどの大歓声！ キミはついに世界の壁をこえた。伝説の始まりだ！'},
+];
+const prVal=(s,R)=>R.stat==='ovr'?ovr(s):rt(s,R.stat);
+const prStat=R=>R.stat==='ovr'?'総合':statName(R.stat);
+const nonRest=s=>s.logs.filter(l=>!l.rest).length;
+function placeRival(){
+  const i=stageOf(lv(S.xp).L);
+  if(!S.place||S.place.i!==i)S.place={i,from:nonRest(S),beaten:false};
+  const R=PLACE_RIVALS[i], cnt=Math.max(0,nonRest(S)-S.place.from), val=prVal(S,R);
+  return {i,R,cnt,val,beaten:S.place.beaten};
+}
+/* 練習のたびに勝てたか調べる */
+function placeCheck(notes){
+  const P=placeRival(); if(P.beaten||P.cnt<P.R.need||P.val<P.R.v)return 0;
+  S.place.beaten=true; S.placeWins=S.placeWins||[]; if(!S.placeWins.includes(P.i))S.placeWins.push(P.i);
+  notes.push(`⚔️ <b>${P.R.name}</b> に勝った！ 🎖️ トロフィーが部屋に飾られたよ`);
+  notes.push(`💬 ${P.R.win}`);
+  return 200;
+}
+function placeRivalCard(){
+  const P=placeRival(), R=P.R, a=Math.min(1,P.cnt/R.need), b=Math.min(1,(P.val-40)/Math.max(1,R.v-40));
+  return `<div class="card prcard ${P.beaten?'beaten':''}"><h3>📍 ${STAGES[P.i].name}のライバル</h3>
+    <div class="row" style="margin-top:8px;align-items:flex-start"><span class="bossic">${R.ic}</span><div style="flex:1"><b style="font-size:17px">${R.name}</b>
+    <p class="prstory">${P.beaten?R.win:R.intro}</p></div></div>
+    ${P.beaten?`<p class="sub" style="margin:6px 0 0">🎖️ 勝利！ 次の場所（${STAGES[P.i+1]?STAGES[P.i+1].name+'・Lv.'+STAGES[P.i+1].lv:'もうない！ 最高の選手だ'}）で新しいライバルが待ってるよ</p>`
+    :`<div class="prneed"><span>ここで練習 ${Math.min(P.cnt,R.need)}/${R.need}回</span><i><b style="width:${a*100}%"></b></i></div>
+      <div class="prneed"><span>${prStat(R)} ${P.val}/${R.v}</span><i><b style="width:${Math.max(0,b)*100}%"></b></i></div>
+      <p class="sub" style="margin:6px 0 0">ほうしゅう：🪙200・🎖️トロフィー</p>`}</div>`;
+}
 /* 部屋に飾るもの（練習でもらったものが増えていく） */
 function roomItems(s){
   const L=lv(s.xp).L, R=ROOMS[stageOf(L)], days=practiceDays(s);
   const trophies=[];
+  (s.placeWins||[]).forEach(k=>trophies.push({ic:'🎖️',t:`${PLACE_RIVALS[k].name}に勝利`}));
   for(let k=0;k<(s.bossWins||0);k++)trophies.push({ic:'🏆',t:'ライバル撃破'});
   [[10,'🥉'],[30,'🥈'],[60,'🥇'],[100,'👑']].forEach(([d,ic])=>{if(days>=d)trophies.push({ic,t:`練習${d}日達成`})});
   const medals=MENUS.map(m=>({m,q:mastery(s,m.id)})).filter(x=>x.q.i>=3).sort((a,b)=>b.q.i-a.q.i).map(x=>({k:x.q.m.k,t:`${x.m.name}：${x.q.m.name}`}));
@@ -1253,6 +1293,7 @@ function homeView(){
     ${hp<25?`<div class="card warn">⚠ HPが少なくなっています。疲れがたまるとケガをしやすくなるよ。今日は宿屋で休もう。</div>`:''}
     ${chestCard()}
     ${weekCard()}
+    ${placeRivalCard()}
     ${questCard()}
     ${roadCard()}
     ${bossCard()}
@@ -1434,6 +1475,7 @@ function gain(xp,notes,coin=0){
   const gear=GEAR.filter(g=>g.lv>before&&g.lv<=after);
   coin+=newT.length*30+(stageOf(after)>stageOf(before)?200:0);
   coin+=roadGain(xp,notes);
+  coin+=placeCheck(notes);
   if(Math.floor((totalMin())/60)>Math.floor((totalMin()-(S.logs[0]&&!S.logs[0].rest?S.logs[0].min:0))/60)&&S.logs[0]&&!S.logs[0].rest)notes.push('🎁 宝箱をゲット！ ホームで開けよう');
   if(coin){S.coin=(S.coin||0)+coin;notes.push(`🪙 コイン +${coin}`)}
   save();tab='home';render();
@@ -1466,7 +1508,7 @@ function showResult(xp,b,a,newT,gear,notes,newS=[]){
   if(stageOf(a)>stageOf(b)&&!showResult.cut){
     const i=stageOf(a);
     showResult.cut=1;
-    cutin({kicker:'昇格！',title:rankOf(a),color:RANK_COL[i],L:a,i,lines:[`📍 練習場所：<b>${STAGES[i].name}</b>`,`🏠 新しい部屋：<b>${ROOMS[i].name}</b>`]})
+    cutin({kicker:'昇格！',title:rankOf(a),color:RANK_COL[i],L:a,i,lines:[`📍 練習場所：<b>${STAGES[i].name}</b>`,`🏠 新しい部屋：<b>${ROOMS[i].name}</b>`,`⚔️ 新しいライバル：<b>${PLACE_RIVALS[i].name}</b>`]})
       .then(()=>{showResult(xp,b,a,newT,gear,notes,newS);showResult.cut=0});
     return;
   }
