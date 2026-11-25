@@ -62,6 +62,7 @@
 - 選手の切りかえ（兄弟）`profMeta()`・`switchProfile()`：選手ごとに保存キーが別（1人目は `renshu-quest-v1` のまま）
 - 選手カード画像 `makeCardImage()`・`saveCardImage()`（保護者確認つき・端末内で作成）
 - 練習場所のライバルとストーリー `PLACE_RIVALS`・`placeCheck()`／はじめての練習ボーナス `firstCard()`
+- 練習ノート `openNote()`・`notesCard()`：ホームで書き、記録（`S.logs` の `menu:'note'`）に `note:{good,bad,next}` で保存。きろくで読み返す
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
 - ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）／相棒ボルト `buddyLines()`・`BOLT`
 - イラストのキャラ `AVATARS`・`avatarView()`

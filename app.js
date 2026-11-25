@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.17.2';
+const APP_VERSION='0.18.1';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -541,7 +541,7 @@ function buddyLines(){
   if(rested) L.push({f:'sleep',t:'今日は宿屋でおやすみ…。しっかり休んで、明日またがんばろう。'});
   const pend=chestsPending(); if(pend) L.push({f:'chest',t:`宝箱が${pend}個あるよ！ 開けてみて！`});
   if(td.length) L.push({f:'joy',t:`${nm}選手、今日もナイス練習！ 明日もいっしょにがんばろう！`});
-  else if(!rested) L.push({f:'serious',t:q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}選手、今日はどんな練習をする？`});
+  else if(!rested) L.push({f:'serious',note:!!q&&q.id==='q9',t:q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}選手、今日はどんな練習をする？`});
   if(S.boss&&!S.boss.beaten) L.push({f:'wow',t:`今週のライバル「${BOSSES[S.boss.idx].name}」が待ってるよ！`});
   if(wd>=WEEK_GOAL) L.push({f:'trophy',t:'今週の目標達成！ キミは最高だ！'});
   else if(wd>0) L.push({f:'cheer',t:`あと${WEEK_GOAL-wd}日で今週の目標達成だよ！`});
@@ -551,14 +551,16 @@ function buddyLines(){
   L.push({f:'smile',t:'ボクはボルト。キミの練習をずっと応援してるよ！'});
   return L;
 }
+/* 「練習ノートを書く」をすすめるときは、その場で書けるボタンを付ける */
+const bubbleHTML=x=>x.t+(x.note?'<button class="bnote" onclick="event.stopPropagation();openTodayNote()">📓 ここで書く</button>':'');
 function buddyNext(){
   buddyIdx++; const L=buddyLines(), x=L[buddyIdx%L.length];
-  document.querySelector('.buddycard .bubble').innerHTML=x.t;   // 名前は buddyLines で esc ずみ
+  document.querySelector('.buddycard .bubble').innerHTML=bubbleHTML(x);   // 名前は buddyLines で esc ずみ
   const im=document.querySelector('.buddycard .boltimg'); im.src=`img/bolt/bolt-${BOLT[x.f]}.webp`;
   im.classList.remove('hop'); void im.offsetWidth; im.classList.add('hop');
 }
 function buddyCard(){const L=buddyLines(), x=L[buddyIdx%L.length];
-  return `<div class="buddycard" onclick="buddyNext()">${boltImg(x.f,'hop')}<div class="bubble">${x.t}</div></div>`}
+  return `<div class="buddycard" onclick="buddyNext()">${boltImg(x.f,'hop')}<div class="bubble">${bubbleHTML(x)}</div></div>`}
 
 /* ===== 宝箱（練習60分ごとに1個。中身はランダム） ===== */
 const totalMin=()=>S.logs.filter(l=>!l.rest).reduce((a,l)=>a+(l.min||0),0);
@@ -998,10 +1000,53 @@ function boss(){
   }
   return S.boss;
 }
+/* ===== 練習ノート：ホームでそのまま書いて、きろくで読み返す =====
+   文章は練習の記録（S.logs の menu:'note'）に note:{good,bad,next} として端末の中だけに保存する。
+   ホームから書くのは1日1冊（2回目からは書き足し。EXPは最初の1回だけ） */
+const NOTE_MIN=5, NOTE_MAX=300;
+const NOTE_F=[['good','今日できたこと','例：リフティングが10回できた'],['bad','むずかしかったこと','例：左足のパスがずれた'],['next','次にやること・コーチに言われたこと','例：ボールをよく見てから、ける']];
+let noteTmp=null, noteAll=false;   // noteTmp＝書きかけ（まちがえて閉じても消えない）
+const noteOf=l=>{const n=l&&l.note;return n&&typeof n==='object'&&NOTE_F.some(([k])=>n[k])?n:null};
+const todayNote=()=>S.logs.find(l=>l.date===today()&&l.menu==='note');
+const cleanNote=v=>{const o={};NOTE_F.forEach(([k])=>{const t=String(v[k]==null?'':v[k]).trim().slice(0,NOTE_MAX);if(t)o[k]=t});return o};
+/* log＝書き直す記録（なければ新しいノート）。min＝新しいノートの練習時間 */
+function openNote(log,min=NOTE_MIN){
+  const id=KEY+(log?`${log.date}#${S.logs.length-S.logs.indexOf(log)}`:'new'+today());
+  const v=noteTmp&&noteTmp.id===id?noteTmp.v:{...(log&&noteOf(log)||{})};
+  noteTmp={id,v};
+  const box=document.getElementById('ovbox');
+  box.innerHTML=`<div class="notebook"><h2 style="font-size:22px">📓 練習ノート</h2><p class="sub" style="margin:0 0 10px">${(log?log.date:today()).slice(5).replace('-','/')}　1つだけでもOK！</p>
+    ${NOTE_F.map(([k,t,ph])=>`<label><b>${t}</b><textarea data-note="${k}" rows="2" maxlength="${NOTE_MAX}" placeholder="${ph}">${esc(v[k]||'')}</textarea></label>`).join('')}
+    <p class="sub" id="notemsg" style="color:#ff8a8a;min-height:1.4em;margin:4px 0"></p>
+    <button class="btn gold" id="noteok">${log?'保存する':`書いて記録する　+${min*2} EXP`}</button><button class="btn ghost" id="noteno" style="margin-top:10px">とじる</button></div>`;
+  document.getElementById('ov').classList.add('show');
+  box.querySelectorAll('[data-note]').forEach(t=>t.oninput=()=>{v[t.dataset.note]=t.value});
+  document.getElementById('noteno').onclick=closeOv;
+  document.getElementById('noteok').onclick=()=>{if(!saveNote(v,log,min))document.getElementById('notemsg').textContent='どれか1つ書いてみよう'};
+}
+function saveNote(v,log,min=NOTE_MIN){
+  const n=cleanNote(v); if(!Object.keys(n).length)return false;
+  noteTmp=null; closeOv();
+  if(log){log.note=n;save();const y=window.scrollY;render();window.scrollTo(0,y);return true}
+  const keep=draft.menu==='note'?{menu:null,min:15,rec:''}:draft;   // ほかの練習の書きかけは残す
+  draft={menu:'note',min,rec:'',note:n}; doPractice(); draft=keep;
+  return true;
+}
+const openTodayNote=()=>openNote(todayNote());
+const editNote=i=>{if(S.logs[i])openNote(S.logs[i])};
+function notesCard(){
+  const L=S.logs.map((l,i)=>({l,i})).filter(x=>noteOf(x.l));
+  const t=todayNote(), show=noteAll?L:L.slice(0,3);
+  return `<div class="card"><h3>📓 練習ノート <span class="sub">${L.length}回</span></h3>
+    ${show.map(({l,i})=>`<div class="noteitem"><div class="row" style="justify-content:space-between"><b class="noted">${l.date.replace(/-/g,'/')}</b><button class="chip mini" onclick="editNote(${i})">書き直す</button></div>
+      ${NOTE_F.filter(([k])=>noteOf(l)[k]).map(([k,n])=>`<p><small>${n}</small>${esc(noteOf(l)[k])}</p>`).join('')}</div>`).join('')||'<p class="sub" style="margin:6px 0">まだノートがないよ。今日の練習をふりかえって書いてみよう</p>'}
+    ${L.length>3?`<button class="btn ghost" style="font-size:15px;margin-top:10px" onclick="noteAll=!noteAll;const y=scrollY;render();scrollTo(0,y)">${noteAll?'少なくする':`全部見る（${L.length}回）`}</button>`:''}
+    <button class="btn ghost" style="font-size:15px;margin-top:10px" onclick="openTodayNote()">${t?'今日のノートに書き足す':'今日のノートを書く'}</button></div>`;
+}
 function questCard(){
   const d=today(), done=(S.qd&&S.qd[d])||[];
   return `<div class="card"><h3>📜 今日のクエスト <span class="sub">${done.length}/3</span></h3>
-    ${quests(d).map(q=>`<div class="quest ${done.includes(q.id)?'done':''}"><span>${done.includes(q.id)?'✔':'□'}</span>${q.t}<em>+30 EXP・🪙20</em></div>`).join('')}
+    ${quests(d).map(q=>q.id==='q9'?`<button class="quest questbtn ${done.includes(q.id)?'done':''}" onclick="openTodayNote()"><span>${done.includes(q.id)?'✔':'□'}</span><u>${q.t}</u><em>${done.includes(q.id)?'読む・書き足す ›':'+30 EXP・🪙20　書く ›'}</em></button>`:`<div class="quest ${done.includes(q.id)?'done':''}"><span>${done.includes(q.id)?'✔':'□'}</span>${q.t}<em>+30 EXP・🪙20</em></div>`).join('')}
     <p class="sub" style="margin:6px 0 0">3つ全部クリアで 🪙50 ボーナス！</p></div>`;
 }
 function bossCard(){
@@ -1117,7 +1162,7 @@ function homeView(){
   <div class="wrap">
     ${firstCard()}
     <button class="btn gold" onclick="go('practice')" style="margin:4px 0 10px">練習を記録する</button>
-    <div class="row" style="margin:0 0 16px"><button class="btn ghost" onclick="go('status')" style="flex:1">つよさ</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
+    <div class="row" style="margin:0 0 16px"><button class="btn ghost" onclick="go('status')" style="flex:1">つよさ</button><button class="btn ghost" onclick="openTodayNote()" style="flex:1">ノート</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
     ${buddyCard()}
     ${parentMsgCard()}
     ${hp<25?`<div class="card warn">⚠ HPが少なくなっています。疲れがたまるとケガをしやすくなるよ。今日は宿屋で休もう。</div>`:''}
@@ -1173,7 +1218,7 @@ function practiceView(){
       <div class="hint">自己ベストを更新するとボーナス +30 EXP</div></div>`:''}
     ${draft.timed?`<div class="card timedone">⏱ タイマーで <b>${draft.min}分</b> 練習したよ！ 記録があれば入れて「記録する」を押そう</div>`:''}
     <button class="btn ghost timerbtn" id="tstart">⏱ タイマーで練習する（${draft.min}分）</button>
-    <button class="btn gold" id="save">記録する　<span id="xpv">+${calcXP()}</span> EXP</button>
+    ${m.id==='note'?`<button class="btn gold" id="savenote">📓 ノートを書いて記録　<span id="xpv">+${calcXP()}</span> EXP</button>`:`<button class="btn gold" id="save">記録する　<span id="xpv">+${calcXP()}</span> EXP</button>`}
   </div>`;
 }
 function calcXP(){return draft.min*2}
@@ -1230,6 +1275,8 @@ function bindPractice(){
   if(rc)rc.oninput=e=>{draft.rec=e.target.value};
   const sv=document.getElementById('save');
   if(sv)sv.onclick=doPractice;
+  const sn=document.getElementById('savenote');
+  if(sn)sn.onclick=()=>openNote(null,draft.min);
   const ts=document.getElementById('tstart');
   if(ts)ts.onclick=()=>{S.timer={menu:draft.menu,goal:draft.min,start:Date.now(),acc:0,run:true};save();go('timer')};
 }
@@ -1265,7 +1312,7 @@ function doPractice(){
   if(Object.keys(m.gain).some(id=>boost.includes(id))) notes.push('🌱 のびどきボーナス ×1.5');
   if(jobMult(J,Object.keys(m.gain)[0])>1) notes.push(`⚽ ${J.name}の職業ボーナス`);
   const mb=mastery(S,m.id).i;
-  S.logs.unshift({date:today(),menu:m.id,min:draft.min,rec,xp,pb});
+  S.logs.unshift({date:today(),menu:m.id,min:draft.min,rec,xp,pb,...(draft.note?{note:draft.note}:{})});
   if(first){xp+=100;coin+=50;S.bonusChest=(S.bonusChest||0)+1;notes.unshift('🎉 はじめての練習ボーナス！ +100 EXP・🪙50・🎁宝箱')}
   {const ma=mastery(S,m.id);if(ma.i>mb)notes.push(`🏅 「${m.name}」の熟練度が <b>${ma.m.name}</b> に上がった！`)}
   S.hp=Math.max(0,S.hp-draft.min/2);
@@ -1510,16 +1557,16 @@ let calOff=0;
 function calendarCard(){
   const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()+calOff);
   const y=d.getFullYear(), mo=d.getMonth(), first=(d.getDay()+6)%7, days=new Date(y,mo+1,0).getDate(), pre=`${y}-${String(mo+1).padStart(2,'0')}-`;
-  const by={}; S.logs.forEach(l=>{if(l.date.startsWith(pre)){const k=+l.date.slice(8);by[k]=by[k]||{min:0,rest:false};if(l.rest)by[k].rest=true;else by[k].min+=l.min}});
+  const by={}; S.logs.forEach(l=>{if(l.date.startsWith(pre)){const k=+l.date.slice(8);by[k]=by[k]||{min:0,rest:false,note:false};if(noteOf(l))by[k].note=true;if(l.rest)by[k].rest=true;else by[k].min+=l.min}});
   const pd=Object.values(by).filter(x=>x.min>0).length, tm=Object.values(by).reduce((a,x)=>a+x.min,0), td=today();
   let cells='';
   for(let i=0;i<first;i++)cells+='<span></span>';
   for(let k=1;k<=days;k++){const v=by[k], key=pre+String(k).padStart(2,'0');
     const lvl=!v||!v.min?0:v.min<30?1:v.min<60?2:3;
-    cells+=`<span class="cd l${lvl} ${key===td?'today':''}">${k}${v&&v.rest?'<i>🏨</i>':''}</span>`}
+    cells+=`<span class="cd l${lvl} ${key===td?'today':''}">${k}${v&&v.rest?'<i>🏨</i>':''}${v&&v.note?'<i class="cnote">📓</i>':''}</span>`}
   return `<div class="card"><div class="row" style="justify-content:space-between"><button class="chip mini" data-cal="-1">‹</button><h3>${y}年${mo+1}月</h3><button class="chip mini" data-cal="1" ${calOff>=0?'disabled':''}>›</button></div>
     <div class="cal"><b>月</b><b>火</b><b>水</b><b>木</b><b>金</b><b class="sat">土</b><b class="sun">日</b>${cells}</div>
-    <div class="calleg"><span class="cd l1"></span>30分未満 <span class="cd l2"></span>60分未満 <span class="cd l3"></span>60分以上 🏨宿屋</div>
+    <div class="calleg"><span class="cd l1"></span>30分未満 <span class="cd l2"></span>60分未満 <span class="cd l3"></span>60分以上 🏨宿屋 <span>📓ノート</span></div>
     <p class="sub" style="margin:6px 0 0">この月の練習：<b style="color:var(--ink)">${pd}日・${tm}分</b></p></div>`;
 }
 function logView(){
@@ -1532,12 +1579,13 @@ function logView(){
       <div><div class="big">${practiceDays(S)}</div><div class="sub">練習した日</div></div>
       <div><div class="big">${total}</div><div class="sub">合計（分）</div></div>
     </div>
+    ${notesCard()}
     <div class="card"><h3>自己ベスト</h3>
       ${SPORT.menus.filter(m=>m.rec).map(m=>`<div class="log"><span>${m.name}：${m.rec}</span><b>${S.best[m.id]!=null?S.best[m.id]+m.unit:'—'}</b></div>`).join('')}
     </div>
     <div class="card"><h3>最近の練習</h3>
       ${S.logs.length?S.logs.slice(0,30).map(l=>{const m=SPORT.menus.find(x=>x.id===l.menu);
-        return `<div class="log"><span>${l.date.slice(5).replace('-','/')}　${l.rest?'🏨 休養日':(m?m.name:'練習')+' '+l.min+'分'}${l.rec!=null?'（記録 '+l.rec+'）':''}</span><span class="xpplus">+${l.xp}</span></div>`}).join('')
+        return `<div class="log"><span>${l.date.slice(5).replace('-','/')}　${l.rest?'🏨 休養日':(m?m.name:'練習')+' '+l.min+'分'}${l.rec!=null?'（記録 '+l.rec+'）':''}${noteOf(l)?' 📓':''}</span><span class="xpplus">+${l.xp}</span></div>`}).join('')
       :'<p class="sub">まだ記録がないよ</p>'}
     </div>
   </div>`;
@@ -1663,7 +1711,7 @@ function parentMsgCard(){
 function switchProfile(id){
   const m=profMeta(); if(m.cur===id){go('home');return}
   if(S)save(); m.cur=id; saveMeta(m); KEY=profKey(id);
-  S=null; ed=null; draft={menu:null,min:15,rec:''}; load(); tab='home'; render(); remindSoon();
+  S=null; ed=null; noteTmp=null; noteAll=false; draft={menu:null,min:15,rec:''}; load(); tab='home'; render(); remindSoon();
   if(S)dialog({icon:'👋',title:`${esc(S.c.name)}に切りかえたよ`,msg:'練習の記録は選手ごとに別々に保存されます。'});
 }
 function addProfile(){
