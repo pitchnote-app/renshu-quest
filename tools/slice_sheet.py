@@ -53,6 +53,16 @@ def drop_shadow(im, top):
                     px[nx, ny] = (0, 0, 0, 0)
                     stack.append((nx, ny))
 
+def clear_rect(im, rect, everything):
+    """四角の中の 白〜明るい灰色（消し残り）だけを消す。everything なら 中身を全部消す"""
+    x0, y0, x1, y1 = rect
+    px = im.load()
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            r, g, b, a = px[x, y]
+            if a and (everything or (min(r, g, b) >= 150 and max(r, g, b) - min(r, g, b) < 45)):
+                px[x, y] = (0, 0, 0, 0)
+
 def defringe(im, seed_colors, band=3, full=60):
     """ふちの色戻し：背景（灰色）と混ざった ふちの画素から背景の色を取りのぞき、
     本来の絵の色と なめらかな透明度に戻す（白っぽいフチ・ガビガビを消す）"""
@@ -149,11 +159,22 @@ def main():
     ap.add_argument('--size', type=int, default=512); ap.add_argument('--tol', type=int, default=40)
     ap.add_argument('--pad', type=float, default=0.0, help='外側の余白（割合）')
     ap.add_argument('--keep', type=float, default=0.03, help='これより小さい かけら（本体比）を消す。記号を残したいときは小さく')
-    ap.add_argument('--holes', default='', help='外側とつながっていない背景を消す。マス内の座標を "x,y;x,y" で（1マスの画像向け）')
+    ap.add_argument('--holes', default='', help='外側とつながっていない背景を消す。マス内の座標を "x,y;x,y" で。何人も並ぶシートは "マス番号:x,y"（例 2:243,161）')
     ap.add_argument('--shadow', type=float, default=0.0, help='足元の影を消す。この高さ（割合。例 0.92）より下の灰色が対象')
+    ap.add_argument('--clear', default='', help='四角の中の白い消し残りを消す。"マス番号:x0,y0,x1,y1" を ; で。最後に ! を付けると中身を全部消す')
     ap.add_argument('--band', type=int, default=3, help='ふちの色戻しの幅（px）。大きな1人絵で輪郭線の内側が欠けるときは 1 に')
     a = ap.parse_args()
-    holes = [tuple(int(n) for n in e.split(',')) for e in a.holes.split(';') if e]
+    clears = []  # (マスの番号, x0, y0, x1, y1, 全部消すか)
+    for e in a.clear.split(';'):
+        if e:
+            no, _, v = e.rpartition(':')
+            everything = v.endswith('!')
+            clears.append((int(no) if no else 0, *(int(n) for n in v.rstrip('!').split(',')), everything))
+    holes = []   # (マスの番号 1〜, x, y)。番号なしは 全部のマス
+    for e in a.holes.split(';'):
+        if e:
+            no, _, xy = e.rpartition(':')
+            holes.append((int(no) if no else 0, *(int(n) for n in xy.split(','))))
     names = [n.strip() for n in a.names.split(',') if n.strip()]
     sheet = Image.open(a.src).convert('RGBA')
     W, H = sheet.size
@@ -164,7 +185,11 @@ def main():
     for j in range(a.rows):
         for i in range(a.cols):
             box = (round(x0+i*cw), round(y0+j*ch), round(x0+(i+1)*cw), round(y0+(j+1)*ch))
-            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol, holes, a.shadow, a.band), a.keep))
+            cut = remove_bg(sheet.crop(box), a.tol, [(x, y) for no, x, y in holes if no in (0, k+1)], a.shadow, a.band)
+            for no, *rect, everything in clears:
+                if no in (0, k+1):
+                    clear_rect(cut, rect, everything)
+            cell = trim_square(drop_fragments(cut, a.keep))
             if cell.width > a.size:
                 cell = cell.resize((a.size, a.size), Image.LANCZOS)
             name = names[k] if k < len(names) else f'item-{k+1}'

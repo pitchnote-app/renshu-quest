@@ -34,6 +34,7 @@
   - 例：`python tools/slice_sheet.py img/sheets/xxx.webp 5 2 img/items ball-1,ball-2,... --size 320 --tol 30`
   - 1人だけの画像は列数・行数を `1 1` に。腕のすき間の背景は `--holes "x,y;x,y"`、足元の影は `--shadow 0.92`、輪郭の内側が欠けるときは `--band 1`
   - 例：`python tools/slice_sheet.py img/sheets/chara-11.webp 1 1 img/chars idea-11 --size 512 --tol 30 --holes "640,560;378,544;379,268;380,278;467,27" --shadow 0.92 --band 1`
+  - 何人も並ぶシートは、マス番号を付けて指定する（例 `--holes "2:243,161"`）。白い消し残りは `--clear "マス番号:x0,y0,x1,y1"`（最後に `!` で中身を全部消す）。`characters-idea.webp` の設定は `docs/キャラ切り出し設定.md`
   - 小さな記号（Zzz など）を残したいときは `--keep 0.008`
 - 切り出した後は、暗い背景に置いて拡大し、白いフチ・かけらが残っていないか必ず確認する。
 - 実在のチーム名・ロゴ・既存キャラクターの絵は使わない。
