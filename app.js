@@ -400,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.12.0';
+const APP_VERSION='0.13.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -652,14 +652,24 @@ const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNative
 const PL=NATIVE?(Capacitor.Plugins||{}):{};
 
 /* ===== データ保存 ===== */
-const KEY='renshu-quest-v1';
+/* 兄弟で使えるように、選手（プロフィール）ごとに別々に保存する。1人目は昔からのキーのまま（データ移行なし） */
+const PKEY='renshu-quest-profiles', MAX_PROF=4;
+const profKey=id=>id?`renshu-quest-v1-p${id}`:'renshu-quest-v1';
+function profMeta(){let m=null;try{m=JSON.parse(localStorage.getItem(PKEY))}catch(e){}
+  m=m&&m.list?m:{cur:0,list:[{id:0}]};
+  m.list.forEach(x=>{if(!x.name){try{const d=JSON.parse(localStorage.getItem(profKey(x.id)));if(d&&d.c){x.name=d.c.name;x.lv=lv(d.xp||0).L;x.av=d.c.avatar||''}}catch(e){}}});   // 一覧に名前がなければ、その選手のデータから読む
+  return m}
+function saveMeta(m){const t=JSON.stringify(m);try{localStorage.setItem(PKEY,t)}catch(e){}if(PL.Preferences)PL.Preferences.set({key:PKEY,value:t}).catch(()=>{})}
+let KEY=profKey(profMeta().cur);
 /* アプリ版は 端末の保存領域（Preferences）にも二重に保存する（WebViewのデータが消えても記録が残る） */
 async function restoreNative(){
   if(!PL.Preferences)return;
   try{
-    let ls=null; try{ls=localStorage.getItem(KEY)}catch(e){}
-    const r=await PL.Preferences.get({key:KEY});
-    if(!ls&&r&&r.value){try{localStorage.setItem(KEY,r.value)}catch(e){}}
+    const restore=async k=>{let ls=null;try{ls=localStorage.getItem(k)}catch(e){}
+      const r=await PL.Preferences.get({key:k});if(!ls&&r&&r.value){try{localStorage.setItem(k,r.value)}catch(e){}}};
+    await restore(PKEY);
+    const m=profMeta(); for(const x of m.list)await restore(profKey(x.id));
+    KEY=profKey(m.cur);
   }catch(e){}
 }
 let S=null, tab='home', draft={menu:null,min:15,rec:''};
@@ -671,6 +681,7 @@ function load(){try{const t=localStorage.getItem(KEY);if(t)S=JSON.parse(t)}catch
   else S.stats={...freshStats(),...st};
 }
 function save(){const t=JSON.stringify(S);try{localStorage.setItem(KEY,t)}catch(e){}
+  if(S&&S.c){const m=profMeta(),x=m.list.find(p=>p.id===m.cur);if(x&&(x.name!==S.c.name||x.lv!==lv(S.xp).L||x.av!==S.c.avatar)){x.name=S.c.name;x.lv=lv(S.xp).L;x.av=S.c.avatar||'';saveMeta(m)}}
   if(PL.Preferences)PL.Preferences.set({key:KEY,value:t}).catch(()=>{});
   remindSoon();
 }
@@ -1071,7 +1082,7 @@ function editView(){
       <div class="row numrow"><button class="chip" data-nd="-1" aria-label="1つ減らす">−</button><input type="text" id="cnum" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="10" aria-label="背番号" value="${esc(numText(ed.num))}"><button class="chip" data-nd="1" aria-label="1つ増やす">＋</button></div></div>`:''}
     <div class="card">${t.items.map(itemView).join('')}</div>
     <div class="row"><button class="btn ghost" id="rand" style="flex:1">おまかせ</button><button class="btn gold" id="edok" style="flex:2">${S?'決定':'このキャラで始める'}</button></div>
-    ${S?'<button class="btn ghost" id="edcancel" style="margin-top:14px;font-size:15px">キャンセル</button>':''}
+    ${S||profMeta().list.length>1?'<button class="btn ghost" id="edcancel" style="margin-top:14px;font-size:15px">キャンセル</button>':''}
   </div>`;
 }
 function itemView(it){
@@ -1122,7 +1133,9 @@ function bindEdit(){
     else S.c=ed;
     const isNew=!S.tut;ed=null;save();go('home');if(isNew)showTutorial();
   };
-  const cc=document.getElementById('edcancel'); if(cc) cc.onclick=()=>{ed=null;go('settings')};
+  const cc=document.getElementById('edcancel'); if(cc) cc.onclick=()=>{ed=null;
+    if(!S){const m=profMeta(), x=m.list.find(p=>p.id===m.cur); if(x&&!x.name){m.list=m.list.filter(p=>p!==x)} m.cur=m.list[0].id; saveMeta(m); KEY=profKey(m.cur); load(); tab='settings'; render(); return}
+    go('settings')};
 }
 
 /* ===== 画面 ===== */
@@ -1224,6 +1237,7 @@ function homeView(){
   const t=TITLES.find(x=>x.id===S.eq);
   return `<div class="top">
     <button class="coin" onclick="go('shop')" style="position:absolute;right:14px;top:12px;z-index:5">🪙 ${S.coin||0}</button>
+    ${profChip()}
     ${roomView(S)}
     ${t?`<div class="title-badge" style="margin-top:10px">${t.ic} ${t.name}</div><br>`:''}
     <div class="lv">Lv. ${L}</div> ${rankTag(L)} <span class="jobtag">${J.name}</span>
@@ -1609,7 +1623,7 @@ function logView(){
     </div>
   </div>`;
 }
-async function resetAll(){if(!await parentGate())return;if(await dialog({icon:'⚠️',title:'本当に全部消していい？',msg:'キャラ・記録・コインがすべて消えます。元には戻せません。先にバックアップを保存しておくと安心です。',ok:'全部消す',cancel:'やめる',danger:true})){try{localStorage.removeItem(KEY)}catch(e){}if(PL.Preferences)PL.Preferences.remove({key:KEY}).catch(()=>{});if(PL.LocalNotifications)PL.LocalNotifications.cancel({notifications:[1,2,3,4,5,6,7].map(id=>({id}))}).catch(()=>{});S=null;ed=null;render()}}
+async function resetAll(){if(!await parentGate())return;if(await dialog({icon:'⚠️',title:'本当に全部消していい？',msg:'今の選手のキャラ・記録・コインがすべて消えます（ほかの選手は残ります）。元には戻せません。先にバックアップを保存しておくと安心です。',ok:'全部消す',cancel:'やめる',danger:true})){try{localStorage.removeItem(KEY)}catch(e){}if(PL.Preferences)PL.Preferences.remove({key:KEY}).catch(()=>{});if(PL.LocalNotifications)PL.LocalNotifications.cancel({notifications:[1,2,3,4,5,6,7].map(id=>({id}))}).catch(()=>{});S=null;ed=null;render()}}
 let shopCat=0, wardCat=0;
 const ITEM_DESC={ball:'練習で使うボール。カードのキャラが持つよ',boot:'足元をかっこよく',kit:'特別なデザインのユニフォーム',bg:'カードの背景が変わるよ'};
 function shopView(){
@@ -1726,9 +1740,41 @@ function parentMsgCard(){
   const m=S.pmsg; if(!m||m.read)return '';
   return `<div class="card pmsgcard"><h3>📣 おうちの人から</h3><p style="margin:8px 0 12px;line-height:1.7;font-weight:700">${esc(m.t)}</p>${m.gift?`<p class="sub" style="margin:0 0 10px">ごほうび 🪙${m.gift} つき！</p>`:''}<button class="btn gold" id="pread">ありがとう！</button></div>`;
 }
+/* ===== 選手の切りかえ（兄弟で使う） ===== */
+function switchProfile(id){
+  const m=profMeta(); if(m.cur===id){go('home');return}
+  if(S)save(); m.cur=id; saveMeta(m); KEY=profKey(id);
+  S=null; ed=null; draft={menu:null,min:15,rec:''}; load(); tab='home'; render(); remindSoon();
+  if(S)dialog({icon:'👋',title:`${esc(S.c.name)}に切りかえたよ`,msg:'練習の記録は選手ごとに別々に保存されます。'});
+}
+function addProfile(){
+  const m=profMeta(); if(m.list.length>=MAX_PROF){dialog({icon:'👥',title:`選手は${MAX_PROF}人までです`});return}
+  const id=Math.max(...m.list.map(x=>x.id))+1; m.list.push({id}); saveMeta(m); switchProfile(id);
+}
+async function deleteProfile(id){
+  const m=profMeta(), x=m.list.find(p=>p.id===id); if(!x||m.list.length<2)return;
+  if(!await parentGate())return;
+  if(!await dialog({icon:'⚠️',title:`「${esc(x.name||'名前なし')}」を消していい？`,msg:'この選手の記録がすべて消えます。元には戻せません。',ok:'消す',cancel:'やめる',danger:true}))return;
+  try{localStorage.removeItem(profKey(id))}catch(e){} if(PL.Preferences)PL.Preferences.remove({key:profKey(id)}).catch(()=>{});
+  m.list=m.list.filter(p=>p.id!==id); if(m.cur===id){m.cur=m.list[0].id}
+  saveMeta(m); KEY=profKey(m.cur); S=null; ed=null; load(); tab='settings'; render();
+}
+function profilesCard(){
+  const m=profMeta();
+  return `<div class="card"><h3>選手の切りかえ（兄弟で使う）</h3>
+    <p class="sub" style="margin:6px 0 8px">1台のスマホで${MAX_PROF}人まで。記録は選手ごとに別々です。</p>
+    ${m.list.map(x=>`<div class="profrow ${x.id===m.cur?'on':''}"><button class="setrow" onclick="switchProfile(${x.id})"><span>${x.av?`<img src="img/chars/${x.av}.webp" alt="">`:'👤'} ${esc(x.name||'（作成中）')}${x.lv?` <small>Lv.${x.lv}</small>`:''}</span><span class="arr">${x.id===m.cur?'✔ 使用中':'切りかえ'}</span></button>${m.list.length>1?`<button class="profdel" onclick="deleteProfile(${x.id})" aria-label="消す">✕</button>`:''}</div>`).join('')}
+    ${m.list.length<MAX_PROF?`<button class="setrow" onclick="addProfile()"><span>＋ 新しい選手を追加</span><span class="arr">›</span></button>`:''}
+  </div>`;
+}
+function profChip(){
+  const m=profMeta(); if(m.list.length<2)return '';
+  return `<button class="profchip" onclick="go('settings')">👥 ${esc(S.c.name)} ▾</button>`;
+}
 function settingsView(){
   return `<div class="wrap">
     <h2 style="margin:8px 0 12px">設定</h2>
+    ${profilesCard()}
     <div class="card"><h3>プロフィール</h3>
       <button class="setrow" onclick="go('edit')"><span>キャラ・名前・背番号を変える</span><span class="arr">›</span></button>
       <button class="setrow" onclick="go('wardrobe')"><span>着せ替え</span><span class="arr">›</span></button>

@@ -201,6 +201,21 @@ test('練習タイマー：経過時間は始めた時刻から計算し、一�
   ok(run(c, "timerView().includes('足裏コロコロ')"), 'タイマー画面');
 });
 
+test('兄弟で使える：選手ごとに別々に保存され、切りかえても記録がまざらない', c => {
+  run(c, newPlayer + "S.coin=500; save();");
+  eq(run(c, 'profMeta().list.length'), 1);
+  eq(run(c, 'KEY'), 'renshu-quest-v1', '1人目は昔からのキー');
+  run(c, 'addProfile()');
+  eq(run(c, 'S'), null, '2人目は新しく作る');
+  eq(run(c, 'KEY'), 'renshu-quest-v1-p1');
+  run(c, "S={c:norm({name:'いもうと',age:8,v:2}),xp:0,coin:0,stats:freshStats(),best:{},logs:[],titles:[],eq:null,tut:1}; save();");
+  run(c, 'switchProfile(0)');
+  eq(run(c, 'S.c.name'), 'テスト'); eq(run(c, 'S.coin'), 500);
+  run(c, 'switchProfile(1)');
+  eq(run(c, 'S.c.name'), 'いもうと'); eq(run(c, 'S.coin'), 0);
+  eq(run(c, 'profMeta().list.map(x=>x.name)'), ['テスト','いもうと']);
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();

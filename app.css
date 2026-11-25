@@ -493,3 +493,12 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .tquit{margin-top:10px;background:none;border:0;color:rgba(255,255,255,.6);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
 .timerbtn{margin-bottom:10px;width:100%}
 .timedone{border:1px solid var(--ok);color:var(--ink)}
+
+/* ===== 選手の切りかえ（v0.13.0） ===== */
+.profrow{display:flex;align-items:center;gap:6px}
+.profrow .setrow{flex:1}
+.profrow.on .setrow{border-color:var(--gold)}
+.profrow img{width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:2px}
+.profrow small{color:var(--sub)}
+.profdel{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--sub);font:inherit;cursor:pointer}
+.profchip{position:absolute;left:14px;top:12px;z-index:5;background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:4px 10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
