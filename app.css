@@ -425,7 +425,7 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 /* ===== 部屋（マイページ）・練習場所のシーン（v0.10.0） ===== */
 .room{position:relative;width:100%;max-width:420px;aspect-ratio:1/1;margin:6px auto 0;border-radius:18px;overflow:hidden;background-size:cover,cover;background-position:center;box-shadow:inset 0 0 0 2px rgba(255,255,255,.08),0 10px 24px rgba(0,0,0,.45);cursor:pointer;text-align:left}
 .room::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 30%,transparent 55%,rgba(0,0,0,.35));pointer-events:none}
-.room .rposters{position:absolute;top:4%;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:1}
+.room .rposters{position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:1}
 .room .rposters i{display:block;width:26px;height:34px;border:2px solid #f3ead8;border-radius:3px;background-size:cover;background-position:center;box-shadow:0 2px 4px rgba(0,0,0,.35)}
 .room .rshelf{position:absolute;top:22%;width:30%;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.28));border-bottom:5px solid #6b4a2e;border-radius:6px 6px 2px 2px;padding:4px 5px 3px}
 .room .rshelf b{display:block;font-size:9px;color:rgba(255,255,255,.75);font-weight:800}
@@ -435,16 +435,16 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .room .rtro{left:3%}.room .rmed{right:3%}
 .room .rmedal{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.7);box-shadow:0 2px 3px rgba(0,0,0,.4)}
 .room .rmore{font-style:normal;font-size:10px;color:#fff;font-weight:800;margin-left:2px}
-.room .rchar{position:absolute;left:50%;bottom:64px;height:62%;transform:translateX(-50%);z-index:2;aspect-ratio:1/1;display:flex;justify-content:center;align-items:flex-end}
+.room .rchar{position:absolute;left:50%;bottom:52px;height:63%;transform:translateX(-50%);z-index:2;aspect-ratio:1/1;display:flex;justify-content:center;align-items:flex-end}
 .room .rchar .avwrap,.scene .scene-char .avwrap{height:100%;position:relative}
 .room .rchar img,.room .rchar svg{max-height:100%}
-.room .rfloor{position:absolute;bottom:64px;display:flex;gap:1px;z-index:3;align-items:flex-end}
+.room .rfloor{position:absolute;bottom:52px;display:flex;gap:1px;z-index:3;align-items:flex-end}
 .room .rfloor img{width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
 .room .rballs{left:3%;max-width:30%;flex-wrap:wrap}.room .rboots{right:3%;max-width:30%;flex-wrap:wrap;justify-content:flex-end}
 .room .rname{position:absolute;left:8px;bottom:-1px;z-index:4;font-size:10px;font-weight:800;color:#fff;background:rgba(0,0,0,.45);padding:2px 8px;border-radius:8px 8px 0 0;display:none}
-.room .rname{display:block;left:50%;transform:translateX(-50%);bottom:0}
-/* キャラの足元の名札（背番号と名前）。部屋名ラベル（下）と床の飾り（上）の間に置く */
-.nbanner{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:4;min-width:56%;max-width:92%;height:38px;padding:1.5px;box-sizing:border-box;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));
+.room .rname{display:block;left:0;top:0;bottom:auto;padding:4px 12px 4px 10px;border-radius:0 0 12px 0;font-size:11px}
+/* キャラの足元の名札（背番号と名前）。床の飾りの下に置く（部屋名は左上） */
+.nbanner{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);z-index:4;min-width:56%;max-width:92%;height:38px;padding:1.5px;box-sizing:border-box;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));
   --cut:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%)}
 .nbanner::before{content:"";position:absolute;inset:0;clip-path:var(--cut);background:linear-gradient(90deg,#8fd0ff,#f3dc8f 50%,#8fd0ff)}
 .nbin{position:relative;height:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 24px;box-sizing:border-box;clip-path:var(--cut);color:#fff;white-space:nowrap;
@@ -528,6 +528,7 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .profrow small{color:var(--sub)}
 .profdel{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--sub);font:inherit;cursor:pointer}
 .profchip{position:absolute;left:14px;top:12px;z-index:5;background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:4px 10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.profchip~.room{margin-top:28px}
 .chip.mini.gold{background:var(--gold);color:#3a2a00;border-color:var(--gold);font-weight:900}
 
 /* ===== 場所のライバル（v0.15.0） ===== */
@@ -547,4 +548,4 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .room .rhanger{position:absolute;right:3%;top:44%;width:30%;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:1px;z-index:1;border-top:3px solid #8a6a45;padding-top:3px}
 .room .rhanger img{width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
 .room.r6 .rhanger img,.room.r7 .rhanger img{width:18px;height:18px}
-@media (max-width:350px){.room.r7 .rhanger img,.room.r7 .rfloor img{width:15px;height:15px}}
+@media (max-width:350px){.wrap>.row>.btn.ghost{padding-left:4px;padding-right:4px;font-size:16px;white-space:nowrap}.room.r7 .rhanger img,.room.r7 .rfloor img{width:15px;height:15px}}
