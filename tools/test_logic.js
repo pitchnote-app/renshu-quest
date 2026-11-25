@@ -122,7 +122,8 @@ test('キャラはイラストだけ：カードはイラストで表示。前�
   run(c, "S.c.sex='f';"); ok(run(c, "cardView(S,1,0).includes('img/chars/idea-6_1.webp')"), '女の子はポニーテールに');
   run(c, "S.c.avatar='';save();load();"); eq(run(c, 'S.c.avatar'), 'idea-6', '読みこみ時にイラストへ移行');
   ok(run(c, "typeof charSVG==='undefined'"), '自分で作るキャラの絵は消えている');
-  eq(run(c, 'AVATARS.length'), 11);
+  eq(run(c, 'AVATARS.length'), 10);
+  run(c, "S.c.sex='m';S.c.avatar='idea-11';save();load();"); eq(run(c, 'S.c.avatar'), 'idea-1', 'なくなったちゃ髪を選んでいた選手はツンツンに');
   const ids = JSON.parse(run(c, 'JSON.stringify(AVATARS.map(a=>a.id))'));
   eq(new Set(ids).size, ids.length);
   for (const id of ids) ok(require('fs').existsSync(require('path').join(__dirname, '../img/chars', id + '.webp')), id + ' の画像がある');
