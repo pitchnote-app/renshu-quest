@@ -167,7 +167,7 @@ nav button{font-size:11px;font-weight:700}
 .quest{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:15px}
 .quest span{color:var(--main2);font-weight:900;width:16px}
 .quest em{margin-left:auto;font-style:normal;font-size:11px;color:var(--sub);white-space:nowrap}
-.quest.done{color:var(--sub);text-decoration:line-through}
+.quest.done{color:var(--sub)}.quest.done u{text-decoration:none}
 /* 練習ノート */
 .questbtn{width:100%;background:none;border:0;border-bottom:1px dashed var(--line);color:var(--ink);font:inherit;font-size:15px;text-align:left;cursor:pointer}
 .questbtn u{text-underline-offset:3px}.questbtn em{color:var(--gold2)}
@@ -217,6 +217,8 @@ nav button{font-size:11px;font-weight:700}
 .cal b.sat{color:#6fa8ff}.cal b.sun{color:#ff7b7b}
 .cd{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:8px;font-size:12px;background:#121c38;color:var(--sub)}
 .cd.l1{background:#0d3a66;color:#fff}.cd.l2{background:#1060b0;color:#fff}.cd.l3{background:#00b4e6;color:#05070f;font-weight:900}
+button.cd{border:0;padding:0;font-family:inherit;cursor:pointer}
+.pastbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 12px;padding:10px 12px;border:1px solid var(--gold);border-radius:12px;background:var(--on);font-size:14px}
 .cd.today{outline:2px solid #ffd86b}
 .cd i{position:absolute;right:0;bottom:-2px;font-style:normal;font-size:10px}
 .calleg{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:11px;color:var(--sub);margin-top:8px}
@@ -423,20 +425,32 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 /* ===== 部屋（マイページ）・練習場所のシーン（v0.10.0） ===== */
 .room{position:relative;width:100%;max-width:420px;aspect-ratio:1/1;margin:6px auto 0;border-radius:18px;overflow:hidden;background-size:cover,cover;background-position:center;box-shadow:inset 0 0 0 2px rgba(255,255,255,.08),0 10px 24px rgba(0,0,0,.45);cursor:pointer;text-align:left}
 .room::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 30%,transparent 55%,rgba(0,0,0,.35));pointer-events:none}
-.room .rname{position:absolute;top:8px;left:8px;z-index:4;font-size:10px;font-weight:800;color:#fff;background:rgba(8,12,22,.55);padding:3px 9px;border-radius:999px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
-.room .rchar{position:absolute;left:50%;bottom:15%;height:62%;transform:translateX(-50%);z-index:2;aspect-ratio:1/1;display:flex;justify-content:center;align-items:flex-end}
+.room .rname{position:absolute;left:0;top:0;z-index:4;font-size:11px;font-weight:800;color:#fff;background:rgba(8,12,22,.55);padding:4px 12px 4px 10px;border-radius:0 0 12px 0;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.room .rchar{position:absolute;left:50%;bottom:54px;height:61%;transform:translateX(-50%);z-index:4;aspect-ratio:1/1;display:flex;justify-content:center;align-items:flex-end;pointer-events:none}
 .room .rchar .avwrap,.scene .scene-char .avwrap{height:100%;position:relative}
 .room .rchar img,.room .rchar svg{max-height:100%}
-/* 飾り棚：部屋の下に1本。部屋の絵（窓・家具）を隠さない */
-.room .rcase{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;min-height:14%;padding:8px 10px 7px;background:linear-gradient(180deg,rgba(8,12,22,0) 0%,rgba(8,12,22,.55) 38%,rgba(8,12,22,.78) 100%)}
-.room .rcase::before{content:"";position:absolute;left:8px;right:8px;bottom:5px;height:3px;border-radius:2px;background:linear-gradient(90deg,rgba(212,175,55,0),rgba(212,175,55,.75),rgba(212,175,55,0));box-shadow:0 0 8px rgba(212,175,55,.35)}
-.room .rawards,.room .rgear{position:relative;display:flex;flex-wrap:wrap;align-items:flex-end;gap:3px;padding-bottom:6px}
-.room .rgear{justify-content:flex-end;max-width:48%}
+/* 飾り棚：名札のすぐ上に1本。部屋の絵（窓・家具）を隠さない */
+.room .rcase{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:30%;padding:0 10px 54px;box-sizing:border-box;background:linear-gradient(180deg,rgba(8,12,22,0) 0%,rgba(8,12,22,.35) 45%,rgba(8,12,22,.75) 100%)}
+.room .rcase::before{content:"";position:absolute;left:8px;right:8px;bottom:50px;height:3px;border-radius:2px;background:linear-gradient(90deg,rgba(212,175,55,0),rgba(212,175,55,.75),rgba(212,175,55,0));box-shadow:0 0 8px rgba(212,175,55,.35)}
+.room .rawards,.room .rgear{position:relative;display:flex;flex-wrap:wrap;align-items:flex-end;gap:3px;max-width:34%;padding-bottom:4px}
+.room .rgear{justify-content:flex-end}
 .room .rawards .rtro{font-size:19px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.55))}
 .room .rgear img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.55))}
-.room .rawards small{font-size:10px;color:rgba(255,255,255,.65);font-weight:700}
+.room .rawards small{font-size:10px;color:rgba(255,255,255,.7);font-weight:700;line-height:1.3}
 .room .rmedal{display:inline-block;width:17px;height:17px;border-radius:50%;border:2px solid rgba(255,255,255,.75);box-shadow:0 2px 3px rgba(0,0,0,.5)}
 .room .rmore{font-style:normal;font-size:10px;color:#fff;font-weight:800;margin:0 3px 2px 1px}
+/* キャラの足元の名札（背番号と名前）。床の飾りの下に置く（部屋名は左上） */
+.nbanner{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);z-index:4;min-width:56%;max-width:92%;height:38px;padding:1.5px;box-sizing:border-box;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));
+  --cut:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%)}
+.nbanner::before{content:"";position:absolute;inset:0;clip-path:var(--cut);background:linear-gradient(90deg,#8fd0ff,#f3dc8f 50%,#8fd0ff)}
+.nbin{position:relative;height:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 24px;box-sizing:border-box;clip-path:var(--cut);color:#fff;white-space:nowrap;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),transparent 45%),linear-gradient(90deg,#0b1a44,#1d4fa8 50%,#0b1a44);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.nbin img{width:22px;height:22px;object-fit:contain;flex:none}.nbin i{font-style:normal;font-size:18px}
+.nbin b{font-family:"Dela Gothic One",sans-serif;font-weight:400;font-size:24px;line-height:1;flex:none}
+.nbin span{font-family:"Dela Gothic One",sans-serif;font-size:18px;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
+.nbanner.long .nbin{gap:6px;padding:0 20px}.nbanner.long .nbin b{font-size:20px}.nbanner.long .nbin span{font-size:14px}
+.nbanner.xlong .nbin{gap:4px;padding:0 15px}.nbanner.xlong .nbin img{width:18px;height:18px}.nbanner.xlong .nbin b{font-size:17px}.nbanner.xlong .nbin span{font-size:12.5px}
+.room.r6 .rgear img,.room.r7 .rgear img{width:20px;height:20px}
 .room.r6,.room.r7{box-shadow:inset 0 0 0 2px rgba(245,179,1,.45),0 0 24px rgba(245,179,1,.25),0 10px 24px rgba(0,0,0,.45)}
 .scene{position:relative;height:300px;margin:0 0 8px;background-size:cover,cover;background-position:center;border-radius:0 0 24px 24px;overflow:hidden;border-bottom:2px solid rgba(212,175,55,.45)}
 .scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 30%,transparent 65%,rgba(0,0,0,.55));pointer-events:none}
@@ -510,6 +524,7 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .profrow small{color:var(--sub)}
 .profdel{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--sub);font:inherit;cursor:pointer}
 .profchip{position:absolute;left:14px;top:12px;z-index:5;background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:4px 10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.profchip~.room{margin-top:28px}
 .chip.mini.gold{background:var(--gold);color:#3a2a00;border-color:var(--gold);font-weight:900}
 
 /* ===== 場所のライバル（v0.15.0） ===== */
@@ -526,3 +541,4 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .firstpicks button{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:6px;color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
 .firstpicks .mthumb{width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:8px}
 .firstpicks .mthumb svg{width:100%;height:100%}
+@media (max-width:350px){.wrap>.row>.btn.ghost{padding-left:4px;padding-right:4px;font-size:16px;white-space:nowrap}.room.r7 .rgear img{width:16px;height:16px}}

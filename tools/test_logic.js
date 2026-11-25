@@ -270,6 +270,34 @@ test('練習ノート：ホームで書くと記録・クエストに入り、�
   run(c, "S.logs.push({date:'2026-01-01',menu:'note',min:15,xp:30});logView();");   // 文章のない昔の記録
 });
 
+test('前の日の記入：日付順に入り、EXPは増えるが 今日のクエスト・HPは変わらない', c => {
+  run(c, newPlayer + "S.hp=80;S.hpDay=today();S.dcheck=today();S.logs=[{date:today(),menu:'lift',min:10,rec:null,xp:20},{date:'2026-01-10',menu:'lift',min:10,rec:null,xp:20},{date:'2026-01-01',menu:'lift',min:10,rec:null,xp:20}];S.qd={[today()]:[]};");
+  run(c, "startDay('2026-01-05')"); eq(run(c, 'tab'), 'practice');
+  ok(run(c, 'practiceView()').includes('1月5日'), '記入中の日付が出る');
+  run(c, "draft.menu='lift';draft.min=20;"); ok(!run(c, 'practiceView()').includes('id="tstart"'), 'タイマーは出さない');
+  const xp = run(c, 'S.xp');
+  run(c, 'doPractice()');
+  eq(JSON.parse(run(c, 'JSON.stringify(S.logs.map(l=>l.date).slice(1))')), ['2026-01-10', '2026-01-05', '2026-01-01']);
+  eq(run(c, 'S.logs[2].min'), 20); eq(run(c, 'S.xp') - xp, run(c, 'S.logs[2].xp')); ok(run(c, 'S.xp') > xp, 'EXPは増える');
+  eq(run(c, 'S.hp'), 80); eq(run(c, 'S.qd[today()].length'), 0); eq(run(c, 'tab'), 'log');
+  ok(!run(c, 'draft.date'), '日付の指定は消える');
+  run(c, "saveNote({good:'前の日のノート'},undefined,5,'2026-01-03')");
+  eq(run(c, "noteAt('2026-01-03').note.good"), '前の日のノート'); eq(run(c, "S.logs.findIndex(l=>l.date==='2026-01-03')"), 3);
+  run(c, "startDay('2026-01-05');go('practice');"); ok(!run(c, 'draft.date'), '画面を移ると 今日の記入に戻る');
+  eq(run(c, "isPast(today())"), false); eq(run(c, "isPast('2999-01-01')"), false); eq(run(c, "isPast('x')"), false);
+  ok(run(c, 'calendarCard()').includes("openDay('" + run(c, 'today()') + "')"), '今日までの日付は押せる');
+});
+
+test('ホームの名札：背番号と名前が出る（記号は安全な形・長い名前は小さめ）', c => {
+  run(c, newPlayer + "S.c.name='ゆか';S.c.num=10;");
+  const h = run(c, 'roomView(S)');
+  ok(h.includes('<b>#10</b>') && h.includes('<span>ゆか</span>'), '名札');
+  ok(!h.includes('nbanner long'), '短い名前');
+  run(c, "S.c.name='<b>あいうえおか';S.c.num=999;");
+  const g = run(c, 'nameBanner(S)');
+  ok(g.includes('#999') && g.includes('&lt;b&gt;あ') && g.includes('nbanner long'), '長い名前・記号');
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();
@@ -282,7 +310,8 @@ async function nativeTests() {
   try {
     run(c, newPlayer + "S.remind='23:59';");
     await run(c, 'remindSchedule()');
-    ok(scheduled.length === 7, `7件のはず（${scheduled.length}件）`);
+    const d = new Date(), late = d.getHours() === 23 && d.getMinutes() >= 59;   // 23:59 を過ぎていたら今日の分は出ない
+    ok(scheduled.length === (late ? 6 : 7), `${late ? 6 : 7}件のはず（${scheduled.length}件）`);
     scheduled.length = 0;
     run(c, "S.logs.unshift({date:today(),menu:'x',min:10,xp:5})");
     await run(c, 'remindSchedule()');
