@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.19.0';
+const APP_VERSION='0.20.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1108,6 +1108,11 @@ function roomItems(s){
   const own=(list)=>list.filter(it=>(s.inv||[]).includes(it.id)&&it.img);
   return {R,trophies,medals,balls:own(BALLS),boots:own(BOOTS),kits:own(KITS),posters:STAGES.slice(0,stageOf(L)+1)};
 }
+/* キャラの足元の名札：「#10 ゆか」。ボールは装備中のもの */
+function nameBanner(s){
+  const c=norm(s.c), B=dressed(s).ballT||BALLS[0], nm=String(c.name||''), num=parseNum(c.num);
+  return `<div class="nbanner ${[...nm].length>8?'long xlong':[...nm].length>6?'long':''}"><div class="nbin">${B.img?`<img src="${B.img}" alt="" onerror="this.remove()">`:'<i>⚽</i>'}${num!=null?`<b>#${num}</b>`:''}<span>${esc(nm)}</span></div></div>`;
+}
 function roomView(s){
   const L=lv(s.xp).L, i=stageOf(L), X=roomItems(s), R=X.R, cap=R.cap, c=dressed(s);
   const more=(n)=>n>cap?`<em class="rmore">+${n-cap}</em>`:'';
@@ -1120,6 +1125,7 @@ function roomView(s){
     <div class="rfloor rballs">${X.balls.slice(0,cap).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
     <div class="rhanger">${X.kits.slice(0,Math.max(1,cap-1)).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
     <div class="rfloor rboots">${X.boots.slice(0,Math.max(1,cap-1)).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
+    ${nameBanner(s)}
     <div class="rname">🏠 ${R.name}</div>
   </div>`;
 }
