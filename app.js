@@ -400,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.10.0';
+const APP_VERSION='0.11.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -581,10 +581,16 @@ function openChest(){
   else {const c=r<.45?30+Math.floor(Math.random()*4)*10:r<.85?60+Math.floor(Math.random()*5)*10:150;
     S.coin=(S.coin||0)+c; html=`<div class="bigcoin">🪙</div><p style="font-size:26px;font-weight:900;margin:6px 0">${c} コイン</p>${c>=150?'<p class="rare">大当たり！</p>':''}`; sfx('coin')}
   save();
-  const box=document.getElementById('ovbox');
-  box.innerHTML=`<div class="chestopen">${boltImg('chest','big')}</div><h2>宝箱を開けた！</h2>${html}<button class="btn gold" id="chestok">${chestsPending()?'次の宝箱を開ける':'やったね！'}</button>`;
+  const box=document.getElementById('ovbox'), rare=html.includes('class="rare"');
+  box.innerHTML=`<div class="chestwait ${rare?'rarebox':''}" id="chestwait"><div class="chestbig">🎁</div><p class="sub">タップして開けよう！</p></div>`;
   document.getElementById('ov').classList.add('show');
-  document.getElementById('chestok').onclick=()=>{if(chestsPending())openChest();else{closeOv();render()}};
+  const w=document.getElementById('chestwait'); let opened=false;
+  const reveal=()=>{if(opened)return;opened=true;w.classList.add('burst');vib(rare?[60,40,60,40,160]:[50]);
+    setTimeout(()=>{box.innerHTML=`<div class="chestopen ${rare?'rareglow':''}">${boltImg('chest','big')}</div><h2>宝箱を開けた！</h2>${html}<button class="btn gold" id="chestok">${chestsPending()?'次の宝箱を開ける':'やったね！'}</button>`;
+      if(rare)confetti();
+      const ok=document.getElementById('chestok'); if(ok)ok.onclick=()=>{if(chestsPending())openChest();else{document.getElementById('ov').classList.remove('show');render()}};
+    },420)};
+  w.onclick=reveal;
 }
 
 /* ===== 月間チャレンジロード（毎月リセット。報酬は練習で必ずもらえる） ===== */
@@ -1380,18 +1386,39 @@ function allot(id){
   const nn=newN.map(({N,x})=>`${N.ic} ${N.name}の二つ名が <b>「${x.t}」</b> になった！`);
   if(newT.length||newS.length||nn.length)showResult(0,1,1,newT,[],[...(newT.length?[`🪙 コイン +${newT.length*30}`]:[]),...nn],newS);
 }
+/* 全画面のカットイン演出（昇格・引っこしなど）。タップで次へ */
+function cutin({kicker,title,color='#f5b301',lines=[],L,i}){
+  return new Promise(res=>{
+    const d=document.createElement('div'); d.className='cutin';
+    const c=dressed(S);
+    d.innerHTML=`<div class="cut-rays" style="--c:${color}"></div><div class="cut-band" style="--c:${color}"></div>
+      <div class="cut-char">${charView(c,L,i)}</div>
+      <div class="cut-text"><small>${kicker}</small><h1 style="--c:${color}">${title}</h1>${lines.map(x=>`<p>${x}</p>`).join('')}<em>タップして続ける</em></div>`;
+    document.body.appendChild(d); sfx('stage'); vib([40,40,120]);
+    requestAnimationFrame(()=>d.classList.add('on'));
+    setTimeout(()=>d.onclick=()=>{d.classList.add('off');setTimeout(()=>{d.remove();res()},250)},600);
+  });
+}
+const vib=p=>{try{if(S&&S.sound!==false&&navigator.vibrate)navigator.vibrate(p)}catch(e){}};
 function showResult(xp,b,a,newT,gear,notes,newS=[]){
+  if(stageOf(a)>stageOf(b)&&!showResult.cut){
+    const i=stageOf(a);
+    showResult.cut=1;
+    cutin({kicker:'昇格！',title:rankOf(a),color:RANK_COL[i],L:a,i,lines:[`📍 練習場所：<b>${STAGES[i].name}</b>`,`🏠 新しい部屋：<b>${ROOMS[i].name}</b>`]})
+      .then(()=>{showResult(xp,b,a,newT,gear,notes,newS);showResult.cut=0});
+    return;
+  }
   const up=a>b, awk=stageOf(a)>stageOf(b);
   sfx(awk?'stage':up?'level':'ok');
-  if(up)confetti();
+  if(up){confetti();vib([30,30,60])}
   let items=notes.map(n=>`<li>${n}</li>`).join('');
   gear.forEach(g=>items+=`<li>新しい装備：${g.name}</li>`);
   newS.forEach(k=>items+=`<li>スキル習得：<span class="skchip ${k.tier}">${k.name}</span></li>`);
   newT.forEach(t=>items+=`<li>称号ゲット：${t.ic} ${t.name}</li>`);
   document.getElementById('ovbox').innerHTML=`
     <div class="star">${boltImg(awk?'trophy':up?'joy':newT.length||newS.length?'wow':'cheer','big')}</div>
-    <h2>${awk?'昇格！':up?'レベルアップ！':xp?'+'+xp+' EXP':'習得！'}</h2>
-    ${up?`<p style="font-size:22px;font-weight:800;margin:0">Lv.${b} → <span style="color:var(--gold)">Lv.${a}</span></p><p class="sub">+${xp} EXP</p>`:'<p class="sub">よくがんばったね！</p>'}
+    <h2 class="${up?'lvtitle':''}">${awk?'昇格！':up?'レベルアップ！':xp?'+'+xp+' EXP':'習得！'}</h2>
+    ${up?`<div class="lvflip"><span class="old">Lv.${b}</span><span class="arrow">▶</span><span class="new">Lv.${a}</span></div><p class="sub">+${xp} EXP</p>`:'<p class="sub">よくがんばったね！</p>'}
     <ul>${items}</ul>
     <button class="btn" onclick="document.getElementById('ov').classList.remove('show')">やったね！</button>`;
   document.getElementById('ov').classList.add('show');

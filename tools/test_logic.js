@@ -12,7 +12,7 @@ function makeContext(extra) {
   const store = new Map();
   const doc = { getElementById: () => el(), querySelectorAll: () => [], querySelector: () => null, createElement: () => el(), body: el() };
   const ctx = {
-    console, Math, Date, JSON, Promise, setTimeout: () => 0, clearTimeout() {}, Set, Map, Object, Array, Number, String, Proxy, Blob: function () {},
+    console, Math, Date, JSON, Promise, setTimeout: () => 0, clearTimeout() {}, requestAnimationFrame: () => 0, Set, Map, Object, Array, Number, String, Proxy, Blob: function () {},
     URL: { createObjectURL: () => '', revokeObjectURL() {} },
     document: doc, navigator: {}, location: { reload() {} }, matchMedia: () => ({ matches: true }),
     localStorage: { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) },

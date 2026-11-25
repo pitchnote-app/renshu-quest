@@ -1,6 +1,6 @@
 {
   "name": "renshu-quest",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "description": "れんしゅうクエスト：練習するほど強くなる サッカー育成アプリ",
   "scripts": {
