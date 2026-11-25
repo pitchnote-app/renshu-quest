@@ -10,7 +10,7 @@
 import argparse, os
 from PIL import Image, ImageDraw, ImageFilter
 
-def remove_bg(im, tol, holes=(), shadow=0, band=3):
+def remove_bg(im, tol, holes=(), shadow=0, band=3, auto=0, auto_area=300):
     im = im.convert('RGBA')
     w, h = im.size
     # 四すみ＋四辺の中点から、背景を塗りつぶして透明にする（つながっている部分だけ）
@@ -29,6 +29,8 @@ def remove_bg(im, tol, holes=(), shadow=0, band=3):
             raise SystemExit(f'--holes の {x},{y} は背景の色ではありません（{c[:3]}）')
         if c[3]:
             ImageDraw.floodfill(im, (x, y), marker, thresh=tol)
+    if auto:
+        auto_holes(im, bgs, marker, auto, auto_area)
     px = im.load()
     for y in range(h):
         for x in range(w):
@@ -37,6 +39,38 @@ def remove_bg(im, tol, holes=(), shadow=0, band=3):
     if shadow:
         drop_shadow(im, shadow)
     return defringe(im, bgs, band)
+
+def auto_holes(im, bgs, marker, tol, min_area):
+    """囲まれた背景を自動で探して消す（格子状のシート向け）。
+    ① 背景の色とほぼ完全に同じ（±2）広い部分を「背景のかたまり」として見つける
+    ② そこから ±tol までの色に広げて消す（白い服・くつ下などの かげのある色は残る）"""
+    cols = [c[:3] for c in bgs if c[3] and c[:3] != marker[:3]]
+    if not cols:
+        return
+    B = tuple(sorted(c[k] for c in cols)[len(cols)//2] for k in range(3))   # 中央値（四すみの1つが絵にかかっていても大丈夫）
+    w, h = im.size; px = im.load()
+    def comp(x, y, ok, seen):
+        stack = [(x, y)]; seen[y*w+x] = 1; pts = []
+        while stack:
+            cx, cy = stack.pop(); pts.append((cx, cy))
+            for nx, ny in ((cx+1, cy), (cx-1, cy), (cx, cy+1), (cx, cy-1)):
+                if 0 <= nx < w and 0 <= ny < h and not seen[ny*w+nx] and ok(px[nx, ny]):
+                    seen[ny*w+nx] = 1; stack.append((nx, ny))
+        return pts
+    exact = lambda c: c[3] and c != marker and all(abs(c[k]-B[k]) <= 2 for k in range(3))
+    near = lambda c: c[3] and c != marker and all(abs(c[k]-B[k]) <= tol for k in range(3))
+    seen = bytearray(w*h); cores = []
+    for y in range(h):
+        for x in range(w):
+            if not seen[y*w+x] and exact(px[x, y]):
+                pts = comp(x, y, exact, seen)
+                if len(pts) >= min_area:
+                    cores.append(pts[0])
+    seen = bytearray(w*h)
+    for x, y in cores:
+        if not seen[y*w+x]:
+            for q in comp(x, y, near, seen):
+                px[q] = marker
 
 def drop_shadow(im, top):
     """足元の影：高さ top（割合）より下で、透明部分とつながった灰色だけを消す（輪郭線で止まる）"""
@@ -152,6 +186,10 @@ def main():
     ap.add_argument('--holes', default='', help='外側とつながっていない背景を消す。マス内の座標を "x,y;x,y" で（1マスの画像向け）')
     ap.add_argument('--shadow', type=float, default=0.0, help='足元の影を消す。この高さ（割合。例 0.92）より下の灰色が対象')
     ap.add_argument('--band', type=int, default=3, help='ふちの色戻しの幅（px）。大きな1人絵で輪郭線の内側が欠けるときは 1 に')
+    ap.add_argument('--auto-holes', type=int, default=0, help='囲まれた背景を自動で消す（背景色からの許容差。例 4）。格子状のシート向け')
+    ap.add_argument('--hole-area', type=int, default=300, help='--auto-holes で消す最小の広さ（画素数）')
+    ap.add_argument('--xs', default='', help='列の区切り位置（px）を手で指定。エフェクトがとなりのマスにはみ出すとき。例 0,390,880,1215,1774')
+    ap.add_argument('--ys', default='', help='行の区切り位置（px）を手で指定')
     a = ap.parse_args()
     holes = [tuple(int(n) for n in e.split(',')) for e in a.holes.split(';') if e]
     names = [n.strip() for n in a.names.split(',') if n.strip()]
@@ -161,10 +199,12 @@ def main():
     cw, ch = (W-2*x0)/a.cols, (H-2*y0)/a.rows
     os.makedirs(a.out, exist_ok=True)
     k = 0
+    xs = [int(v) for v in a.xs.split(',')] if a.xs else [round(x0+i*cw) for i in range(a.cols+1)]
+    ys = [int(v) for v in a.ys.split(',')] if a.ys else [round(y0+j*ch) for j in range(a.rows+1)]
     for j in range(a.rows):
         for i in range(a.cols):
-            box = (round(x0+i*cw), round(y0+j*ch), round(x0+(i+1)*cw), round(y0+(j+1)*ch))
-            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol, holes, a.shadow, a.band), a.keep))
+            box = (xs[i], ys[j], xs[i+1], ys[j+1])
+            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol, holes, a.shadow, a.band, a.auto_holes, a.hole_area), a.keep))
             if cell.width > a.size:
                 cell = cell.resize((a.size, a.size), Image.LANCZOS)
             name = names[k] if k < len(names) else f'item-{k+1}'
