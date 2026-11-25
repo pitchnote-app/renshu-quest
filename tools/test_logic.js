@@ -138,5 +138,13 @@ test('ボルトの一言：名前は「〇〇選手」と呼び、記号は安�
   ok(run(c, "buddyLines().every(x=>!x.t.includes('<b>'))"), 'タグがそのまま入らない');
 });
 
+test('更新の読みこみ直しは ホームか設定だけ（入力中・お知らせ中・最初の設定ではしない）', c => {
+  run(c, newPlayer + "ed=null;tab='home';");
+  eq(run(c, 'canReload()'), true); run(c, "tab='settings'"); eq(run(c, 'canReload()'), true);
+  run(c, "tab='practice';"); eq(run(c, 'canReload()'), false);
+  run(c, "tab='home';ed=norm(S.c);"); eq(run(c, 'canReload()'), false);
+  run(c, "ed=null;S=null;"); eq(run(c, 'canReload()'), false);
+});
+
 console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
 process.exit(fail ? 1 : 0);

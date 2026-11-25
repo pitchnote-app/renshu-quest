@@ -351,7 +351,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.6.5';
+const APP_VERSION='0.6.6';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1415,15 +1415,37 @@ function settingsView(){
       <button class="setrow" onclick="importData()"><span>バックアップから読みこむ</span><span class="arr">›</span></button>
       <button class="setrow danger" onclick="resetAll()"><span>最初からやり直す</span><span class="arr">›</span></button>
     </div>
+    ${swReg?'<button class="btn ghost" style="font-size:15px" onclick="checkUpdate()">新しい版があるか確認する</button>':''}
     <p class="sub" style="text-align:center">れんしゅうクエスト ver ${APP_VERSION}</p>
   </div>`;
 }
-function go(t){tab=t;render()}
+function go(t){tab=t;render();applyUpdate()}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.tab));
+/* ===== アプリの更新 =====
+   新しい版が届いたら読みこみ直す。入力中・お知らせ表示中は待って、ホームか設定にいるときだけ */
+let swReg=null, updReady=false;
+function canReload(){
+  if(!S||ed||!['home','settings'].includes(tab))return false;
+  if(document.getElementById('ov').classList.contains('show'))return false;
+  const a=document.activeElement; return !(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+function applyUpdate(){if(updReady&&canReload()){updReady=false;location.reload()}}
+async function checkUpdate(){
+  try{await swReg.update()}catch(e){await dialog({icon:'📶',title:'確認できませんでした',msg:'インターネットにつながっているか確かめて、もう一度試してね。'});return}
+  if(updReady){applyUpdate();return}
+  if(!swReg.installing&&!swReg.waiting) dialog({icon:'✅',title:'最新の版です',msg:`いまの版は ver ${APP_VERSION} だよ。`});
+}
+function startUpdater(){
+  const sw=navigator.serviceWorker; let had=!!sw.controller;
+  sw.addEventListener('controllerchange',()=>{if(had){updReady=true;applyUpdate()}had=true});
+  sw.register('sw.js',{updateViaCache:'none'}).then(r=>{if(!window.Capacitor)swReg=r;
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){r.update().catch(()=>{});applyUpdate()}});
+  }).catch(()=>{});
+}
 /* 予期しないエラーが起きても 固まらないように */
 let errShown=false;
 window.addEventListener('error',()=>{if(errShown)return;errShown=true;
   try{dialog({icon:'⚠️',title:'問題が発生しました',msg:'アプリを読みこみ直します。記録は保存されています。',ok:'読みこみ直す'}).then(()=>location.reload())}catch(e){}});
 load();render();
 if(S&&!S.tut){S.tut=1;save()} // 既存ユーザーには 遊び方を 自動では出さない
-if('serviceWorker' in navigator&&window.isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&window.isSecureContext)startUpdater();
