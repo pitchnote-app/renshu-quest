@@ -167,7 +167,7 @@ nav button{font-size:11px;font-weight:700}
 .quest{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:15px}
 .quest span{color:var(--main2);font-weight:900;width:16px}
 .quest em{margin-left:auto;font-style:normal;font-size:11px;color:var(--sub);white-space:nowrap}
-.quest.done{color:var(--sub);text-decoration:line-through}
+.quest.done{color:var(--sub)}.quest.done u{text-decoration:none}
 /* 練習ノート */
 .questbtn{width:100%;background:none;border:0;border-bottom:1px dashed var(--line);color:var(--ink);font:inherit;font-size:15px;text-align:left;cursor:pointer}
 .questbtn u{text-underline-offset:3px}.questbtn em{color:var(--gold2)}
