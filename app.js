@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.18.1';
+const APP_VERSION='0.18.2';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1110,15 +1110,17 @@ function roomView(s){
   const L=lv(s.xp).L, i=stageOf(L), X=roomItems(s), R=X.R, cap=R.cap, c=dressed(s);
   const more=(n)=>n>cap?`<em class="rmore">+${n-cap}</em>`:'';
   const bg=`url('img/room/room-${i+1}.webp'),linear-gradient(180deg,${R.wall} 0%,${R.wall2} 62%,${R.floor} 62%,${R.floor} 100%)`;
+  // 飾りは部屋の下の「飾り棚」1本にまとめる（部屋の絵の窓や家具を隠さない）
+  const awards=X.trophies.slice(0,cap).map(x=>`<span class="rtro" title="${x.t}">${x.ic}</span>`).join('')+more(X.trophies.length)
+    +X.medals.slice(0,cap).map(x=>`<span class="rmedal ${x.k}" title="${x.t}"></span>`).join('')+more(X.medals.length);
+  const gear=[...X.balls.slice(0,cap),...X.boots.slice(0,Math.max(1,cap-1)),...X.kits.slice(0,Math.max(1,cap-1))].map(it=>`<img src="${it.img}" alt="">`).join('');
   return `<div class="room r${i}" style="background-image:${bg}" onclick="roomInfo()">
-    <div class="rposters">${X.posters.map((st,k)=>`<i title="${st.name}" style="background-image:${stageImg(k)},${st.bg}"></i>`).join('')}</div>
-    <div class="rshelf rtro"><b>トロフィー</b><div>${X.trophies.slice(0,cap).map(x=>`<span title="${x.t}">${x.ic}</span>`).join('')||'<small>まだない</small>'}${more(X.trophies.length)}</div></div>
-    <div class="rshelf rmed"><b>メダル</b><div>${X.medals.slice(0,cap).map(x=>`<span class="rmedal ${x.k}" title="${x.t}"></span>`).join('')||'<small>まだない</small>'}${more(X.medals.length)}</div></div>
-    <div class="rchar">${charView(c,L,i)}</div>
-    <div class="rfloor rballs">${X.balls.slice(0,cap).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
-    <div class="rhanger">${X.kits.slice(0,Math.max(1,cap-1)).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
-    <div class="rfloor rboots">${X.boots.slice(0,Math.max(1,cap-1)).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
     <div class="rname">🏠 ${R.name}</div>
+    <div class="rchar">${charView(c,L,i)}</div>
+    <div class="rcase">
+      <div class="rawards">${awards||'<small>トロフィー・メダルはまだない</small>'}</div>
+      <div class="rgear">${gear}</div>
+    </div>
   </div>`;
 }
 function roomInfo(){
