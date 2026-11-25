@@ -706,7 +706,7 @@ function charSVG(cIn,L,poseIdx){
   h+=`<g clip-path="url(#${u}t)">${pat}<path d="M117 110 L140 110 L140 170 L115 170Z" fill="#000" opacity=".13"/></g>`;
   h+=`<path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z" fill="none" ${O}/>`;
   h+=`<path d="M88 116 L100 131 L112 116" fill="${sk}" stroke="${c2==='#ffffff'?'#fff':c2}" stroke-width="4" stroke-linejoin="round"/>`;
-  h+=`<text x="100" y="155" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text>`;
+  h+=`<text x="100" y="155" text-anchor="middle" font-size="${String(c.num).length>2?17:20}" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text>`;
   h+=`</g>`;
   // あたま
   h+=`<rect x="93" y="108" width="14" height="12" fill="${sk}"/><rect x="93" y="108" width="14" height="6" fill="#000" opacity=".1"/>`;
@@ -769,7 +769,7 @@ function itemSVG(cat,it){
     return `<svg viewBox="52 108 96 62"><defs><linearGradient id="${u}k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}"/><stop offset="1" stop-color="${c2}"/></linearGradient><clipPath id="${u}t"><path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z"/></clipPath></defs>
       ${sl}${MIR(sl)}<path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z" fill="${col}"/><g clip-path="url(#${u}t)">${patSVG(c,u,col,c2)}</g>
       <path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z" fill="none" ${O}/><path d="M88 116 L100 131 L112 116" fill="#0a1124" stroke="${c2==='#ffffff'?'#fff':c2}" stroke-width="4" stroke-linejoin="round"/>
-      <text x="100" y="155" text-anchor="middle" font-size="18" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text></svg>`}
+      <text x="100" y="155" text-anchor="middle" font-size="${String(c.num).length>2?16:18}" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text></svg>`}
   return '';
 }
 function itemIcon(cat,it){
@@ -819,7 +819,7 @@ function cardView(s,L,i,opt={}){
   const bgStyle=bgi&&bgi.bg?`background-image:${bgi.bg}`:`background-image:url('img/bg_${i+1}.jpg'),${st.bg}`;
   return `<div class="pc s${i} ${opt.mini?'mini':''} ${lk?'locked':''}">
     <div class="pc-bg" style="${bgStyle}"></div><div class="pc-fx"></div>
-    <div class="pc-num">${c.num}</div>
+    <div class="pc-num ${String(c.num).length>2?'n3':''}">${c.num}</div>
     <div class="pc-char">${charView(c,L,i)}</div>
     <div class="pc-ovr"><b>${lk?'?':ovr(s)}</b><span>${lk?'':jobOf(s).short}</span></div>
     <div class="pc-stage">${st.name}</div>
@@ -876,9 +876,9 @@ const ED=[
     {k:'acc',label:'アクセサリー',type:'opt',opts:['なし','メガネ','リストバンド','星のピン']},
   ]},
 ];
-/* 背番号：1〜99。全角の数字も半角にして読み取る。正しくないときは null */
-const NUM_MIN=1, NUM_MAX=99;
-function numText(v){return String(v==null?'':v).replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0)).replace(/[^0-9]/g,'').slice(0,2)}
+/* 背番号：1〜999。全角の数字も半角にして読み取る。正しくないときは null */
+const NUM_MIN=1, NUM_MAX=999;
+function numText(v){return String(v==null?'':v).replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0)).replace(/[^0-9]/g,'').slice(0,3)}
 function parseNum(v){const t=numText(v),n=t===''?NaN:+t;return n>=NUM_MIN&&n<=NUM_MAX?n:null}
 let ed=null, edTab=0, edPose=0;
 function edPreview(){return ed.avatar?avatarView(norm(ed),STAGES[edPose].lv,edPose):charSVG(ed,STAGES[edPose].lv,POSE_OF[edPose])}
@@ -895,7 +895,7 @@ function editView(){
     ${edTab>0&&ed.avatar?`<div class="card hint" style="margin-bottom:14px">イラストのキャラを選んでいるときは、顔・目・髪・小物の設定は使われません（背番号はカードに使われます）。「体」タブで「自分で作る」を選ぶと使えるよ。</div>`:''}
     ${edTab===0?`<div class="card"><h3>名前</h3><input type="text" id="cname" maxlength="10" placeholder="名前を入力" value="${esc(ed.name||'')}" style="margin-top:8px"></div>
     <div class="card"><h3>背番号</h3><p class="sub" style="margin:4px 0 8px">${NUM_MIN}〜${NUM_MAX}の好きな番号を入れてね</p>
-      <div class="row numrow"><button class="chip" data-nd="-1" aria-label="1つ減らす">−</button><input type="text" id="cnum" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="10" aria-label="背番号" value="${esc(numText(ed.num))}"><button class="chip" data-nd="1" aria-label="1つ増やす">＋</button></div></div>`:''}
+      <div class="row numrow"><button class="chip" data-nd="-1" aria-label="1つ減らす">−</button><input type="text" id="cnum" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="10" aria-label="背番号" value="${esc(numText(ed.num))}"><button class="chip" data-nd="1" aria-label="1つ増やす">＋</button></div></div>`:''}
     <div class="card">${t.items.map(itemView).join('')}</div>
     <div class="row"><button class="btn ghost" id="rand" style="flex:1">おまかせ</button><button class="btn gold" id="edok" style="flex:2">${S?'決定':'このキャラで始める'}</button></div>
     ${S?'<button class="btn ghost" id="edcancel" style="margin-top:14px;font-size:15px">キャンセル</button>':''}

@@ -123,8 +123,8 @@ test('イラストのキャラを選ぶと カードはイラストで表示（�
   for (const id of ids) ok(require('fs').existsSync(require('path').join(__dirname, '../img/chars', id + '.webp')), id + ' の画像がある');
 });
 
-test('背番号は1〜99だけ（全角も読み取る）。最初の設定に入力欄がある', c => {
-  eq(run(c, "parseNum('7')"), 7); eq(run(c, "parseNum('１０')"), 10); eq(run(c, "parseNum(99)"), 99);
+test('背番号は1〜999だけ（全角も読み取る）。最初の設定に入力欄がある', c => {
+  eq(run(c, "parseNum('7')"), 7); eq(run(c, "parseNum('１０')"), 10); eq(run(c, "parseNum(99)"), 99); eq(run(c, "parseNum('100')"), 100); eq(run(c, "parseNum('９９９')"), 999);
   for (const v of ["''", "'0'", "'00'", "'abc'", 'null', 'undefined']) eq(run(c, `parseNum(${v})`), null);
   run(c, "S=null;ed=norm({name:''});edTab=0;");
   ok(run(c, `editView().includes('id="cnum"')`), '入力欄');
