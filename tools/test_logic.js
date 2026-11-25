@@ -242,6 +242,14 @@ test('はじめての練習：ホームに案内が出て、最初の1回だけ�
   ok(run(c, 'S.xp') - x < 100, '2回目はボーナスなし');
 });
 
+test('更新の読みこみ直しは ホームか設定だけ（入力中・お知らせ中・最初の設定ではしない）', c => {
+  run(c, newPlayer + "ed=null;tab='home';");
+  eq(run(c, 'canReload()'), true); run(c, "tab='settings'"); eq(run(c, 'canReload()'), true);
+  run(c, "tab='practice';"); eq(run(c, 'canReload()'), false);
+  run(c, "tab='home';ed=norm(S.c);"); eq(run(c, 'canReload()'), false);
+  run(c, "ed=null;S=null;"); eq(run(c, 'canReload()'), false);
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();
