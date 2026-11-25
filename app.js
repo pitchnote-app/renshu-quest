@@ -400,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.15.0';
+const APP_VERSION='0.16.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1268,6 +1268,14 @@ function stageScene(s){
     <div class="scene-foot"><b>Lv.${L}</b> ${rankTag(L)}<span>${nx?`次は「${nx.name}」Lv.${nx.lv}`:'最高の舞台！'}</span></div>
   </div>`;
 }
+/* はじめての人向け：最初の練習へ案内する（かんたんな練習を3つ） */
+function firstCard(){
+  if(S.logs.some(l=>!l.rest))return '';
+  const picks=['sole_roll','lift','dash'].map(menuOf).filter(Boolean);
+  return `<div class="card firstcard"><h3>🎯 はじめての練習をしよう！</h3>
+    <p class="sub" style="margin:6px 0 10px">5分だけでもOK。最初の練習でボーナス（+100 EXP・🪙50・🎁宝箱）がもらえるよ！</p>
+    <div class="firstpicks">${picks.map(m=>`<button onclick="draft={menu:'${m.id}',min:10,rec:''};go('practice')"><div class="mthumb">${diag(m.d)}</div><b>${m.name}</b></button>`).join('')}</div></div>`;
+}
 function homeView(){
   recoverHP();dailyCheck();
   const {L,r,n}=lv(S.xp);
@@ -1286,6 +1294,7 @@ function homeView(){
     <div class="hprow"><b>HP</b><div class="hpbar"><i style="width:${hp}%;background:${hp<25?'#ff4d4d':hp<50?'#ffb020':'#3ee08f'}"></i></div><span>${hp}/100</span></div>
   </div>
   <div class="wrap">
+    ${firstCard()}
     <button class="btn gold" onclick="go('practice')" style="margin:4px 0 10px">練習を記録する</button>
     <div class="row" style="margin:0 0 16px"><button class="btn ghost" onclick="go('status')" style="flex:1">つよさ</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
     ${buddyCard()}
@@ -1422,6 +1431,7 @@ function doPractice(){
   const m=menuOf(draft.menu);
   let xp=calcXP(), notes=[], coin=draft.min, pb=false;
   const rec=draft.rec===''?null:Number(draft.rec);
+  const first=!S.logs.some(l=>!l.rest);
   if(rec!=null&&(isNaN(rec)||rec<0||(m.max&&rec>m.max))){dialog({icon:'🔢',title:'記録の数字を確かめてね',msg:m.max?`0〜${m.max}の数字で入力してね。`:'0以上の数字で入力してね。'});return}
   if(rec!=null){
     const b=S.best[m.id], better=b==null||(m.lower?rec<b:rec>b);
@@ -1436,6 +1446,7 @@ function doPractice(){
   if(jobMult(J,Object.keys(m.gain)[0])>1) notes.push(`⚽ ${J.name}の職業ボーナス`);
   const mb=mastery(S,m.id).i;
   S.logs.unshift({date:today(),menu:m.id,min:draft.min,rec,xp,pb});
+  if(first){xp+=100;coin+=50;S.bonusChest=(S.bonusChest||0)+1;notes.unshift('🎉 はじめての練習ボーナス！ +100 EXP・🪙50・🎁宝箱')}
   {const ma=mastery(S,m.id);if(ma.i>mb)notes.push(`🏅 「${m.name}」の熟練度が <b>${ma.m.name}</b> に上がった！`)}
   S.hp=Math.max(0,S.hp-draft.min/2);
   const q=checkQuests(); xp+=q.xp; coin+=q.coin; notes.push(...q.notes);

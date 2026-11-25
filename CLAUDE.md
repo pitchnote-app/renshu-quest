@@ -56,6 +56,10 @@
 - 個人技スキル `SKILLS`（金・技・心がまえの札。`name` は保存のキーなので変えない）／つよさ画面 `statusView()`
 - 練習場所8段階 `STAGES`（家の庭→近所の公園→大きな公園→河川敷→小学校のグラウンド→フットサルコート→天然芝のピッチ→満員のスタジアム）。練習画面の上 `stageScene()`、絵は `img/stages/stage-N.webp`
 - 部屋（マイページ）8段階 `ROOMS`・`roomView()`：階級と同時に引っこし、広く豪華に。飾り（トロフィー・メダル・ボール・くつ・ポスター）が増える。絵は `img/room/room-N.webp`
+- 演出：全画面カットイン `cutin()`（昇格）／宝箱はタップで開く `openChest()`／練習タイマー `timerView()`・`S.timer`
+- 選手の切りかえ（兄弟）`profMeta()`・`switchProfile()`：選手ごとに保存キーが別（1人目は `renshu-quest-v1` のまま）
+- 選手カード画像 `makeCardImage()`・`saveCardImage()`（保護者確認つき・端末内で作成）
+- 練習場所のライバルとストーリー `PLACE_RIVALS`・`placeCheck()`／はじめての練習ボーナス `firstCard()`
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
 - ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）／相棒ボルト `buddyLines()`・`BOLT`
 - イラストのキャラ `AVATARS`・`avatarView()`

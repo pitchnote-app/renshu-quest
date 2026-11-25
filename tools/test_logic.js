@@ -86,7 +86,8 @@ test('宿屋：HPが全回復', c => {
   run(c, newPlayer + "S.hp=10;S.hpDay=today();doRest();"); eq(run(c, 'S.hp'), 100);
 });
 test('宝箱：練習60分ごとに1個', c => {
-  run(c, newPlayer + "draft={menu:'run',min:90,rec:''};doPractice();"); eq(run(c, 'chestsPending()'), 1);
+  // はじめての練習ボーナスの宝箱とまざらないよう、すでに1回練習したことにしておく
+  run(c, newPlayer + "S.logs.push({date:'2026-01-01',menu:'run',min:0,xp:0});draft={menu:'run',min:90,rec:''};doPractice();"); eq(run(c, 'chestsPending()'), 1);
   run(c, "openChest();"); eq(run(c, 'chestsPending()'), 0);
 });
 test('チャレンジロード：120 EXPごとに段階が進む', c => {
@@ -228,6 +229,17 @@ test('場所のライバル：その場所で練習を重ね、能力が届く�
   eq(run(c, 'S.placeWins'), [0]);
   ok(run(c, "roomItems(S).trophies.some(t=>t.ic==='🎖️')"), '部屋にトロフィー');
   eq(run(c, 'placeCheck([])'), 0, '2回は勝たない');
+});
+
+test('はじめての練習：ホームに案内が出て、最初の1回だけボーナス（+100 EXP・宝箱）', c => {
+  run(c, newPlayer);
+  ok(run(c, "firstCard().includes('はじめての練習')"), '案内');
+  run(c, "draft={menu:'sole_roll',min:10,rec:''}; doPractice()");
+  ok(run(c, 'S.xp') >= 120, `ボーナス込み（${run(c, 'S.xp')}）`);
+  eq(run(c, 'S.bonusChest'), 1);
+  eq(run(c, 'firstCard()'), '', '2回目からは出ない');
+  const x = run(c, 'S.xp'); run(c, "draft={menu:'sole_roll',min:10,rec:''}; doPractice()");
+  ok(run(c, 'S.xp') - x < 100, '2回目はボーナスなし');
 });
 
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
