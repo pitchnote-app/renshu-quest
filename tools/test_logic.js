@@ -12,7 +12,7 @@ function makeContext(extra) {
   const store = new Map();
   const doc = { getElementById: () => el(), querySelectorAll: () => [], querySelector: () => null, createElement: () => el(), body: el() };
   const ctx = {
-    console, Math, Date, JSON, Promise, setTimeout: () => 0, clearTimeout() {}, requestAnimationFrame: () => 0, Set, Map, Object, Array, Number, String, Proxy, Blob: function () {},
+    console, Math, Date, JSON, Promise, setTimeout: () => 0, clearTimeout() {}, requestAnimationFrame: () => 0, setInterval: () => 0, clearInterval() {}, Set, Map, Object, Array, Number, String, Proxy, Blob: function () {},
     URL: { createObjectURL: () => '', revokeObjectURL() {} },
     document: doc, navigator: {}, location: { reload() {} }, matchMedia: () => ({ matches: true }),
     localStorage: { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) },
@@ -191,6 +191,14 @@ test('部屋：階級と同じ8段階で、広い部屋ほど飾れる数が多�
   eq(run(c, 'roomItems(S).medals.length'), 1, 'ゴールドの熟練度');
   ok(run(c, "roomView(S).includes('せまい物置部屋')"), '部屋の名前');
   ok(run(c, "stageScene(S).includes('家の庭')"), '練習場所');
+});
+
+test('練習タイマー：経過時間は始めた時刻から計算し、一時停止中は増えない', c => {
+  run(c, newPlayer);
+  eq(run(c, 'tElapsed({acc:60000,run:false,start:0})'), 60000);
+  ok(run(c, 'tElapsed({acc:0,run:true,start:Date.now()-120000})') >= 120000, '動いている間は増える');
+  run(c, "S.timer={menu:'sole_roll',goal:15,start:Date.now(),acc:0,run:true}");
+  ok(run(c, "timerView().includes('足裏コロコロ')"), 'タイマー画面');
 });
 
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */

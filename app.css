@@ -469,3 +469,27 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 @keyframes chestburst{40%{transform:scale(1.25) rotate(-6deg)}100%{transform:scale(1.8);opacity:0;filter:brightness(3) drop-shadow(0 0 40px #fff)}}
 .rareglow .boltimg{filter:drop-shadow(0 0 22px rgba(245,179,1,.95))}
 @media (prefers-reduced-motion:reduce){.cut-rays,.cut-band,.chestwait .chestbig{animation:none}}
+
+/* ===== 練習タイマー（v0.12.0） ===== */
+.tview{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px 16px 24px;background-size:cover,cover;background-position:center;color:#fff}
+.tview::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.15) 40%,rgba(5,8,15,.85) 70%);pointer-events:none}
+.tview>*{position:relative}
+.tmenu{font-weight:900;font-size:16px;background:rgba(0,0,0,.45);padding:4px 14px;border-radius:12px}
+.tchar{height:32vh;aspect-ratio:1/1;display:flex;justify-content:center;align-items:flex-end;margin-top:4px}
+.tchar .avwrap{height:100%}.tchar img,.tchar svg{max-height:100%}
+.tclock{position:relative;width:180px;height:180px;margin-top:6px}
+.tclock svg{width:100%;height:100%;transform:rotate(-90deg)}
+.tclock .tbg{fill:rgba(5,8,15,.7);stroke:rgba(255,255,255,.15);stroke-width:8}
+.tclock .tfg{fill:none;stroke:var(--gold);stroke-width:8;stroke-linecap:round;stroke-dasharray:0 100;transition:stroke-dasharray .5s}
+.tclock>div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tclock b{font-family:"Dela Gothic One",sans-serif;font-size:40px;font-variant-numeric:tabular-nums}
+.tclock small{color:rgba(255,255,255,.7);font-size:12px}
+.tclock.goal .tfg{stroke:var(--ok);filter:drop-shadow(0 0 8px var(--ok))}
+.ttalk{display:flex;align-items:center;gap:8px;margin:10px 0;width:100%;max-width:420px}
+.ttalk .boltimg{width:56px;height:56px}
+.ttalk .bubble{flex:1;background:#fff8e6;color:#1a1a1a;border-radius:14px;padding:8px 12px;font-weight:800;font-size:14px}
+.tbtns{display:flex;gap:10px;width:100%;max-width:420px}
+.tbtns .btn{flex:1}
+.tquit{margin-top:10px;background:none;border:0;color:rgba(255,255,255,.6);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+.timerbtn{margin-bottom:10px;width:100%}
+.timedone{border:1px solid var(--ok);color:var(--ink)}

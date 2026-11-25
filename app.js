@@ -400,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.11.0';
+const APP_VERSION='0.12.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1135,7 +1135,8 @@ function render(){
   nav.classList.remove('hide');
   nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(S)wear(S);
-  app.innerHTML={status:statusView,home:homeView,practice:practiceView,skill:titlesView,log:logView,settings:settingsView,shop:shopView,wardrobe:wardrobeView,report:reportView}[tab]();
+  app.innerHTML={timer:timerView,status:statusView,home:homeView,practice:practiceView,skill:titlesView,log:logView,settings:settingsView,shop:shopView,wardrobe:wardrobeView,report:reportView}[tab]();
+  if(tab==='timer')bindTimer();
   if(tab==='shop')bindShop();
   if(tab==='wardrobe')bindWardrobe();
   if(tab==='report')bindReport();
@@ -1286,10 +1287,55 @@ function practiceView(){
       <input type="number" id="rec" inputmode="decimal" step="${m.dec?'0.1':'1'}" min="0" ${m.max?`max="${m.max}"`:''} value="${esc(draft.rec)}" placeholder="—">
       <p class="sub" style="margin:8px 0 0">今の自己ベスト：<b>${S.best[m.id]!=null?S.best[m.id]+m.unit:'まだなし'}</b></p>
       <div class="hint">自己ベストを更新するとボーナス +30 EXP</div></div>`:''}
+    ${draft.timed?`<div class="card timedone">⏱ タイマーで <b>${draft.min}分</b> 練習したよ！ 記録があれば入れて「記録する」を押そう</div>`:''}
+    <button class="btn ghost timerbtn" id="tstart">⏱ タイマーで練習する（${draft.min}分）</button>
     <button class="btn gold" id="save">記録する　<span id="xpv">+${calcXP()}</span> EXP</button>
   </div>`;
 }
 function calcXP(){return draft.min*2}
+/* ===== 練習タイマー：スタートすると時間を数え、ボルトが声をかける。終わるとそのまま記録へ =====
+   時間は「始めた時刻」から計算するので、画面を閉じても続きから数えられる */
+const TIMER_TALK=['いいね！ その調子！','ボールをよく見て！','ナイスタッチ！','あと少し！ がんばれ！','フォームを意識しよう！','呼吸を整えてね','キミならできる！','すごい集中力だ！'];
+let timerTick=null, wakeLock=null;
+const tElapsed=T=>T.acc+(T.run?Date.now()-T.start:0);
+function timerView(){
+  const T=S.timer, m=menuOf(T.menu), L=lv(S.xp).L, i=stageOf(L), st=STAGES[i];
+  return `<div class="tview" style="background-image:${stageImg(i)},${st.bg}">
+    <div class="tmenu">${m.name}</div>
+    <div class="tchar">${charView(dressed(S),L,i)}</div>
+    <div class="tclock"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="tbg"/><circle cx="60" cy="60" r="52" class="tfg" id="tring" pathLength="100"/></svg>
+      <div><b id="ttime">0:00</b><small>目標 ${T.goal}分</small></div></div>
+    <div class="ttalk">${boltImg('cheer')}<div class="bubble" id="ttalk">スタート！ いっしょにがんばろう！</div></div>
+    <div class="tbtns"><button class="btn ghost" id="tpause">${T.run?'一時停止':'再開'}</button><button class="btn gold" id="tend">終わって記録</button></div>
+    <button class="tquit" id="tquit">やめる</button>
+  </div>`;
+}
+function bindTimer(){
+  const T=S.timer; if(!T){go('practice');return}
+  document.getElementById('nav').classList.add('hide');
+  try{if(navigator.wakeLock&&!wakeLock)navigator.wakeLock.request('screen').then(w=>wakeLock=w).catch(()=>{})}catch(e){}
+  let lastTalk=-1, half=false, done=false;
+  const upd=()=>{
+    if(!document.getElementById('ttime')){clearInterval(timerTick);return}
+    const ms=tElapsed(T), sec=Math.floor(ms/1000), p=Math.min(100,ms/(T.goal*600));
+    document.getElementById('ttime').textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+    document.getElementById('tring').style.strokeDasharray=`${p} 100`;
+    const k=Math.floor(sec/30); if(T.run&&k!==lastTalk&&sec>0){lastTalk=k;document.getElementById('ttalk').textContent=TIMER_TALK[k%TIMER_TALK.length]}
+    if(!half&&p>=50){half=true;if(T.run){sfx('ok');document.getElementById('ttalk').textContent='半分まできた！ ナイス！'}}
+    if(!done&&p>=100){done=true;sfx('level');vib([80,60,80]);document.getElementById('ttalk').textContent='目標達成！ 「終わって記録する」を押そう！';document.querySelector('.tclock').classList.add('goal')}
+  };
+  clearInterval(timerTick); timerTick=setInterval(upd,500); upd();
+  document.getElementById('tpause').onclick=()=>{if(T.run){T.acc=tElapsed(T);T.run=false}else{T.start=Date.now();T.run=true}save();go('timer')};
+  const stop=()=>{clearInterval(timerTick);try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null};
+  document.getElementById('tend').onclick=()=>{
+    const min=Math.max(5,Math.min(90,Math.round(tElapsed(T)/60000/5)*5));
+    stop(); draft={menu:T.menu,min,rec:'',timed:true}; S.timer=null; save(); go('practice');
+  };
+  document.getElementById('tquit').onclick=async()=>{
+    if(!await dialog({icon:'⏱',title:'タイマーをやめる？',msg:'この練習は記録されません。',ok:'やめる',cancel:'続ける'}))return;
+    stop(); S.timer=null; save(); go('practice');
+  };
+}
 function bindPractice(){
   document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{pgrp=b.dataset.g;const y=window.scrollY;render();window.scrollTo(0,y)});
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{draft.menu=b.dataset.m;draft.rec='';render()});
@@ -1300,6 +1346,8 @@ function bindPractice(){
   if(rc)rc.oninput=e=>{draft.rec=e.target.value};
   const sv=document.getElementById('save');
   if(sv)sv.onclick=doPractice;
+  const ts=document.getElementById('tstart');
+  if(ts)ts.onclick=()=>{S.timer={menu:draft.menu,goal:draft.min,start:Date.now(),acc:0,run:true};save();go('timer')};
 }
 function checkQuests(){
   S.qd=S.qd||{}; const d=today(), done=S.qd[d]=S.qd[d]||[];
@@ -1717,7 +1765,7 @@ window.addEventListener('error',()=>{if(errShown)return;errShown=true;
   try{dialog({icon:'⚠️',title:'問題が発生しました',msg:'アプリを読みこみ直します。記録は保存されています。',ok:'読みこみ直す'}).then(()=>location.reload())}catch(e){}});
 (async()=>{
   await restoreNative();
-  load();render();
+  load();if(S&&S.timer)tab='timer';render();
   if(S&&!S.tut){S.tut=1;save()} // 既存ユーザーには 遊び方を 自動では出さない
   remindSoon();
   if(!NATIVE&&'serviceWorker' in navigator&&window.isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{});
