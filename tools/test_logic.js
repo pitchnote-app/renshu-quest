@@ -123,5 +123,13 @@ test('イラストのキャラを選ぶと カードはイラストで表示（�
   for (const id of ids) ok(require('fs').existsSync(require('path').join(__dirname, '../img/chars', id + '.webp')), id + ' の画像がある');
 });
 
+test('背番号は1〜99だけ（全角も読み取る）。最初の設定に入力欄がある', c => {
+  eq(run(c, "parseNum('7')"), 7); eq(run(c, "parseNum('１０')"), 10); eq(run(c, "parseNum(99)"), 99);
+  for (const v of ["''", "'0'", "'00'", "'abc'", 'null', 'undefined']) eq(run(c, `parseNum(${v})`), null);
+  run(c, "S=null;ed=norm({name:''});edTab=0;");
+  ok(run(c, `editView().includes('id="cnum"')`), '入力欄');
+  ok(run(c, "!ED.flatMap(t=>t.items).some(i=>i.k==='num')"), 'ユニフォームのタブには重ねて出さない');
+});
+
 console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
 process.exit(fail ? 1 : 0);

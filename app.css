@@ -120,6 +120,7 @@ nav button.on{color:var(--main2);text-shadow:0 0 10px var(--main2)}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
 .tabs .chip{flex:none}
 .chip.mini{padding:4px 10px;font-size:13px}
+.numrow{justify-content:center}.numrow input[type=text]{width:110px;font-size:28px;font-weight:800;padding:8px}
 .edi{margin-bottom:16px}.edi:last-child{margin-bottom:0}
 .edi h3{margin-bottom:8px;font-size:16px}
 .edi .chips{justify-content:flex-start}
