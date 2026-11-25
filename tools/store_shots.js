@@ -17,7 +17,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 const SHOTS = [
   { tab: 'home', file: '1-home', cap: '練習するほど<br><em>自分の選手が強くなる</em>' },
   { tab: 'status', file: '2-status', cap: '能力ランクと階級で<br><em>成長がひと目でわかる</em>' },
-  { tab: 'practice', file: '3-practice', cap: '52種類の練習メニューを<br><em>イラストでわかりやすく</em>' },
+  { tab: 'practice', file: '3-practice', cap: '57種類の練習メニューを<br><em>イラストでわかりやすく</em>' },
   { tab: 'skill', file: '4-skill', cap: '練習を続けて<br><em>個人技スキルを習得</em>', js: "document.querySelector('.skhead').scrollIntoView()" },
   { tab: 'log', file: '5-log', cap: 'カレンダーで<br><em>続けた日がひと目でわかる</em>' },
   { tab: 'shop', file: '6-shop', cap: 'コインをためて<br><em>ボールやスパイクを着せ替え</em>' },

@@ -139,9 +139,27 @@ test('ボルトの一言：名前は「〇〇選手」と呼び、記号は安�
   ok(run(c, "buddyLines().every(x=>!x.t.includes('<b>'))"), 'タグがそのまま入らない');
 });
 
-test('階級：成長ステージと同じレベルで昇格する（Lv1 はじめたばかり → Lv36 レジェンド）', c => {
-  eq(run(c, 'rankOf(1)'), 'はじめたばかり'); eq(run(c, 'rankOf(10)'), 'ジュニアユース'); eq(run(c, 'rankOf(36)'), 'レジェンド');
-  eq(run(c, 'RANKS.length'), run(c, 'STAGES.length'));
+test('階級：成長ステージと同じレベルで昇格する（Lv1 ビギナー → Lv36 レジェンド）', c => {
+  eq(run(c, 'rankOf(1)'), 'ビギナー'); eq(run(c, 'rankOf(10)'), 'レギュラー'); eq(run(c, 'rankOf(36)'), 'レジェンド');
+  eq(run(c, 'RANKS.length'), run(c, 'STAGES.length')); eq(run(c, 'RANK_COL.length'), run(c, 'RANKS.length'));
+});
+test('二つ名：14分野×8段階、名前の重複なし。能力はランク、練習は回数で上がる', c => {
+  run(c, newPlayer);
+  eq(run(c, 'NICKS.length'), 14);
+  ok(run(c, 'NICKS.every(N=>N.t.length===8)'), '8段階');
+  const all = run(c, 'NICKS.flatMap(N=>N.t)'); eq(new Set(all).size, all.length, '名前の重複');
+  eq(run(c, "nickOf(S,NICKS.find(N=>N.id==='dribble')).t"), 'ドリブル見習い');
+  run(c, "S.stats.dribble=(81-40)*3");
+  eq(run(c, "nickOf(S,NICKS.find(N=>N.id==='dribble')).t"), '突破の魔術師');
+  run(c, "for(let i=0;i<7;i++)S.logs.push({date:'2026-01-01',menu:'df_1v1',min:10,xp:5})");
+  eq(run(c, "nickOf(S,NICKS.find(N=>N.id==='df')).t"), 'ディフェンダー');
+  run(c, 'nickUps()'); run(c, "for(let i=0;i<8;i++)S.logs.push({date:'2026-01-01',menu:'df_step',min:10,xp:5})");
+  eq(run(c, 'nickUps().map(u=>u.x.t)'), ['ボールハンター'], '上がったときだけ知らせる');
+});
+test('守備の練習メニューがあり、図解が描ける', c => {
+  run(c, newPlayer);
+  ok(run(c, "MENUS.filter(m=>m.grp==='df').length") >= 5, '5種類以上');
+  ok(run(c, "MENUS.filter(m=>m.grp==='df').every(m=>diag(m.d).includes('<svg'))"), '図解');
 });
 test('能力ランク：40はG、55はD、70はB、90以上はS（メダルの色つき）', c => {
   eq(run(c, 'grade(40).g'), 'G'); eq(run(c, 'grade(55).g'), 'D'); eq(run(c, 'grade(70).g'), 'B'); eq(run(c, 'grade(99).g'), 'S');
