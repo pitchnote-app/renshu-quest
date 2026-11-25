@@ -139,6 +139,30 @@ test('ボルトの一言：名前は「〇〇選手」と呼び、記号は安�
   ok(run(c, "buddyLines().every(x=>!x.t.includes('<b>'))"), 'タグがそのまま入らない');
 });
 
+test('階級：成長ステージと同じレベルで昇格する（Lv1 はじめたばかり → Lv36 レジェンド）', c => {
+  eq(run(c, 'rankOf(1)'), 'はじめたばかり'); eq(run(c, 'rankOf(10)'), 'ジュニアユース'); eq(run(c, 'rankOf(36)'), 'レジェンド');
+  eq(run(c, 'RANKS.length'), run(c, 'STAGES.length'));
+});
+test('能力ランク：40はG、55はD、70はB、90以上はS（メダルの色つき）', c => {
+  eq(run(c, 'grade(40).g'), 'G'); eq(run(c, 'grade(55).g'), 'D'); eq(run(c, 'grade(70).g'), 'B'); eq(run(c, 'grade(99).g'), 'S');
+  eq(run(c, 'grade(70).m.name'), 'ゴールド'); eq(run(c, 'grade(99).m.name'), 'ダイヤ');
+});
+test('熟練度：同じ練習の回数でビギナー→ブロンズ→…とメダルが上がる', c => {
+  run(c, newPlayer);
+  eq(run(c, "mastery(S,'sole_roll').i"), -1);
+  run(c, "for(let i=0;i<7;i++)S.logs.push({date:'2026-01-0'+(i%9+1),menu:'sole_roll',min:10,xp:5})");
+  eq(run(c, "mastery(S,'sole_roll').m.name"), 'シルバー'); eq(run(c, "mastery(S,'sole_roll').next"), 15);
+});
+test('個人技スキル：練習回数で習得し、名前の重複がない・30種類以上', c => {
+  run(c, newPlayer);
+  ok(run(c, 'SKILLS.length') >= 30, 'スキルが30種類以上');
+  eq(run(c, 'new Set(SKILLS.map(k=>k.name)).size'), run(c, 'SKILLS.length'), '名前の重複');
+  ok(run(c, "SKILLS.every(k=>['gold','blue','green'].includes(k.tier))"), '札の色');
+  run(c, "for(let i=0;i<7;i++)S.logs.push({date:'2026-01-01',menu:'sole_roll',min:10,xp:5})");
+  ok(run(c, "unlocks().newS.some(k=>k.name==='足裏コントロール')"), '足裏コントロールを習得');
+  ok(run(c, "statusView().includes('足裏コントロール')"), 'つよさ画面に表示');
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();

@@ -48,6 +48,8 @@
 
 ## 主な仕組み（app.js）
 - 能力9種 `SPORT.stats`／練習メニュー52種 `MENUS`（図解 `diag()`）／職業 `JOBS`／称号 `TITLES`／スキル `SKILLS`
+- 階級 `RANKS`（ステージと同じレベルで昇格）／能力ランクS〜G `grade()`／メダル `MEDALS`（ビギナー→ダイヤ）／練習の熟練度 `mastery()`
+- 個人技スキル `SKILLS`（金・技・心がまえの札。`name` は保存のキーなので変えない）／つよさ画面 `statusView()`
 - 成長ステージ8段階 `STAGES`（おうちの庭→公園→チーム入団→トレセン→県代表→地方代表→日本代表→ワールドクラス）
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
 - ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）／相棒ボルト `buddyLines()`・`BOLT`

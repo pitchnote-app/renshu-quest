@@ -16,10 +16,11 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 // 撮る画面と、上にのせる説明文
 const SHOTS = [
   { tab: 'home', file: '1-home', cap: '練習するほど<br><em>自分の選手が強くなる</em>' },
-  { tab: 'practice', file: '2-practice', cap: '52種類の練習メニューを<br><em>イラストでわかりやすく</em>' },
-  { tab: 'skill', file: '3-skill', cap: '9つの能力・職業・スキルで<br><em>自分だけの選手に</em>' },
-  { tab: 'log', file: '4-log', cap: 'カレンダーで<br><em>続けた日がひと目でわかる</em>' },
-  { tab: 'shop', file: '5-shop', cap: 'コインをためて<br><em>ボールやスパイクを着せ替え</em>' },
+  { tab: 'status', file: '2-status', cap: '能力ランクと階級で<br><em>成長がひと目でわかる</em>' },
+  { tab: 'practice', file: '3-practice', cap: '52種類の練習メニューを<br><em>イラストでわかりやすく</em>' },
+  { tab: 'skill', file: '4-skill', cap: '練習を続けて<br><em>個人技スキルを習得</em>', js: "document.querySelector('.skhead').scrollIntoView()" },
+  { tab: 'log', file: '5-log', cap: 'カレンダーで<br><em>続けた日がひと目でわかる</em>' },
+  { tab: 'shop', file: '6-shop', cap: 'コインをためて<br><em>ボールやスパイクを着せ替え</em>' },
 ];
 const DEVICES = [
   { dir: 'iphone', w: 440, h: 956, dpr: 3 },   // 1320×2868
@@ -83,7 +84,7 @@ async function main() {
       await c.send('Page.navigate', { url: base + '/index.html' }, s); await sleep(2000);
       const raw = [];
       for (const S of SHOTS) {
-        await ev(`document.getElementById('ov').classList.remove('show');go('${S.tab}');window.scrollTo(0,0);1`); await sleep(900);
+        await ev(`document.getElementById('ov').classList.remove('show');go('${S.tab}');window.scrollTo(0,0);${S.js||''};1`); await sleep(900);
         const f = path.join(OUT, D.dir, 'raw', S.file + '.png'); await shot(f); raw.push({ ...S, f });
       }
       // 説明文つきのストア画像

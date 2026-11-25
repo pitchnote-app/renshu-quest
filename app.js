@@ -259,20 +259,62 @@ const GEAR = [
   {lv:10, name:'オーラ'}, {lv:15, name:'王冠'}, {lv:20, name:'翼'},
 ];
 /* スキル＝呪文。条件にコーディネーション能力（定位・変換・連結・反応・識別・リズム・バランス）の考え方を使う */
+/* 個人技スキル。tier：gold＝とくに難しい技／blue＝技／green＝心がまえ。name が保存のキー（変えない）
+   need:[練習メニュー, 回数] があるものは「あと◯回」を表示する */
+const SKILL_TIER={gold:{name:'金スキル',ic:'🌟'},blue:{name:'技スキル',ic:'⚽'},green:{name:'心がまえ',ic:'🍀'}};
+const SK=(tier,name,how,ok,need)=>({tier,name,how,ok,need});
+const mcount=(s,id)=>s.logs.filter(l=>l.menu===id).length;
+const mneed=(id,n)=>s=>mcount(s,id)>=n;
 const SKILLS = [
-  {name:'またぎフェイント',  how:'ドリブルを3回練習（リズム）',            ok:s=>cnt(s,'dribble')>=3},
-  {name:'ダブルタッチ',      how:'ドリブル60（連結）',                    ok:s=>rt(s,'dribble')>=60},
-  {name:'クライフターン',    how:'アジリティ60・ドリブル55（変換）',       ok:s=>rt(s,'agility')>=60&&rt(s,'dribble')>=55},
-  {name:'ルーレット',        how:'ドリブル75・ボールタッチ65・バランス60（バランス）', ok:s=>rt(s,'dribble')>=75&&rt(s,'touch')>=65&&rt(s,'balance')>=60},
-  {name:'ヒールリフト',      how:'リフティング連続50回（識別）',           ok:s=>(s.best.lift||0)>=50},
-  {name:'高速カットイン',    how:'スピード65・アジリティ60（反応）',       ok:s=>rt(s,'speed')>=65&&rt(s,'agility')>=60},
-  {name:'インステップキック',how:'シュートを3回練習',                      ok:s=>cnt(s,'shoot')>=3},
-  {name:'コントロールシュート',how:'キック65（識別）',                      ok:s=>rt(s,'kick')>=65},
-  {name:'ボレーシュート',    how:'キック60・バランス60（連結）',           ok:s=>rt(s,'kick')>=60&&rt(s,'balance')>=60},
-  {name:'ワンタッチパス',    how:'パスを5回練習（反応）',                  ok:s=>cnt(s,'pass')>=5},
-  {name:'スルーパス',        how:'キック60・判断力65（定位）',             ok:s=>rt(s,'kick')>=60&&rt(s,'iq')>=65},
-  {name:'ハードワーカー',    how:'スタミナ65',                            ok:s=>rt(s,'stamina')>=65},
+  // 金スキル（とくに難しい技）
+  SK('gold','ルーレット','ドリブル75・ボールタッチ65・バランス60',s=>rt(s,'dribble')>=75&&rt(s,'touch')>=65&&rt(s,'balance')>=60),
+  SK('gold','ヒールリフト','リフティング連続50回',s=>(s.best.lift||0)>=50),
+  SK('gold','エラシコ','「エラシコ」を15回練習',mneed('elastico',15),['elastico',15]),
+  SK('gold','無回転シュート','「シュート」を30回練習・キック75',s=>mcount(s,'shoot')>=30&&rt(s,'kick')>=75,['shoot',30]),
+  SK('gold','ノールックパス','「壁パス ワンタッチ」を15回・判断力70',s=>mcount(s,'wall_1t')>=15&&rt(s,'iq')>=70,['wall_1t',15]),
+  SK('gold','ドリブルの魔術師','「コーン相手の1対1」を15回・ドリブル85',s=>mcount(s,'cone_1v1')>=15&&rt(s,'dribble')>=85,['cone_1v1',15]),
+  SK('gold','超高速ドリブル','「スピードドリブル」を15回・スピード75',s=>mcount(s,'speed_drib')>=15&&rt(s,'speed')>=75,['speed_drib',15]),
+  SK('gold','リフティングマスター','リフティング連続200回',s=>(s.best.lift||0)>=200),
+  // 技スキル
+  SK('blue','またぎフェイント','ドリブルを3回練習',s=>cnt(s,'dribble')>=3),
+  SK('blue','ダブルタッチ','ドリブル60',s=>rt(s,'dribble')>=60),
+  SK('blue','クライフターン','アジリティ60・ドリブル55',s=>rt(s,'agility')>=60&&rt(s,'dribble')>=55),
+  SK('blue','高速カットイン','スピード65・アジリティ60',s=>rt(s,'speed')>=65&&rt(s,'agility')>=60),
+  SK('blue','インステップキック','シュートを3回練習',s=>cnt(s,'shoot')>=3),
+  SK('blue','コントロールシュート','キック65',s=>rt(s,'kick')>=65),
+  SK('blue','ボレーシュート','キック60・バランス60',s=>rt(s,'kick')>=60&&rt(s,'balance')>=60),
+  SK('blue','ワンタッチパス','パスを5回練習',s=>cnt(s,'pass')>=5),
+  SK('blue','スルーパス','キック60・判断力65',s=>rt(s,'kick')>=60&&rt(s,'iq')>=65),
+  SK('blue','足裏コントロール','「足裏コロコロ」を7回練習',mneed('sole_roll',7),['sole_roll',7]),
+  SK('blue','インアウト','「インアウト」を5回練習',mneed('inout',5),['inout',5]),
+  SK('blue','L字ターン','「L字（引いて横へ）」を5回練習',mneed('l_drag',5),['l_drag',5]),
+  SK('blue','Vターン','「Vターン」を5回練習',mneed('v_turn',5),['v_turn',5]),
+  SK('blue','ストップ＆ゴー','「ストップ＆ゴー」を5回練習',mneed('stop_go',5),['stop_go',5]),
+  SK('blue','ターンの名手','「ターン練習」を7回練習',mneed('turn_drill',7),['turn_drill',7]),
+  SK('blue','1対1の突破','「コーン相手の1対1」を7回練習',mneed('cone_1v1',7),['cone_1v1',7]),
+  SK('blue','ピタッとトラップ','「トラップ（止めて蹴る）」を7回練習',mneed('trap',7),['trap',7]),
+  SK('blue','浮き球トラップ','「浮き球トラップ」を5回練習',mneed('air_trap',5),['air_trap',5]),
+  SK('blue','ロングフィード','「ロングキック」を5回練習・キック60',s=>mcount(s,'long_kick')>=5&&rt(s,'kick')>=60,['long_kick',5]),
+  SK('blue','四すみシュート','「四すみねらい」を7回練習',mneed('target',7),['target',7]),
+  SK('blue','ヘディング','「ヘディングリフティング」を5回練習',mneed('lift_head',5),['lift_head',5]),
+  SK('blue','爆発ダッシュ','「ダッシュ」を7回練習・スピード60',s=>mcount(s,'dash')>=7&&rt(s,'speed')>=60,['dash',7]),
+  SK('blue','反応スピード','「反応ダッシュ」を7回練習',mneed('react',7),['react',7]),
+  SK('blue','ステップワーク','「ラダー」を7回練習',mneed('ladder',7),['ladder',7]),
+  SK('blue','空中戦','「なわとび（二重跳び）」を7回・パワー60',s=>mcount(s,'jump')>=7&&rt(s,'power')>=60,['jump',7]),
+  SK('blue','両足使い','「両足交互リフティング」を10回練習',mneed('lift_alt',10),['lift_alt',10]),
+  // 心がまえ
+  SK('green','ハードワーカー','スタミナ65',s=>rt(s,'stamina')>=65),
+  SK('green','コツコツ努力家','30日練習する',s=>practiceDays(s)>=30),
+  SK('green','休むのも上手','宿屋で5回休む',s=>s.logs.filter(l=>l.rest).length>=5),
+  SK('green','研究熱心','「練習ノート」を10回書く',mneed('note',10),['note',10]),
+  SK('green','試合で強い','「試合・ミニゲーム」を10回',mneed('game',10),['game',10]),
+  SK('green','チームプレーヤー','「チーム練習」を10回',mneed('team',10),['team',10]),
+  SK('green','ぶれない体幹','「プランク」を10回練習',mneed('core',10),['core',10]),
+  SK('green','負けずぎらい','ライバルに3回勝つ',s=>(s.bossWins||0)>=3),
+  SK('green','自己ベスト更新王','自己ベストを10回更新',s=>s.logs.filter(l=>l.pb).length>=10),
 ];
+/* スキルの進み具合（0〜1）。練習回数で覚えるものだけ */
+const skillProg=(s,k)=>k.need?Math.min(1,mcount(s,k.need[0])/k.need[1]):null;
 
 /* ===== デイリークエスト ===== */
 const QPOOL=[
@@ -351,7 +393,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.7.0';
+const APP_VERSION='0.8.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -695,6 +737,25 @@ const STAGES=[
 ];
 const POSE_OF=[0,0,1,1,2,3,3,4];
 function stageOf(L){let r=0;STAGES.forEach((x,i)=>{if(L>=x.lv)r=i});return r}
+/* 階級：成長ステージ（舞台）と同じレベルで昇格する、選手としての格 */
+const RANKS=['はじめたばかり','キッズ','ジュニア','ジュニアユース','ユース','アマチュア','プロ','レジェンド'];
+const rankOf=L=>RANKS[stageOf(L)];
+/* メダル：ビギナー→ブロンズ→シルバー→ゴールド→プラチナ→ダイヤ */
+const MEDALS=[{name:'ビギナー',k:'beg'},{name:'ブロンズ',k:'brz'},{name:'シルバー',k:'slv'},{name:'ゴールド',k:'gld'},{name:'プラチナ',k:'plt'},{name:'ダイヤ',k:'dia'}];
+/* 能力ランク（S〜G）。数値の帯ごとにメダルの色 */
+function grade(r){
+  const t=[[90,'S',5],[80,'A',4],[70,'B',3],[60,'C',2],[55,'D',1],[50,'E',1],[45,'F',0],[0,'G',0]].find(x=>r>=x[0]);
+  return {g:t[1],m:MEDALS[t[2]],next:r>=90?null:[90,80,70,60,55,50,45].reverse().find(x=>x>r)};
+}
+const gradeTag=r=>{const G=grade(r);return `<b class="grade ${G.m.k}">${G.g}</b>`};
+/* 練習メニューの熟練度：同じメニューを続けた回数でメダルが上がる */
+const MASTERY=[1,3,7,15,30,50];
+function mastery(s,id){
+  const n=s.logs.filter(l=>l.menu===id).length; let i=-1; MASTERY.forEach((x,j)=>{if(n>=x)i=j});
+  return {n,i,m:i>=0?MEDALS[i]:null,next:MASTERY[i+1]||null};
+}
+const medalTag=(M,small)=>M.m?`<span class="medal ${M.m.k}${small?' sm':''}">${M.m.name}</span>`:'';
+
 /* 画像（img/m1_3.png など）が あれば それを、なければ コードの イラストを ひょうじ */
 /* ===== AIイラストのキャラ（選んで使う） ===== */
 const AVATARS=[
@@ -1014,7 +1075,7 @@ function render(){
   nav.classList.remove('hide');
   nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(S)wear(S);
-  app.innerHTML={home:homeView,practice:practiceView,skill:titlesView,log:logView,settings:settingsView,shop:shopView,wardrobe:wardrobeView,report:reportView}[tab]();
+  app.innerHTML={status:statusView,home:homeView,practice:practiceView,skill:titlesView,log:logView,settings:settingsView,shop:shopView,wardrobe:wardrobeView,report:reportView}[tab]();
   if(tab==='shop')bindShop();
   if(tab==='wardrobe')bindWardrobe();
   if(tab==='report')bindReport();
@@ -1067,13 +1128,14 @@ function homeView(){
     <button class="coin" onclick="go('shop')" style="position:absolute;right:14px;top:12px;z-index:5">🪙 ${S.coin||0}</button>
     ${cardView(S,L,stageOf(L))}
     ${t?`<div class="title-badge" style="margin-top:10px">${t.ic} ${t.name}</div><br>`:''}
-    <div class="lv">Lv. ${L}</div> <span class="jobtag">${J.name}</span>
+    <div class="lv">Lv. ${L}</div> <span class="ranktag">${rankOf(L)}</span> <span class="jobtag">${J.name}</span>
     <div class="xpbar"><i style="width:${r/n*100}%"></i></div>
     <div class="xptext">次のレベルまで あと${n-r} EXP</div>
     <div class="hprow"><b>HP</b><div class="hpbar"><i style="width:${hp}%;background:${hp<25?'#ff4d4d':hp<50?'#ffb020':'#3ee08f'}"></i></div><span>${hp}/100</span></div>
   </div>
   <div class="wrap">
-    <div class="row" style="margin:4px 0 16px"><button class="btn gold" onclick="go('practice')" style="flex:2">練習を記録する</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
+    <button class="btn gold" onclick="go('practice')" style="margin:4px 0 10px">練習を記録する</button>
+    <div class="row" style="margin:0 0 16px"><button class="btn ghost" onclick="go('status')" style="flex:1">つよさ</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
     ${buddyCard()}
     ${parentMsgCard()}
     ${hp<25?`<div class="card warn">⚠ HPが少なくなっています。疲れがたまるとケガをしやすくなるよ。今日は宿屋で休もう。</div>`:''}
@@ -1107,7 +1169,7 @@ function practiceView(){
     <p class="sub" style="margin:0 0 12px">🌱＝今の年齢で伸びやすい練習（経験×1.5）　★＝むずかしさ</p>
     <div class="gtabs">${GRPS.map(g=>`<button class="gtab ${g.id===pgrp?'on':''}" data-g="${g.id}"><span>${g.ic}</span>${g.name}</button>`).join('')}</div>
     <div class="mlist">${SPORT.menus.filter(x=>x.grp===pgrp).map(x=>`<button class="mitem" data-m="${x.id}"><div class="mthumb">${diag(x.d)}</div>
-      <div class="minfo"><b>${x.name}</b>${stars(x.lv)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span></div>
+      <div class="minfo"><b>${x.name}</b>${stars(x.lv)}${medalTag(mastery(S,x.id),1)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span></div>
       ${boost.includes(Object.keys(x.gain)[0])?'<em class="nobi">🌱</em>':''}</button>`).join('')}</div>
   </div>`;
   return `<div class="wrap">
@@ -1117,6 +1179,7 @@ function practiceView(){
       <ol class="how">${m.how.map(h=>`<li>${h}</li>`).join('')}</ol>
       <div class="legend"><span><i style="background:#ffd84a"></i>ボールの動き</span><span><i style="background:#eaf2ff"></i>人の動き</span><span><i style="background:#ff8a00"></i>コーン</span></div>
     </div>
+    ${(()=>{const Q=mastery(S,m.id);return `<div class="card mastcard"><h3>熟練度 ${medalTag(Q)||'<span class="sub">まだ練習していない</span>'}</h3><p class="sub" style="margin:6px 0 0">この練習をした回数：<b style="color:var(--ink)">${Q.n}回</b>${Q.next?`　次のメダルまで あと${Q.next-Q.n}回`:'　最高ランク！'}</p>${SKILLS.filter(k=>k.need&&k.need[0]===m.id&&!(S.skills||[]).includes(k.name)).map(k=>`<p class="sub" style="margin:4px 0 0">${SKILL_TIER[k.tier].ic} あと${Math.max(0,k.need[1]-Q.n)}回で「${k.name}」を習得できるかも</p>`).join('')}</div>`})()}
     <div class="card"><h3>上がる能力</h3><p style="margin:6px 0 0">${Object.entries(m.gain).map(([id,w])=>`${statName(id)}<b class="gmark">${w>=1?'◎':w>=.4?'○':'△'}</b>`).join('　')}${boost.includes(Object.keys(m.gain)[0])?'　<span class="nobitag">🌱 のびどき</span>':''}</p></div>
     <div class="card"><h3>練習時間</h3>
       <div class="big"><span id="minv">${draft.min}</span> 分</div>
@@ -1171,7 +1234,9 @@ function doPractice(){
   notes.unshift(...(ups.length?ups:[`${statName(Object.keys(m.gain)[0])}の経験がたまった（もうすぐアップ）`]));
   if(Object.keys(m.gain).some(id=>boost.includes(id))) notes.push('🌱 のびどきボーナス ×1.5');
   if(jobMult(J,Object.keys(m.gain)[0])>1) notes.push(`⚽ ${J.name}の職業ボーナス`);
+  const mb=mastery(S,m.id).i;
   S.logs.unshift({date:today(),menu:m.id,min:draft.min,rec,xp,pb});
+  {const ma=mastery(S,m.id);if(ma.i>mb)notes.push(`🏅 「${m.name}」の熟練度が <b>${ma.m.name}</b> に上がった！`)}
   S.hp=Math.max(0,S.hp-draft.min/2);
   const q=checkQuests(); xp+=q.xp; coin+=q.coin; notes.push(...q.notes);
   const bb=checkBoss(m,rec); xp+=bb.xp; coin+=bb.coin; notes.push(...bb.notes);
@@ -1203,7 +1268,7 @@ function gain(xp,notes,coin=0){
   S.xp+=xp;
   const after=lv(S.xp).L;
   if(after>before){S.bp=(S.bp||0)+3*(after-before);notes.push(`育成ポイント +${3*(after-before)}`)}
-  if(stageOf(after)>stageOf(before)){const R=STAGES[stageOf(after)];notes.push(`ステージアップ！ <b>${R.name}</b>に進出！`)}
+  if(stageOf(after)>stageOf(before)){const R=STAGES[stageOf(after)];notes.push(`昇格！ 階級が <b>${rankOf(after)}</b> になった！`);notes.push(`ステージアップ！ <b>${R.name}</b>に進出！`)}
   const {newT,newS}=unlocks();
   const gear=GEAR.filter(g=>g.lv>before&&g.lv<=after);
   coin+=newT.length*30+(stageOf(after)>stageOf(before)?200:0);
@@ -1227,11 +1292,11 @@ function showResult(xp,b,a,newT,gear,notes,newS=[]){
   if(up)confetti();
   let items=notes.map(n=>`<li>${n}</li>`).join('');
   gear.forEach(g=>items+=`<li>新しい装備：${g.name}</li>`);
-  newS.forEach(k=>items+=`<li>スキル習得：${k.name}</li>`);
+  newS.forEach(k=>items+=`<li>スキル習得：<span class="skchip ${k.tier}">${k.name}</span></li>`);
   newT.forEach(t=>items+=`<li>称号ゲット：${t.ic} ${t.name}</li>`);
   document.getElementById('ovbox').innerHTML=`
     <div class="star">${boltImg(awk?'trophy':up?'joy':newT.length||newS.length?'wow':'cheer','big')}</div>
-    <h2>${awk?'ステージアップ！':up?'レベルアップ！':xp?'+'+xp+' EXP':'習得！'}</h2>
+    <h2>${awk?'昇格！':up?'レベルアップ！':xp?'+'+xp+' EXP':'習得！'}</h2>
     ${up?`<p style="font-size:22px;font-weight:800;margin:0">Lv.${b} → <span style="color:var(--gold)">Lv.${a}</span></p><p class="sub">+${xp} EXP</p>`:'<p class="sub">よくがんばったね！</p>'}
     <ul>${items}</ul>
     <button class="btn" onclick="document.getElementById('ov').classList.remove('show')">やったね！</button>`;
@@ -1249,6 +1314,52 @@ function collection(){
   const all=TITLES.length+SKILLS.length+STAGES.length+items.length;
   return {have,all,p:Math.round(have/all*100)};
 }
+function skillBoard(){
+  const got=S.skills||[];
+  return Object.entries(SKILL_TIER).map(([t,T])=>{
+    const L=SKILLS.filter(k=>k.tier===t);
+    return `<h3 class="skhead ${t}">${T.ic} ${T.name}　<small>${L.filter(k=>got.includes(k.name)).length}/${L.length}</small></h3>
+    <div class="skgrid">${L.map(k=>{const ok=got.includes(k.name), pr=skillProg(S,k);
+      return ok?`<div class="skchip ${t}">${k.name}</div>`
+        :`<div class="skchip lock"><b>？？？</b><small>${k.how}</small>${pr!=null?`<span class="tprog"><i style="width:${pr*100}%"></i></span>`:''}</div>`}).join('')}</div>`}).join('');
+}
+function statusView(){
+  const {L,r,n}=lv(S.xp), J=jobOf(S), w=wear(S), c=norm(S.c);
+  const item=(cat,id)=>(SHOP.find(x=>x.cat===cat).items.find(i=>i.id===id)||{}).name||'—';
+  const got=SKILLS.filter(k=>(S.skills||[]).includes(k.name)).sort((a,b)=>'gold,blue,green'.indexOf(a.tier)-'gold,blue,green'.indexOf(b.tier));
+  return `<div class="wrap stv">
+    <button class="chip mini" onclick="go('home')" style="margin:4px 0 10px">‹ ホーム</button>
+    <div class="dqwin stv-top">
+      <div class="stv-l">
+        <div class="stv-name">${esc(c.name)}</div>
+        <div class="stv-rank">${rankOf(L)}</div>
+        <div class="stv-row"><span>職業</span><b>${J.name}</b></div>
+        <div class="stv-row"><span>レベル</span><b>${L}</b></div>
+        <div class="stv-row"><span>EXP</span><b>${S.xp}</b></div>
+        <div class="stv-row"><span>次まで</span><b>${n-r}</b></div>
+        <div class="stv-row"><span>総合</span><b>${ovr(S)}</b></div>
+        <div class="stv-row"><span>コイン</span><b>${S.coin||0}</b></div>
+      </div>
+      <div class="stv-r">${SPORT.stats.map(x=>{const v=rt(S,x.id);return `<div class="stv-st"><span>${x.name}</span>${gradeTag(v)}<b>${v}</b></div>`}).join('')}</div>
+    </div>
+    <div class="dqwin stv-bot">
+      <div class="stv-char">${cardView(S,L,stageOf(L),{mini:1})}</div>
+      <div class="stv-eq">
+        <div class="stv-eqh">そうび</div>
+        <div class="stv-row"><span>⚽ ボール</span><b>${item('ball',w.ball)}</b></div>
+        <div class="stv-row"><span>👟 スパイク</span><b>${item('boot',w.boot)}</b></div>
+        <div class="stv-row"><span>👕 ユニフォーム</span><b>${item('kit',w.kit)}</b></div>
+        <div class="stv-row"><span>🏟️ 背景</span><b>${item('bg',w.bg)}</b></div>
+        <button class="chip mini" onclick="go('wardrobe')" style="margin-top:8px">着せ替え ›</button>
+      </div>
+    </div>
+    <div class="dqwin"><div class="stv-eqh">個人技スキル　<small>${got.length} / ${SKILLS.length}</small></div>
+      <div class="skgrid">${got.length?got.map(k=>`<div class="skchip ${k.tier}">${k.name}</div>`).join(''):'<p class="sub" style="margin:4px 0">まだ習得していないよ。練習を続けてみよう！</p>'}</div>
+      <button class="chip mini" onclick="go('skill')" style="margin-top:10px">スキル一覧 ›</button></div>
+    <div class="dqwin"><div class="stv-eqh">能力ランクの見かた</div>
+      <p class="sub" style="margin:4px 0 0;line-height:1.9">${[['G・F',0],['E・D',1],['C',2],['B',3],['A',4],['S',5]].map(([g,i])=>`<span class="medal ${MEDALS[i].k} sm">${MEDALS[i].name}</span> ${g}`).join('　')}</p></div>
+  </div>`;
+}
 function titlesView(){
   const got=S.titles.length, C=collection();
   return `<div class="wrap">
@@ -1261,9 +1372,9 @@ function titlesView(){
       return ok?`<button class="t ${on?'eq':''}" data-job="${j.id}" style="font:inherit;text-align:left;cursor:pointer;color:inherit"><span class="ic">${j.up?'👑':j.id==='none'?'🔰':'⚽'}</span><span><b>${j.name}${j.up?' <small class="upj">上級職</small>':''}</b><span class="sub">${on?'✔ 今の職業':'伸びやすい：'+grow}</span></span></button>`
       :`<div class="t lock"><span class="ic">🔒</span><span><b>${j.name} <small class="upj">上級職</small></b><span class="sub">条件：${j.how}</span></span></div>`}).join('')}</div>
 
-    <h2 style="margin:20px 0 4px">スキル（呪文）</h2>
-    <p class="sub" style="margin:0 0 12px">練習を続けると技を習得できるよ。</p>
-    <div class="tlist">${SKILLS.map(k=>{const ok=(S.skills||[]).includes(k.name);return `<div class="t ${ok?'':'lock'}"><span class="ic">${ok?'🔥':'🔒'}</span><span><b>${ok?k.name:'？？？'}</b><span class="sub">${k.how}</span></span></div>`}).join('')}</div>
+    <h2 style="margin:20px 0 4px">個人技スキル</h2>
+    <p class="sub" style="margin:0 0 10px">同じ練習を続けたり、能力を上げたりすると技を習得できるよ。${(S.skills||[]).length} / ${SKILLS.length}</p>
+    ${skillBoard()}
     <h2 style="margin:20px 0 4px">成長カード</h2>
     <p class="sub" style="margin:0 0 12px">おうちの庭からワールドクラスまで。レベルが上がると次のステージへ。</p>
     <div class="cgrid">${STAGES.map((r,i)=>cardView(S,r.lv,i,{mini:1,locked:lv(S.xp).L<r.lv})).join('')}</div>

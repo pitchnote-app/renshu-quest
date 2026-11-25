@@ -353,3 +353,44 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}
 @keyframes hop{0%{transform:scale(.6) translateY(10px)}100%{transform:none}}
 .buddycard .boltimg{animation:hop .5s cubic-bezier(.2,1.6,.4,1),bob 2.6s ease-in-out .5s infinite}
 .ov .star .boltimg{animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+
+/* ===== 階級・メダル・個人技スキル・つよさ画面（v0.8.0） ===== */
+.ranktag{display:inline-block;vertical-align:middle;margin-left:4px;padding:3px 10px;border-radius:10px;font-weight:900;font-size:13px;color:#06101f;background:linear-gradient(135deg,#7fe3ff,#1f6bff);box-shadow:0 0 12px rgba(0,212,255,.35)}
+.medal{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:8px;font-size:11px;font-weight:900;vertical-align:middle;color:#141414;line-height:1.6}
+.medal.sm{font-size:10px;padding:0 6px}
+.minfo .medal{margin-left:0;margin-top:2px;align-self:flex-start}
+.beg{background:#5c6678;color:#eef2fa}
+.brz{background:linear-gradient(135deg,#f0b27a,#a0522d)}
+.slv{background:linear-gradient(135deg,#ffffff,#9aa6b8)}
+.gld{background:linear-gradient(135deg,#fff1a8,#e0a800)}
+.plt{background:linear-gradient(135deg,#e6fffb,#5fd4c4)}
+.dia{background:linear-gradient(135deg,#ffd6f5,#9ad0ff,#b5ffd9);box-shadow:0 0 10px rgba(180,220,255,.7)}
+.grade{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-family:"Dela Gothic One",sans-serif;font-size:14px;font-weight:400;color:#141414}
+.mastcard h3{display:flex;align-items:center;gap:4px}
+.skhead{margin:14px 0 8px;font-size:15px}
+.skhead small{color:var(--sub);font-weight:700}
+.skhead.gold{color:#ffd54a}.skhead.blue{color:#7fc4ff}.skhead.green{color:#7be6a6}
+.skgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.skchip{display:flex;flex-direction:column;justify-content:center;min-height:38px;padding:6px 10px;border-radius:8px;font-weight:900;font-size:13px;color:#0b1220;border:2px solid rgba(0,0,0,.35);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
+.skchip.gold{background:linear-gradient(180deg,#fff3b0,#f0b400);box-shadow:0 0 10px rgba(245,179,1,.45),inset 0 -3px 0 rgba(0,0,0,.18)}
+.skchip.blue{background:linear-gradient(180deg,#bfe3ff,#4aa3ff)}
+.skchip.green{background:linear-gradient(180deg,#d4ffe4,#46c97a)}
+.skchip.lock{background:var(--chip);color:var(--sub);border:1px dashed var(--line);box-shadow:none;font-size:13px}
+.skchip.lock small{font-weight:600;font-size:11px;line-height:1.4;margin-top:2px}
+.skchip .tprog{margin-top:4px}
+.dqwin{background:#05080f;border:3px solid #eaf2ff;border-radius:10px;box-shadow:0 0 0 2px #05080f,0 0 0 4px rgba(234,242,255,.25);padding:12px 14px;margin-bottom:14px}
+.stv-top{display:grid;grid-template-columns:1fr 1.15fr;gap:12px}
+.stv-l{border-right:1px solid rgba(234,242,255,.2);padding-right:10px}
+.stv-name{font-size:20px;font-weight:900;letter-spacing:1px}
+.stv-rank{display:inline-block;margin:4px 0 8px;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:900;color:#06101f;background:linear-gradient(135deg,#7fe3ff,#1f6bff)}
+.stv-row{display:flex;justify-content:space-between;gap:6px;font-size:13px;line-height:1.9}
+.stv-row span{color:var(--sub)}
+.stv-row b{text-align:right}
+.stv-st{display:grid;grid-template-columns:1fr 24px 28px;align-items:center;gap:6px;font-size:13px;line-height:1.75}
+.stv-st b:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.stv-bot{display:grid;grid-template-columns:.9fr 1.1fr;gap:12px;align-items:center}
+.stv-char .pc{margin:0}
+.stv-eqh{font-weight:900;color:var(--gold);margin-bottom:6px}
+.stv-eqh small{color:var(--sub)}
+.stv-eq .stv-row{font-size:12px}
