@@ -288,6 +288,16 @@ test('前の日の記入：日付順に入り、EXPは増えるが 今日のク�
   ok(run(c, 'calendarCard()').includes("openDay('" + run(c, 'today()') + "')"), '今日までの日付は押せる');
 });
 
+test('ホームの名札：背番号と名前が出る（記号は安全な形・長い名前は小さめ）', c => {
+  run(c, newPlayer + "S.c.name='ゆか';S.c.num=10;");
+  const h = run(c, 'roomView(S)');
+  ok(h.includes('<b>#10</b>') && h.includes('<span>ゆか</span>'), '名札');
+  ok(!h.includes('nbanner long'), '短い名前');
+  run(c, "S.c.name='<b>あいうえおか';S.c.num=999;");
+  const g = run(c, 'nameBanner(S)');
+  ok(g.includes('#999') && g.includes('&lt;b&gt;あ') && g.includes('nbanner long'), '長い名前・記号');
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();
