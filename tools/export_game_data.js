@@ -22,7 +22,7 @@ const out=vm.runInContext(`(()=>{
   shop:SHOP.flatMap(c=>c.items.map(it=>({cat:c.name,id:it.id,name:it.name,price:it.price}))),
   bosses:BOSSES.map(b=>({ic:b.ic,name:b.name,menu:menuOf(b.menu).name,def:b.def,unit:menuOf(b.menu).unit||'',lower:!!menuOf(b.menu).lower})),
   qpool:QPOOL.map(q=>({t:q.t})),
-  avatars:AVATARS, gear:typeof GEAR!=='undefined'?GEAR:[], chest:CHEST_ITEMS.map(([c,id])=>id), boost:{'6〜12さい':['touch','dribble','agility','balance'].map(statName),'13〜15さい':['stamina','speed','kick'].map(statName),'16さい〜':['power','stamina'].map(statName)},
+  avatars:AVATARS, chest:CHEST_ITEMS.map(([c,id])=>id), boost:{'6〜12さい':['touch','dribble','agility','balance'].map(statName),'13〜15さい':['stamina','speed','kick'].map(statName),'16さい〜':['power','stamina'].map(statName)},
   version:APP_VERSION
  }})()`,ctx);
 fs.writeFileSync(process.argv[3],JSON.stringify(out,null,1));

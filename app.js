@@ -261,10 +261,6 @@ const TITLES = [
   {id:'ace',    ic:'⭐', name:'チームのエース',     how:'レベル10になる',                ok:s=>lv(s.xp).L>=10},
   {id:'legend', ic:'🐉', name:'レジェンド',        how:'レベル20になる',                ok:s=>lv(s.xp).L>=20},
 ];
-const GEAR = [
-  {lv:3,  name:'ヘアバンド'}, {lv:5, name:'ヒーローマント'}, {lv:7, name:'金のスパイク'},
-  {lv:10, name:'オーラ'}, {lv:15, name:'王冠'}, {lv:20, name:'翼'},
-];
 /* スキル＝呪文。条件にコーディネーション能力（定位・変換・連結・反応・識別・リズム・バランス）の考え方を使う */
 /* 個人技スキル。tier：gold＝とくに難しい技／blue＝技／green＝心がまえ。name が保存のキー（変えない）
    need:[練習メニュー, 回数] があるものは「あと◯回」を表示する */
@@ -400,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.17.0';
+const APP_VERSION='0.17.1';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1104,7 +1100,7 @@ function homeView(){
   recoverHP();dailyCheck();
   const {L,r,n}=lv(S.xp);
   const restedToday=S.logs.some(l=>l.date===today()&&l.rest);
-  const next=GEAR.find(g=>g.lv>L), ns=STAGES[stageOf(L)+1];
+  const ns=STAGES[stageOf(L)+1];
   const bp=S.bp||0, hp=Math.round(S.hp), J=jobOf(S);
   const t=TITLES.find(x=>x.id===S.eq);
   return `<div class="top">
@@ -1139,8 +1135,7 @@ function homeView(){
       ${CATS.filter(c=>c.id!=='game').map(c=>`<div class="grp">${c.name}</div>`+SPORT.stats.filter(x=>x.g===c.id).map(s=>{const p=S.stats[s.id]%3;return `<div class="stat"><span>${s.name}</span><div class="bar"><i style="width:${rt(S,s.id)>=99?100:p/3*100}%"></i></div><span>${rt(S,s.id)}</span></div>`}).join('')).join('')}
       <p class="sub" style="margin:6px 0 0">バーがたまると能力が+1</p>
     </div>
-    ${ns?`<div class="card"><h3>次のステージ</h3><p style="margin:8px 0 0">Lv.${ns.lv} で <b>${ns.name}</b> に進出！</p></div>`:''}
-    ${next?`<div class="card"><h3>次のごほうび</h3><p style="margin:8px 0 0">Lv.${next.lv} で <b>${next.name}</b> をゲット！</p></div>`:''}
+    ${ns?`<div class="card"><h3>次の昇格</h3><p style="margin:8px 0 0">Lv.${ns.lv} で 階級が <b>${RANKS[stageOf(L)+1]}</b> に！ 練習場所は <b>${ns.name}</b>、部屋は <b>${ROOMS[stageOf(L)+1].name}</b> へ</p></div>`:''}
     <div class="card"><h3>🏨 宿屋（休養日）</h3><p class="sub" style="margin:6px 0 12px">体を休めるのも大事な練習。筋肉は休んでいる間に強くなるよ。宿屋に泊まるとHPが全回復して、10 EXPもらえる。</p>
       <button class="btn ghost" id="rest" ${restedToday?'disabled':''}>${restedToday?'今日はゆっくり休もう':'宿屋に泊まる'}</button></div>
   </div>`;
@@ -1307,14 +1302,13 @@ function gain(xp,notes,coin=0){
   if(stageOf(after)>stageOf(before)){const R=STAGES[stageOf(after)];notes.push(`昇格！ 階級が <b>${rankOf(after)}</b> になった！`);notes.push(`📍 練習場所が <b>${R.name}</b> にレベルアップ！`);notes.push(`🏠 部屋が <b>${ROOMS[stageOf(after)].name}</b> に引っこした！`)}
   const {newT,newS,newN}=unlocks();
   newN.forEach(({N,x})=>notes.push(`${N.ic} ${N.name}の二つ名が <b>「${x.t}」</b> になった！`));
-  const gear=GEAR.filter(g=>g.lv>before&&g.lv<=after);
   coin+=newT.length*30+(stageOf(after)>stageOf(before)?200:0);
   coin+=roadGain(xp,notes);
   coin+=placeCheck(notes);
   if(Math.floor((totalMin())/60)>Math.floor((totalMin()-(S.logs[0]&&!S.logs[0].rest?S.logs[0].min:0))/60)&&S.logs[0]&&!S.logs[0].rest)notes.push('🎁 宝箱をゲット！ ホームで開けよう');
   if(coin){S.coin=(S.coin||0)+coin;notes.push(`🪙 コイン +${coin}`)}
   save();tab='home';render();
-  showResult(xp,before,after,newT,gear,notes,newS);
+  showResult(xp,before,after,newT,[],notes,newS);
 }
 function allot(id){
   if(!(S.bp>0))return;
@@ -1351,7 +1345,6 @@ function showResult(xp,b,a,newT,gear,notes,newS=[]){
   sfx(awk?'stage':up?'level':'ok');
   if(up){confetti();vib([30,30,60])}
   let items=notes.map(n=>`<li>${n}</li>`).join('');
-  gear.forEach(g=>items+=`<li>新しい装備：${g.name}</li>`);
   newS.forEach(k=>items+=`<li>スキル習得：<span class="skchip ${k.tier}">${k.name}</span></li>`);
   newT.forEach(t=>items+=`<li>称号ゲット：${t.ic} ${t.name}</li>`);
   document.getElementById('ovbox').innerHTML=`
@@ -1496,8 +1489,6 @@ function titlesView(){
     <div class="tlist">${TITLES.map(t=>{const g=has(S,t.id);
       return g?`<button class="t ${S.eq===t.id?'eq':''}" data-eq="${t.id}" style="font:inherit;text-align:left;cursor:pointer;color:inherit"><span class="ic">${t.ic}</span><span><b>${t.name}</b><span class="sub">${S.eq===t.id?'✔ 表示中':t.how}</span></span></button>`
       :`<div class="t lock"><span class="ic">🔒</span><span style="flex:1"><b>？？？</b><span class="sub">${t.how}</span>${TP[t.id]?`<span class="tprog"><i style="width:${Math.max(0,Math.min(100,TP[t.id](S)*100))}%"></i></span>`:''}</span></div>`}).join('')}</div>
-    <h2 style="margin:20px 0 10px">装備</h2>
-    <div class="tlist">${GEAR.map(g=>{const ok=lv(S.xp).L>=g.lv;return `<div class="t ${ok?'':'lock'}"><span class="ic">${ok?'🎁':'🔒'}</span><span><b>${ok?g.name:'？？？'}</b><span class="sub">Lv.${g.lv}でゲット</span></span></div>`}).join('')}</div>
   </div>`;
 }
 
