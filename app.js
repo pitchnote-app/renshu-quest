@@ -400,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.16.1';
+const APP_VERSION='0.17.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -676,6 +676,7 @@ let S=null, tab='home', draft={menu:null,min:15,rec:''};
 function load(){try{const t=localStorage.getItem(KEY);if(t)S=JSON.parse(t)}catch(e){}
   if(!S)return;
   S.ver=S.ver||2;
+  if(S.c&&!S.c.avatar)S.c.avatar=defaultAvatar(S.c);   // 「自分で作る」は廃止 → イラストのキャラへ
   const st=S.stats||{};
   if(st.lift!=null&&st.touch==null) S.stats={...freshStats(),dribble:st.dribble||0,touch:st.lift||0,kick:(st.shoot||0)+(st.pass||0),stamina:st.stamina||0};
   else S.stats={...freshStats(),...st};
@@ -844,88 +845,13 @@ function avatarView(c,L,i){
   return av+
     `<svg class="avball ${B.fire?'fire':''}" viewBox="${vb}"><defs><filter id="${u}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>${ballSVG(B,u,O)}</svg></div>`;
 }
+/* マイキャラは AIイラストのキャラだけ（自分で作るキャラは廃止） */
 function charView(c,L,i){
-  if(c.avatar)return avatarView(c,L,i);
-  const a=(c.sex==='f'?'f':'m')+'1';
-  return `<img src="img/${a}_${i+1}.png" alt="" onload="this.style.display='block';if(this.nextElementSibling)this.nextElementSibling.remove()" onerror="this.remove()">${charSVG(c,L,POSE_OF[i])}`;
+  return avatarView({...c,avatar:c.avatar||defaultAvatar(c)},L,i);
 }
+const defaultAvatar=c=>c&&c.sex==='f'?'idea-6':'idea-1';
 /* a:[左うで,右うで]の角度  g:[左あし,右あし]の角度  y:ジャンプ  ball:ボールの位置 */
-const POSES=[
-  {a:[8,-8],    g:[0,0],     y:0,   ball:[158,206]},  // N  たちポーズ
-  {a:[12,-150], g:[0,0],     y:0,   ball:[44,208]},   // R  ガッツポーズ
-  {a:[55,-35],  g:[0,-42],   y:0,   ball:[176,176]},  // SR シュート
-  {a:[145,-145],g:[6,-6],    y:0,   ball:[40,208]},   // UR バンザイ
-  {a:[75,-125], g:[28,-62],  y:-16, ball:[182,150]},  // LR ジャンプボレー
-];
-const EYEROT=[0,-14,14,0];
-const BROWS=[{d:'M-8 1 Q0 -3 9 0',w:3},{d:'M-8 3 L9 -3',w:3.5},{d:'M-8 -2 Q0 -1 9 3',w:3},{d:'M-8 1 Q0 -4 9 0',w:6}];
 let UID=0;
-
-function charSVG(cIn,L,poseIdx){
-  const c=norm(cIn), u='k'+(UID++), P=POSES[poseIdx||0];
-  const O='stroke="#3d2b24" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"';
-  const sk=c.skin, col=c.color, c2=c.color2, sock=c.sock||col, boot=c.bootOv?c.bootOv.col:(L>=7?'#f5b301':c.bootCol), bac=c.bootOv?c.bootOv.acc:'';
-  const hf=c.tip?`url(#${u}h)`:c.hairColor;
-  const bw=[0.9,1,1.12][c.build];
-  let h=`<defs><radialGradient id="${u}a"><stop offset="0" stop-color="#ffe680" stop-opacity=".95"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient>
-    <linearGradient id="${u}h" x1="0" y1="0" x2="0" y2="1"><stop offset=".3" stop-color="${c.hairColor}"/><stop offset="1" stop-color="${c.tip||c.hairColor}"/></linearGradient>
-    <filter id="${u}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><linearGradient id="${u}k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.color}"/><stop offset="1" stop-color="${c.color2}"/></linearGradient><clipPath id="${u}t"><path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z"/></clipPath></defs>`;
-  if(L>=10) h+=`<circle class="aura" cx="100" cy="128" r="104" fill="url(#${u}a)"/>`;
-  h+=`<ellipse cx="100" cy="226" rx="${P.y?38:52}" ry="7" fill="#000" opacity=".15"/>`;
-  h+=`<g transform="translate(0 ${P.y})"><g class="bob">`;
-  // つばさ・マント
-  if(L>=20){const w=`<path d="M80 134 C42 104 16 114 8 86 C26 98 30 80 46 92 C40 74 56 74 62 90 C64 78 78 84 82 114Z" fill="#fff" stroke="#b9c6e8" stroke-width="2.5" stroke-linejoin="round"/><path d="M30 96 Q50 104 70 118 M50 90 Q62 102 76 120" stroke="#c9d3ee" stroke-width="2" fill="none"/>`;h+=w+MIR(w)}
-  if(L>=5) h+=`<path d="M70 124 Q58 172 46 214 Q100 226 154 214 Q142 172 130 124Z" fill="#c1121f" ${O}/><path d="M100 128 Q104 180 110 220 Q130 220 154 214 Q142 172 130 124Z" fill="#000" opacity=".15"/>`;
-  // うしろ髪
-  h+=hairBack(c,hf,O);
-  // からだ
-  const leg=`<rect x="82" y="166" width="14" height="32" rx="5" fill="${sk}" ${O}/><rect x="81" y="186" width="16" height="22" rx="4" fill="${sock}" ${O}/><rect x="82" y="191" width="14" height="4" fill="${c2}"/><path d="M75 212 Q75 203 88 203 L98 205 Q101 213 97 216 L78 216 Q75 216 75 212Z" fill="${boot}" ${O}/><path d="M80 216 h2 M86 216 h2 M92 216 h2" stroke="#999" stroke-width="2"/>${bac?`<path d="M80 209 L96 206.5" stroke="${bac}" stroke-width="2.5" stroke-linecap="round"/>`:''}`;
-  const arm=`<path d="M58 146 L70 149 L67 166 Q62 172 56 167Z" fill="${sk}" ${O}/>${c.acc===2?`<rect x="56" y="154" width="14" height="7" rx="2" fill="${c2}" ${O}/>`:''}<circle cx="61" cy="170" r="6.5" fill="${sk}" ${O}/><path d="M76 122 Q62 126 56 148 L71 152 Q72 138 80 132Z" fill="${col}" ${O}/><path d="M57 144 L71 148" stroke="${c2}" stroke-width="3"/>`;
-  const pat=patSVG(c,u,col,c2);
-  h+=`<g transform="translate(100 0) scale(${bw} 1) translate(-100 0)">`;
-  h+=`<g transform="rotate(${P.g[0]} 89 166)">${leg}</g><g transform="rotate(${P.g[1]} 111 166)">${MIR(leg)}</g>`;
-  h+=`<path d="M70 156 L130 156 L135 180 Q118 185 104 180 L100 170 L96 180 Q82 185 65 180Z" fill="${c.pants}" ${O}/><path d="M68 168 L67 179 M132 168 L133 179" stroke="${col}" stroke-width="4"/>`;
-  h+=`<g transform="rotate(${P.a[0]} 72 126)">${arm}</g><g transform="rotate(${P.a[1]} 128 126)">${MIR(arm)}</g>`;
-  h+=`<path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z" fill="${col}"/>`;
-  h+=`<g clip-path="url(#${u}t)">${pat}<path d="M117 110 L140 110 L140 170 L115 170Z" fill="#000" opacity=".13"/></g>`;
-  h+=`<path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z" fill="none" ${O}/>`;
-  h+=`<path d="M88 116 L100 131 L112 116" fill="${sk}" stroke="${c2==='#ffffff'?'#fff':c2}" stroke-width="4" stroke-linejoin="round"/>`;
-  h+=`<text x="100" y="155" text-anchor="middle" font-size="${String(c.num).length>2?17:20}" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text>`;
-  h+=`</g>`;
-  // あたま
-  h+=`<rect x="93" y="108" width="14" height="12" fill="${sk}"/><rect x="93" y="108" width="14" height="6" fill="#000" opacity=".1"/>`;
-  h+=`<circle cx="62" cy="88" r="7" fill="${sk}" ${O}/><circle cx="138" cy="88" r="7" fill="${sk}" ${O}/>`;
-  const face=['M62 80 Q62 42 100 42 Q138 42 138 80 Q138 116 100 118 Q62 116 62 80Z',
-              'M62 80 Q62 42 100 42 Q138 42 138 80 Q136 104 100 121 Q64 104 62 80Z',
-              'M62 78 Q62 42 100 42 Q138 42 138 78 L136 102 Q128 116 100 118 Q72 116 64 102Z'][c.face];
-  h+=`<path d="${face}" fill="${sk}" ${O}/>`;
-  h+=eyeSVG(c,84,-1)+eyeSVG(c,116,1);
-  if(L>=10&&c.eye!==3){ // かくせい：目から 光が のびる
-    const glow=L>=20?'#ffd84a':'#3ad6ff';
-    const trail=`<path d="M124 86 C142 80 160 80 192 66" stroke="${glow}" stroke-width="4.5" fill="none" stroke-linecap="round" opacity=".9"/><path d="M124 88 C146 86 166 90 194 84" stroke="${glow}" stroke-width="2" fill="none" stroke-linecap="round" opacity=".7"/>`;
-    h+=`<g filter="url(#${u}g)"><circle cx="116" cy="90" r="5" fill="${glow}" opacity=".85"/>${trail}${L>=20?`<circle cx="84" cy="90" r="5" fill="${glow}" opacity=".85"/>${MIR(trail)}`:''}</g>`;
-  }
-  const B=BROWS[c.brow], bp=`<path d="${B.d}" stroke="${c.hairColor}" stroke-width="${B.w}" fill="none" stroke-linecap="round"/>`;
-  h+=`<g transform="translate(116 ${70+(c.eyeSize-1)*-12})">${bp}</g><g transform="translate(84 ${70+(c.eyeSize-1)*-12}) scale(-1 1)">${bp}</g>`;
-  if(c.cheek!==1) h+=`<ellipse cx="73" cy="103" rx="6.5" ry="3.5" fill="#ff7b7b" opacity="${c.cheek===0?.45:.25}"/><ellipse cx="127" cy="103" rx="6.5" ry="3.5" fill="#ff7b7b" opacity="${c.cheek===0?.45:.25}"/>`;
-  if(c.cheek===2){const f=`<circle cx="70" cy="99" r="1.3" fill="#a0603a"/><circle cx="75" cy="101" r="1.3" fill="#a0603a"/><circle cx="79" cy="98" r="1.3" fill="#a0603a"/>`;h+=f+MIR(f)}
-  if(c.cheek===3) h+=`<g transform="rotate(-20 126 101)"><rect x="117" y="97" width="18" height="8" rx="3" fill="#f6d0a6" stroke="#c99a6b" stroke-width="1.5"/><path d="M124 98 v6 M128 98 v6" stroke="#c99a6b" stroke-width="1"/></g>`;
-  h+=`<path d="M99 99 Q100 101 101 99" stroke="#c98a6a" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-  h+=[`<path d="M91 104 Q100 115 109 104 Z" fill="#b5413a" stroke="#3d2b24" stroke-width="2" stroke-linejoin="round"/><path d="M95 109 Q100 112 105 109 Q100 107 95 109Z" fill="#ff8f8f"/>`,
-      `<path d="M88 102 Q100 122 112 102 Z" fill="#b5413a" stroke="#3d2b24" stroke-width="2" stroke-linejoin="round"/><path d="M90 103 H110 L109 106 H91Z" fill="#fff"/><path d="M94 113 Q100 117 106 113 Q100 110 94 113Z" fill="#ff8f8f"/>`,
-      `<path d="M91 106 Q102 111 110 101" stroke="#3d2b24" stroke-width="3" fill="none" stroke-linecap="round"/>`,
-      `<path d="M95 106 Q100 108 105 106" stroke="#3d2b24" stroke-width="3" fill="none" stroke-linecap="round"/>`][c.mouth];
-  h+=hairFront(c,hf,O);
-  h+=`<path d="M78 44 Q100 36 122 44" stroke="#fff" stroke-opacity=".35" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-  if(c.acc===1) h+=`<g fill="#fff" fill-opacity=".15" stroke="#2d2d35" stroke-width="2.5"><circle cx="84" cy="90" r="12.5"/><circle cx="116" cy="90" r="12.5"/></g><path d="M96.5 89 Q100 86 103.5 89 M71.5 88 L63 85 M128.5 88 L137 85" stroke="#2d2d35" stroke-width="2.5" fill="none"/>`;
-  if(c.acc===3) h+=`<path d="M124 42 l3 6 6.5 1 -4.8 4.5 1.2 6.5 -5.9 -3.1 -5.9 3.1 1.2 -6.5 -4.8 -4.5 6.5 -1z" fill="#ffd23f" ${O}/>`;
-  if(L>=3) h+=`<path d="M59 68 Q100 52 141 68 L142 76 Q100 60 58 76Z" fill="#e63946" ${O}/>`;
-  if(L>=15) h+=`<path d="M78 36 L80 10 L90 22 L100 4 L110 22 L120 10 L122 36Z" fill="#f5b301" stroke="#9a6d00" stroke-width="2.5" stroke-linejoin="round"/><circle cx="100" cy="24" r="4" fill="#e63946"/><circle cx="86" cy="30" r="2.5" fill="#4dabf7"/><circle cx="114" cy="30" r="2.5" fill="#4dabf7"/>`;
-  h+=`</g></g>`;
-  const [bx,by]=P.ball;
-  h+=`<g transform="translate(${bx-158} ${by-206})">${(c.ballT||BALLS[0]).img?`<image href="${(c.ballT||BALLS[0]).img}" x="132" y="180" width="52" height="52"/>`:ballSVG(c.ballT||BALLS[0],u,O)}</g>`;
-  return `<svg class="char" viewBox="0 -10 200 246" aria-label="マイキャラ">${h}</svg>`;
-}
 function patSVG(c,u,col,c2){return [``,
     `<rect x="78" y="110" width="7" height="60" fill="${c2}"/><rect x="93" y="110" width="7" height="60" fill="${c2}"/><rect x="108" y="110" width="7" height="60" fill="${c2}"/><rect x="123" y="110" width="7" height="60" fill="${c2}"/>`,
     `<rect x="60" y="126" width="80" height="6" fill="${c2}"/><rect x="60" y="139" width="80" height="6" fill="${c2}"/><rect x="60" y="152" width="80" height="6" fill="${c2}"/>`,
@@ -961,40 +887,6 @@ function itemIcon(cat,it){
   if(cat==='bg'){const L=lv(S.xp).L;return `<div class="bgicon" style="background:${it.bg||STAGES[stageOf(L)].bg}">${it.bg?'':'<span>ステージ</span>'}</div>`}
   return itemSVG(cat,it);
 }
-function eyeSVG(c,x,s){
-  let g;
-  if(c.eye===3) g=`<path d="M-9 2 Q0 -8 9 2" stroke="#3d2b24" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
-  else g=`<ellipse rx="9" ry="11" fill="#fff"/><ellipse cy="2" rx="7" ry="9" fill="${c.eyeCol}"/><ellipse cy="4" rx="4" ry="5.5" fill="#1a0f08" opacity=".85"/><ellipse cy="7.5" rx="5" ry="2.5" fill="#fff" opacity=".3"/>`
-    +`<path d="M-10 -6 Q0 -14 10 -6" stroke="#3d2b24" stroke-width="${c.lash?4:3}" fill="none" stroke-linecap="round"/>`
-    +(c.lash?`<path d="M${9*s} -7 l${4*s} -4 M${10*s} -4 l${4*s} -1" stroke="#3d2b24" stroke-width="2.5" stroke-linecap="round"/>`:'')
-    +`<circle cx="2.5" cy="-3" r="3" fill="#fff"/><circle cx="-2.5" cy="7" r="1.6" fill="#fff"/>`;
-  return `<g transform="translate(${x} 89) scale(${c.eyeSize}) rotate(${EYEROT[c.eye]*s})">${g}</g>`;
-}
-function hairBack(c,hf,O){
-  const t=c.hair;
-  if(t===2) return `<path d="M58 80 Q56 30 100 30 Q144 30 142 80 L142 96 Q138 100 134 96 L66 96 Q62 100 58 96Z" fill="${hf}" ${O}/>`;
-  if(t===4) return `<path d="M126 56 Q168 60 162 112 Q158 134 140 142 Q150 116 142 96 Q136 80 122 74Z" fill="${hf}" ${O}/>`;
-  if(t===5){const tail=`<path d="M128 60 Q170 66 162 122 Q158 140 146 146 Q154 120 146 100 Q140 84 124 76Z" fill="${hf}" ${O}/>`;return tail+MIR(tail)}
-  if(t===6) return `<path d="M58 78 Q56 30 100 30 Q144 30 142 78 L146 116 Q134 124 122 114 L78 114 Q66 124 54 116Z" fill="${hf}" ${O}/>`;
-  if(t===7) return `<path d="M56 78 Q54 28 100 28 Q146 28 144 78 L152 168 Q132 176 118 162 L82 162 Q68 176 48 168Z" fill="${hf}" ${O}/>`;
-  return '';
-}
-function hairFront(c,hf,O){
-  const t=c.hair; let h='';
-  if(t===0) h=`<path d="M58 84 Q52 34 100 32 Q148 34 142 84 Q138 66 128 58 Q126 68 118 70 Q116 60 108 56 Q104 68 94 68 Q92 58 86 56 Q80 68 70 66 Q64 72 58 84Z" fill="${hf}" ${O}/>`;
-  if(t===1) h=`<path d="M58 84 L46 60 L62 58 L56 36 L76 42 L78 20 L94 34 L104 10 L112 34 L128 20 L126 42 L146 36 L138 58 L154 60 L142 84 Q138 66 128 58 L120 72 L110 56 L100 70 L90 56 L80 70 L70 60 Q62 70 58 84Z" fill="${hf}" ${O}/>`;
-  if(t===2) h=`<path d="M58 86 Q52 30 100 30 Q148 30 142 86 Q140 78 134 75 Q118 80 100 78 Q82 80 66 75 Q60 78 58 86Z" fill="${hf}" ${O}/><path d="M82 77 L86 58 M100 78 V56 M118 77 L114 58" stroke="#000" stroke-opacity=".18" stroke-width="2"/>`;
-  if(t===3) h=`<path d="M62 74 Q62 40 100 40 Q138 40 138 74 Q120 58 100 58 Q80 58 62 74Z" fill="${hf}" opacity=".9" ${O}/>`;
-  if(t===4||t===5||t===7){h=`<path d="M60 86 Q52 34 100 32 Q148 34 140 86 Q136 64 124 56 Q112 72 90 70 Q100 62 102 52 Q88 68 72 64 Q64 72 60 86Z" fill="${hf}" ${O}/>`;
-    const side=`<path d="M62 70 Q56 96 64 112 Q70 98 68 78Z" fill="${hf}" ${O}/>`;h+=side+MIR(side);
-    const rib=`<circle cx="130" cy="58" r="6" fill="#ff6fa5" ${O}/><path d="M130 58 L138 48 L142 60Z M130 58 L140 66 L134 70Z" fill="#ff6fa5" ${O}/>`;
-    if(t===4) h+=rib; if(t===5) h+=rib+MIR(rib)}
-  if(t===6){h=`<path d="M60 86 Q54 32 100 32 Q146 32 140 86 Q138 70 130 64 L124 74 L116 64 L108 74 L100 64 L92 74 L84 64 L76 74 L70 64 Q62 72 60 86Z" fill="${hf}" ${O}/>`;
-    const side=`<path d="M61 74 Q56 100 60 116 L72 114 Q66 98 69 80Z" fill="${hf}" ${O}/>`;h+=side+MIR(side)}
-  return h;
-}
-
-/* ===== カード ===== */
 function weapon(s){let best=null,v=0;for(const x of SPORT.stats){if(s.stats[x.id]>v){v=s.stats[x.id];best=x.name}}return best}
 const POS_SHORT={'ウイング':'WG','トップ下':'OMF','ストライカー':'ST','ボランチ':'DMF','サイドバック':'SB','見習い':'—'};
 function cardView(s,L,i,opt={}){
@@ -1012,98 +904,38 @@ function cardView(s,L,i,opt={}){
   </div>`;
 }
 
-/* ===== キャラメイク ===== */
-const SWATCH={
-  skin:['#ffe8d6','#ffe0c2','#f1c27d','#d9a066','#c68642','#8d5524'],
-  eyeCol:['#5a3522','#22130b','#2f6fd6','#2a9d5c','#c0392b','#8e44ad'],
-  hairColor:['#2b1d16','#6b4226','#c98b3c','#e8c872','#1e2a4a','#b0b7c3'],
-  tip:['','#e63946','#2f6fd6','#f5b301','#8e44ad','#21a366'],
-  color:['#e63946','#2b59c3','#21a366','#f28c28','#8e44ad','#222831'],
-  color2:['#ffffff','#111111','#f5b301','#e63946','#2b59c3','#21a366'],
-  pants:['#ffffff','#1d2540','#e63946','#2b59c3','#21a366','#111111'],
-  sock:['','#ffffff','#1d2540','#e63946','#2b59c3','#f5b301'],
-  bootCol:['#2d2d35','#ffffff','#e63946','#2b59c3','#21a366','#ff6fa5'],
-};
-const ED=[
-  {tab:'体',items:[
-    {k:'sex',label:'性別',type:'opt',opts:['男の子','女の子'],vals:['m','f']},
-    {k:'skin',label:'肌の色',type:'col'},
-    {k:'build',label:'体型',type:'opt',opts:['ほそめ','ふつう','がっしり']},
-    {k:'age',label:'年齢（伸びやすい能力が変わるよ）',type:'num',min:6,max:18},
-  ]},
-  {tab:'顔',items:[
-    {k:'face',label:'輪郭',type:'opt',opts:['まる','たまご','しかく']},
-    {k:'brow',label:'まゆ毛',type:'opt',opts:['ふつう','きりっ','こまり','ふとい']},
-    {k:'mouth',label:'口',type:'opt',opts:['にっこり','大笑い','ニヤリ','すまし']},
-    {k:'cheek',label:'ほっぺ',type:'opt',opts:['ピンク','なし','そばかす','ばんそうこう']},
-  ]},
-  {tab:'目',items:[
-    {k:'eye',label:'目の形',type:'opt',opts:['まる','つりめ','たれめ','にこにこ']},
-    {k:'eyeCol',label:'目の色',type:'col'},
-    {k:'eyeSize',label:'目の大きさ',type:'range',min:0.8,max:1.25,step:0.05},
-    {k:'lash',label:'まつげ',type:'opt',opts:['なし','あり']},
-  ]},
-  {tab:'髪',items:[
-    {k:'hair',label:'髪型',type:'opt',opts:HAIRSTYLES},
-    {k:'hairColor',label:'髪の色',type:'col'},
-    {k:'tip',label:'毛先の色（グラデーション）',type:'col'},
-  ]},
-  {tab:'ユニフォーム',items:[
-    {k:'color',label:'メインカラー',type:'col'},
-    {k:'color2',label:'サブカラー',type:'col'},
-    {k:'pattern',label:'柄',type:'opt',opts:['無地','縦じま','横じま','ハーフ','たすき']},
-    {k:'pants',label:'パンツの色',type:'col'},
-    {k:'sock',label:'ソックスの色',type:'col'},
-    {k:'bootCol',label:'スパイクの色',type:'col'},
-  ]},
-  {tab:'小物',items:[
-    {k:'acc',label:'アクセサリー',type:'opt',opts:['なし','メガネ','リストバンド','星のピン']},
-  ]},
-];
-/* 背番号：1〜999。全角の数字も半角にして読み取る。正しくないときは null */
+/* ===== キャラを選ぶ画面（イラストのキャラ・名前・背番号・年齢） ===== */
+/* 背番号（1〜999。全角数字も読み取る） */
 const NUM_MIN=1, NUM_MAX=999;
 function numText(v){return String(v==null?'':v).replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0)).replace(/[^0-9]/g,'').slice(0,3)}
 function parseNum(v){const t=numText(v),n=t===''?NaN:+t;return n>=NUM_MIN&&n<=NUM_MAX?n:null}
-let ed=null, edTab=0, edPose=0;
-function edPreview(){return ed.avatar?avatarView(norm(ed),STAGES[edPose].lv,edPose):charSVG(ed,STAGES[edPose].lv,POSE_OF[edPose])}
+let ed=null, edPose=0;
+function edPreview(){return avatarView(norm(ed),STAGES[edPose].lv,edPose)}
 function editView(){
-  const t=ED[edTab];
+  if(!ed.avatar)ed.avatar=defaultAvatar(ed);
   return `<div class="edtop">
     <div class="edprev">${edPreview()}</div>
-    <div class="chips" style="margin-bottom:6px"><span class="sub" style="align-self:center">進化の姿：</span>${STAGES.map((r,i)=>`<button class="chip mini ${i===edPose?'on':''}" data-ep="${i}">${i+1}</button>`).join('')}</div>
-    <div class="tabs">${ED.map((x,i)=>`<button class="chip ${i===edTab?'on':''}" data-et="${i}">${x.tab}</button>`).join('')}</div>
+    <div class="chips" style="margin-bottom:6px"><span class="sub" style="align-self:center">成長：</span>${STAGES.map((r,i)=>`<button class="chip mini ${i===edPose?'on':''}" data-ep="${i}">${i+1}</button>`).join('')}</div>
   </div>
   <div class="wrap">
-    ${edTab===0?`<div class="card"><h3>キャラクターを選ぶ</h3><p class="sub" style="margin:4px 0 10px">イラストのキャラから選ぶか、自分で作るかを選べるよ</p>
-      <div class="avgrid"><button class="avopt ${!ed.avatar?'on':''}" data-av="">${charSVG({...ed,avatar:''},1,0)}<span>自分で作る</span></button>${AVATARS.map(A=>`<button class="avopt ${ed.avatar===A.id?'on':''}" data-av="${A.id}"><img src="img/chars/${A.id}.webp" alt=""><span>${A.name}</span></button>`).join('')}</div></div>`:''}
-    ${edTab>0&&ed.avatar?`<div class="card hint" style="margin-bottom:14px">イラストのキャラを選んでいるときは、顔・目・髪・小物の設定は使われません（背番号はカードに使われます）。「体」タブで「自分で作る」を選ぶと使えるよ。</div>`:''}
-    ${edTab===0?`<div class="card"><h3>名前</h3><input type="text" id="cname" maxlength="10" placeholder="名前を入力" value="${esc(ed.name||'')}" style="margin-top:8px"></div>
+    <div class="card"><h3>キャラクターを選ぶ</h3><p class="sub" style="margin:4px 0 10px">好きな選手を選んでね。レベルが上がると、すがたが成長していくよ</p>
+      <div class="avgrid">${AVATARS.map(A=>`<button class="avopt ${ed.avatar===A.id?'on':''}" data-av="${A.id}"><img src="img/chars/${A.id}.webp" alt=""><span>${A.name}</span></button>`).join('')}</div></div>
+    <div class="card"><h3>名前</h3><input type="text" id="cname" maxlength="10" placeholder="名前を入力" value="${esc(ed.name||'')}" style="margin-top:8px"></div>
     <div class="card"><h3>背番号</h3><p class="sub" style="margin:4px 0 8px">${NUM_MIN}〜${NUM_MAX}の好きな番号を入れてね</p>
-      <div class="row numrow"><button class="chip" data-nd="-1" aria-label="1つ減らす">−</button><input type="text" id="cnum" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="10" aria-label="背番号" value="${esc(numText(ed.num))}"><button class="chip" data-nd="1" aria-label="1つ増やす">＋</button></div></div>`:''}
-    <div class="card">${t.items.map(itemView).join('')}</div>
+      <div class="row numrow"><button class="chip" data-nd="-1" aria-label="1つ減らす">−</button><input type="text" id="cnum" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="10" aria-label="背番号" value="${esc(numText(ed.num))}"><button class="chip" data-nd="1" aria-label="1つ増やす">＋</button></div></div>
+    <div class="card"><h3>年齢</h3><p class="sub" style="margin:4px 0 8px">年齢によって、伸びやすい能力が変わるよ</p>
+      <div class="row" style="justify-content:center"><button class="chip" data-age="-1">−</button><span class="big" style="min-width:80px">${ed.age}さい</span><button class="chip" data-age="1">＋</button></div></div>
     <div class="row"><button class="btn ghost" id="rand" style="flex:1">おまかせ</button><button class="btn gold" id="edok" style="flex:2">${S?'決定':'このキャラで始める'}</button></div>
     ${S||profMeta().list.length>1?'<button class="btn ghost" id="edcancel" style="margin-top:14px;font-size:15px">キャンセル</button>':''}
   </div>`;
-}
-function itemView(it){
-  let ctl='';
-  if(it.type==='opt') ctl=`<div class="chips">${it.opts.map((o,i)=>{const v=it.vals?it.vals[i]:i;return `<button class="chip ${ed[it.k]===v?'on':''}" data-k="${it.k}" data-v="${v}" data-n="${it.vals?0:1}">${o}</button>`}).join('')}</div>`;
-  if(it.type==='col') ctl=`<div class="chips">${SWATCH[it.k].map(v=>`<button class="swatch ${ed[it.k]===v?'on':''}" style="background:${v||'repeating-linear-gradient(45deg,#fff 0 6px,#dde3ef 6px 12px)'}" data-k="${it.k}" data-v="${v}" data-n="0" aria-label="${v||'なし'}"></button>`).join('')}<label class="swatch picker" aria-label="自分で選ぶ">🎨<input type="color" data-ck="${it.k}" value="${ed[it.k]||'#ffffff'}"></label></div>`;
-  if(it.type==='range') ctl=`<input type="range" data-rk="${it.k}" min="${it.min}" max="${it.max}" step="${it.step}" value="${ed[it.k]}">`;
-  if(it.type==='num') ctl=`<div class="row" style="justify-content:center"><button class="chip" data-nk="${it.k}" data-d="-1">−</button><span class="big" style="min-width:80px">${ed[it.k]}</span><button class="chip" data-nk="${it.k}" data-d="1">＋</button></div>`;
-  return `<div class="edi"><h3>${it.label}</h3>${ctl}</div>`;
 }
 function bindEdit(){
   const app=document.getElementById('app');
   const re=()=>{const y=window.scrollY;render();window.scrollTo(0,y)};
   const pv=()=>{app.querySelector('.edprev').innerHTML=edPreview()};
-  app.querySelectorAll('[data-et]').forEach(b=>b.onclick=()=>{edTab=+b.dataset.et;re()});
-  app.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{const v=b.dataset.av;ed.avatar=v;if(v)ed.sex=AVATARS.find(x=>x.id===v).sex;re()});
+  app.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{const v=b.dataset.av;ed.avatar=v;ed.sex=AVATARS.find(x=>x.id===v).sex;re()});
   app.querySelectorAll('[data-ep]').forEach(b=>b.onclick=()=>{edPose=+b.dataset.ep;re()});
-  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ed[b.dataset.k]=b.dataset.n==='1'?+b.dataset.v:b.dataset.v;re()});
-  app.querySelectorAll('[data-ck]').forEach(i=>i.oninput=()=>{ed[i.dataset.ck]=i.value;pv()});
-  app.querySelectorAll('[data-rk]').forEach(i=>i.oninput=()=>{ed[i.dataset.rk]=+i.value;pv()});
-  app.querySelectorAll('[data-nk]').forEach(b=>b.onclick=()=>{const k=b.dataset.nk;const it=ED.flatMap(t=>t.items).find(i=>i.k===k);ed[k]=Math.min(it.max,Math.max(it.min,ed[k]+ +b.dataset.d));re()});
+  app.querySelectorAll('[data-age]').forEach(b=>b.onclick=()=>{ed.age=Math.min(18,Math.max(6,(ed.age||10)+ +b.dataset.age));re()});
   const nm=document.getElementById('cname'); if(nm) nm.oninput=()=>{ed.name=nm.value};
   const nb=document.getElementById('cnum');
   if(nb){
@@ -1113,21 +945,12 @@ function bindEdit(){
     nb.onfocus=()=>nb.select();
     app.querySelectorAll('[data-nd]').forEach(b=>b.onclick=()=>{nb.value=Math.min(NUM_MAX,Math.max(NUM_MIN,(+numText(nb.value)||0)+ +b.dataset.nd));put()});
   }
-  document.getElementById('rand').onclick=()=>{
-    const pick=a=>a[Math.floor(Math.random()*a.length)];
-    ED.forEach(t=>t.items.forEach(it=>{
-      if(it.k==='sex'||it.type==='num')return;
-      if(it.type==='opt') ed[it.k]=it.vals?pick(it.vals):Math.floor(Math.random()*it.opts.length);
-      if(it.type==='col') ed[it.k]=pick(SWATCH[it.k]);
-      if(it.type==='range') ed[it.k]=Math.round((it.min+Math.random()*(it.max-it.min))/it.step)*it.step;
-    }));
-    re();
-  };
+  document.getElementById('rand').onclick=()=>{const A=AVATARS[Math.floor(Math.random()*AVATARS.length)];ed.avatar=A.id;ed.sex=A.sex;re()};
   document.getElementById('edok').onclick=()=>{
     const name=(ed.name||'').trim();
-    if(!name){edTab=0;re();dialog({icon:'✏️',title:'名前を入力してね',msg:'「体」タブで名前を入れてから始めよう。'});return}
+    if(!name){re();dialog({icon:'✏️',title:'名前を入力してね',msg:'名前を入れてから始めよう。'});return}
     const num=parseNum(ed.num);
-    if(num==null){edTab=0;re();dialog({icon:'👕',title:'背番号を入力してね',msg:`「体」タブで${NUM_MIN}〜${NUM_MAX}の番号を入れてから始めよう。`});return}
+    if(num==null){re();dialog({icon:'👕',title:'背番号を入力してね',msg:`${NUM_MIN}〜${NUM_MAX}の番号を入れてから始めよう。`});return}
     ed.name=name;ed.num=num;
     if(!S) S={c:ed,xp:0,stats:freshStats(),best:{},logs:[],titles:[],eq:null};
     else S.c=ed;
@@ -1142,7 +965,7 @@ function bindEdit(){
 function render(){
   const app=document.getElementById('app'), nav=document.getElementById('nav');
   if(!S||tab==='edit'){
-    if(!ed){ed=norm(S?{...S.c}:{name:''});edTab=0;edPose=0}
+    if(!ed){ed=norm(S?{...S.c}:{name:''});edPose=0}
     nav.classList.add('hide');app.innerHTML=editView();bindEdit();return;
   }
   nav.classList.remove('hide');
@@ -1251,6 +1074,7 @@ function roomView(s){
     <div class="rshelf rmed"><b>メダル</b><div>${X.medals.slice(0,cap).map(x=>`<span class="rmedal ${x.k}" title="${x.t}"></span>`).join('')||'<small>まだない</small>'}${more(X.medals.length)}</div></div>
     <div class="rchar">${charView(c,L,i)}</div>
     <div class="rfloor rballs">${X.balls.slice(0,cap).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
+    <div class="rhanger">${X.kits.slice(0,Math.max(1,cap-1)).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
     <div class="rfloor rboots">${X.boots.slice(0,Math.max(1,cap-1)).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
     <div class="rname">🏠 ${R.name}</div>
   </div>`;
@@ -1576,8 +1400,7 @@ async function makeCardImage(){
   g.font='italic 520px "Dela Gothic One"'; g.textAlign='center'; g.strokeStyle='rgba(255,255,255,.22)'; g.lineWidth=6; g.strokeText(String(c.num||''),W*.6,H*.62);
   // キャラ
   let ch=null;
-  if(c.avatar){ch=await loadImg(`img/chars/${c.avatar}_${i+1}.webp`)||await loadImg(`img/chars/${c.avatar}.webp`)}
-  else{const svg=charSVG(c,L,POSE_OF[i]).replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');ch=await loadImg('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg))}
+  const av=c.avatar||defaultAvatar(c); ch=await loadImg(`img/chars/${av}_${i+1}.webp`)||await loadImg(`img/chars/${av}.webp`);
   if(ch){const h=H*.62, w=ch.width*h/ch.height; g.shadowColor='rgba(0,0,0,.5)'; g.shadowBlur=30; g.drawImage(ch,(W-w)/2,H*.16,w,h); g.shadowBlur=0}
   // 下の帯
   let gb=g.createLinearGradient(0,H*.78,W,H); gb.addColorStop(0,'rgba(5,10,25,.92)'); gb.addColorStop(1,'rgba(5,10,25,.98)'); g.fillStyle=gb; g.fillRect(0,H*.78,W,H*.22);

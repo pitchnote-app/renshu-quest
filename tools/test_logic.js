@@ -115,10 +115,13 @@ test('ショップのアイテムは すべてアイコンが描ける', c => {
   eq(run(c, "SHOP.flatMap(x=>x.items.map(it=>itemIcon(x.cat,it))).filter(h=>!h||h.length<40).length"), 0);
 });
 
-test('イラストのキャラを選ぶと カードはイラストで表示（自分で作るときはコードの絵）', c => {
+test('キャラはイラストだけ：カードはイラストで表示。前に「自分で作る」だった選手もイラストに切りかわる', c => {
   run(c, newPlayer + "S.c.avatar='idea-3';");
   ok(run(c, "cardView(S,1,0).includes('img/chars/idea-3_1.webp')"), 'イラスト');
-  run(c, "S.c.avatar='';"); ok(run(c, `cardView(S,1,0).includes('<svg class="char"')`), 'コードの絵');
+  run(c, "S.c.avatar='';"); ok(run(c, "cardView(S,1,0).includes('img/chars/idea-1_1.webp')"), '男の子はツンツンに');
+  run(c, "S.c.sex='f';"); ok(run(c, "cardView(S,1,0).includes('img/chars/idea-6_1.webp')"), '女の子はポニーテールに');
+  run(c, "S.c.avatar='';save();load();"); eq(run(c, 'S.c.avatar'), 'idea-6', '読みこみ時にイラストへ移行');
+  ok(run(c, "typeof charSVG==='undefined'"), '自分で作るキャラの絵は消えている');
   eq(run(c, 'AVATARS.length'), 11);
   const ids = JSON.parse(run(c, 'JSON.stringify(AVATARS.map(a=>a.id))'));
   eq(new Set(ids).size, ids.length);
@@ -128,9 +131,9 @@ test('イラストのキャラを選ぶと カードはイラストで表示（�
 test('背番号は1〜999だけ（全角も読み取る）。最初の設定に入力欄がある', c => {
   eq(run(c, "parseNum('7')"), 7); eq(run(c, "parseNum('１０')"), 10); eq(run(c, "parseNum(99)"), 99); eq(run(c, "parseNum('100')"), 100); eq(run(c, "parseNum('９９９')"), 999);
   for (const v of ["''", "'0'", "'00'", "'abc'", 'null', 'undefined']) eq(run(c, `parseNum(${v})`), null);
-  run(c, "S=null;ed=norm({name:''});edTab=0;");
-  ok(run(c, `editView().includes('id="cnum"')`), '入力欄');
-  ok(run(c, "!ED.flatMap(t=>t.items).some(i=>i.k==='num')"), 'ユニフォームのタブには重ねて出さない');
+  run(c, "S=null;ed=norm({name:''});");
+  const v = run(c, 'editView()');
+  ok(v.includes('id="cnum"'), '入力欄'); ok(!v.includes('自分で作る'), '「自分で作る」はない'); ok(v.includes('img/chars/idea-1.webp'), 'イラストから選ぶ');
 });
 
 test('ボルトの一言：名前は「〇〇選手」と呼び、記号は安全な形にする', c => {
