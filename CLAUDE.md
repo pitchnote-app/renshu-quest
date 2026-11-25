@@ -34,7 +34,11 @@
   - 例：`python tools/slice_sheet.py img/sheets/xxx.webp 5 2 img/items ball-1,ball-2,... --size 320 --tol 30`
   - 1人だけの画像は列数・行数を `1 1` に。腕のすき間の背景は `--holes "x,y;x,y"`、足元の影は `--shadow 0.92`、輪郭の内側が欠けるときは `--band 1`
   - 例：`python tools/slice_sheet.py img/sheets/chara-11.webp 1 1 img/chars idea-11 --size 512 --tol 30 --holes "640,560;378,544;379,268;380,278;467,27" --shadow 0.92 --band 1`
+  - 何人も並ぶシートは、マス番号を付けて指定する（例 `--holes "2:243,161"`）。白い消し残りは `--clear "マス番号:x0,y0,x1,y1"`（最後に `!` で中身を全部消す）。`characters-idea.webp` の設定は `docs/キャラ切り出し設定.md`
   - 小さな記号（Zzz など）を残したいときは `--keep 0.008`
+  - キャラ8段階シート（4列×2行）の例：`python tools/slice_sheet.py img/sheets/idea-3-stages.webp 4 2 img/chars idea-3_1,...,idea-3_8 --size 512 --tol 30 --auto-holes 6 --hole-area 150 --xs 0,390,880,1215,1774`
+    - `--auto-holes`：足の間など囲まれた背景（完全な単色）だけを自動で消す。足元の影や白い服は残る
+    - `--xs`：エフェクトがとなりのマスにはみ出すとき、列の区切り位置を手で指定（すき間の位置を調べて決める）
 - 切り出した後は、暗い背景に置いて拡大し、白いフチ・かけらが残っていないか必ず確認する。
 - 実在のチーム名・ロゴ・既存キャラクターの絵は使わない。
 
@@ -47,8 +51,16 @@
 - 他社作品（ドラクエ・ブルーロック・ワンピースカードなど）は雰囲気の参考のみ。名前・キャラ・ロゴは使わない。
 
 ## 主な仕組み（app.js）
-- 能力9種 `SPORT.stats`／練習メニュー52種 `MENUS`（図解 `diag()`）／職業 `JOBS`／称号 `TITLES`／スキル `SKILLS`
-- 成長ステージ8段階 `STAGES`（おうちの庭→公園→チーム入団→トレセン→県代表→地方代表→日本代表→ワールドクラス）
+- 能力9種 `SPORT.stats`／練習メニュー57種 `MENUS`（図解 `diag()`）／職業 `JOBS`／称号 `TITLES`／スキル `SKILLS`
+- 階級 `RANKS`（ステージと同じレベルで昇格）／能力ランクS〜G `grade()`／メダル `MEDALS`（ビギナー→ダイヤ）／練習の熟練度 `mastery()`
+- 二つ名 `NICKS`（14分野×8段階。能力の分野は能力ランク、練習の分野は回数で上がる）／階級の色 `RANK_COL`
+- 個人技スキル `SKILLS`（金・技・心がまえの札。`name` は保存のキーなので変えない）／つよさ画面 `statusView()`
+- 練習場所8段階 `STAGES`（家の庭→近所の公園→大きな公園→河川敷→小学校のグラウンド→フットサルコート→天然芝のピッチ→満員のスタジアム）。練習画面の上 `stageScene()`、絵は `img/stages/stage-N.webp`
+- 部屋（マイページ）8段階 `ROOMS`・`roomView()`：階級と同時に引っこし、広く豪華に。飾り（トロフィー・メダル・ボール・くつ・ポスター）が増える。絵は `img/room/room-N.webp`
+- 演出：全画面カットイン `cutin()`（昇格）／宝箱はタップで開く `openChest()`／練習タイマー `timerView()`・`S.timer`
+- 選手の切りかえ（兄弟）`profMeta()`・`switchProfile()`：選手ごとに保存キーが別（1人目は `renshu-quest-v1` のまま）
+- 選手カード画像 `makeCardImage()`・`saveCardImage()`（保護者確認つき・端末内で作成）
+- 練習場所のライバルとストーリー `PLACE_RIVALS`・`placeCheck()`／はじめての練習ボーナス `firstCard()`
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
 - ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）／相棒ボルト `buddyLines()`・`BOLT`
 - イラストのキャラ `AVATARS`・`avatarView()`

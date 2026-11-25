@@ -1,5 +1,11 @@
 {
   "appId": "com.pitchnoteapp.renshuquest",
   "appName": "れんしゅうクエスト",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_rq",
+      "iconColor": "#D4AF37"
+    }
+  }
 }

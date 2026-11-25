@@ -8,16 +8,17 @@ function el() {
     querySelectorAll: () => [], querySelector: () => null, appendChild() {}, remove() {}, click() {}, addEventListener() {} },
     { get: (t, k) => (k in t ? t[k] : undefined), set: (t, k, v) => { t[k] = v; return true } });
 }
-function makeContext() {
+function makeContext(extra) {
   const store = new Map();
   const doc = { getElementById: () => el(), querySelectorAll: () => [], querySelector: () => null, createElement: () => el(), body: el() };
   const ctx = {
-    console, Math, Date, JSON, Promise, setTimeout: () => 0, Set, Map, Object, Array, Number, String, Proxy, Blob: function () {},
+    console, Math, Date, JSON, Promise, setTimeout: () => 0, clearTimeout() {}, requestAnimationFrame: () => 0, setInterval: () => 0, clearInterval() {}, Set, Map, Object, Array, Number, String, Proxy, Blob: function () {},
     URL: { createObjectURL: () => '', revokeObjectURL() {} },
     document: doc, navigator: {}, location: { reload() {} }, matchMedia: () => ({ matches: true }),
     localStorage: { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) },
     addEventListener() {}, isSecureContext: false, scrollTo() {}, scrollY: 0,
   };
+  Object.assign(ctx, extra || {});
   ctx.window = ctx;
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'), ctx, { filename: 'app.js' });
@@ -85,7 +86,8 @@ test('宿屋：HPが全回復', c => {
   run(c, newPlayer + "S.hp=10;S.hpDay=today();doRest();"); eq(run(c, 'S.hp'), 100);
 });
 test('宝箱：練習60分ごとに1個', c => {
-  run(c, newPlayer + "draft={menu:'run',min:90,rec:''};doPractice();"); eq(run(c, 'chestsPending()'), 1);
+  // はじめての練習ボーナスの宝箱とまざらないよう、すでに1回練習したことにしておく
+  run(c, newPlayer + "S.logs.push({date:'2026-01-01',menu:'run',min:0,xp:0});draft={menu:'run',min:90,rec:''};doPractice();"); eq(run(c, 'chestsPending()'), 1);
   run(c, "openChest();"); eq(run(c, 'chestsPending()'), 0);
 });
 test('チャレンジロード：120 EXPごとに段階が進む', c => {
@@ -138,5 +140,143 @@ test('ボルトの一言：名前は「〇〇選手」と呼び、記号は安�
   ok(run(c, "buddyLines().every(x=>!x.t.includes('<b>'))"), 'タグがそのまま入らない');
 });
 
-console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
-process.exit(fail ? 1 : 0);
+test('階級：成長ステージと同じレベルで昇格する（Lv1 ビギナー → Lv36 レジェンド）', c => {
+  eq(run(c, 'rankOf(1)'), 'ビギナー'); eq(run(c, 'rankOf(10)'), 'レギュラー'); eq(run(c, 'rankOf(36)'), 'レジェンド');
+  eq(run(c, 'RANKS.length'), run(c, 'STAGES.length')); eq(run(c, 'RANK_COL.length'), run(c, 'RANKS.length'));
+});
+test('二つ名：14分野×8段階、名前の重複なし。能力はランク、練習は回数で上がる', c => {
+  run(c, newPlayer);
+  eq(run(c, 'NICKS.length'), 14);
+  ok(run(c, 'NICKS.every(N=>N.t.length===8)'), '8段階');
+  const all = run(c, 'NICKS.flatMap(N=>N.t)'); eq(new Set(all).size, all.length, '名前の重複');
+  eq(run(c, "nickOf(S,NICKS.find(N=>N.id==='dribble')).t"), 'ドリブル見習い');
+  run(c, "S.stats.dribble=(81-40)*3");
+  eq(run(c, "nickOf(S,NICKS.find(N=>N.id==='dribble')).t"), '突破の魔術師');
+  run(c, "for(let i=0;i<7;i++)S.logs.push({date:'2026-01-01',menu:'df_1v1',min:10,xp:5})");
+  eq(run(c, "nickOf(S,NICKS.find(N=>N.id==='df')).t"), 'ディフェンダー');
+  run(c, 'nickUps()'); run(c, "for(let i=0;i<8;i++)S.logs.push({date:'2026-01-01',menu:'df_step',min:10,xp:5})");
+  eq(run(c, 'nickUps().map(u=>u.x.t)'), ['ボールハンター'], '上がったときだけ知らせる');
+});
+test('守備の練習メニューがあり、図解が描ける', c => {
+  run(c, newPlayer);
+  ok(run(c, "MENUS.filter(m=>m.grp==='df').length") >= 5, '5種類以上');
+  ok(run(c, "MENUS.filter(m=>m.grp==='df').every(m=>diag(m.d).includes('<svg'))"), '図解');
+});
+test('能力ランク：40はG、55はD、70はB、90以上はS（メダルの色つき）', c => {
+  eq(run(c, 'grade(40).g'), 'G'); eq(run(c, 'grade(55).g'), 'D'); eq(run(c, 'grade(70).g'), 'B'); eq(run(c, 'grade(99).g'), 'S');
+  eq(run(c, 'grade(70).m.name'), 'ゴールド'); eq(run(c, 'grade(99).m.name'), 'ダイヤ');
+});
+test('熟練度：同じ練習の回数でビギナー→ブロンズ→…とメダルが上がる', c => {
+  run(c, newPlayer);
+  eq(run(c, "mastery(S,'sole_roll').i"), -1);
+  run(c, "for(let i=0;i<7;i++)S.logs.push({date:'2026-01-0'+(i%9+1),menu:'sole_roll',min:10,xp:5})");
+  eq(run(c, "mastery(S,'sole_roll').m.name"), 'シルバー'); eq(run(c, "mastery(S,'sole_roll').next"), 15);
+});
+test('個人技スキル：練習回数で習得し、名前の重複がない・30種類以上', c => {
+  run(c, newPlayer);
+  ok(run(c, 'SKILLS.length') >= 30, 'スキルが30種類以上');
+  eq(run(c, 'new Set(SKILLS.map(k=>k.name)).size'), run(c, 'SKILLS.length'), '名前の重複');
+  ok(run(c, "SKILLS.every(k=>['gold','blue','green'].includes(k.tier))"), '札の色');
+  run(c, "for(let i=0;i<7;i++)S.logs.push({date:'2026-01-01',menu:'sole_roll',min:10,xp:5})");
+  ok(run(c, "unlocks().newS.some(k=>k.name==='足裏コントロール')"), '足裏コントロールを習得');
+  ok(run(c, "statusView().includes('足裏コントロール')"), 'つよさ画面に表示');
+});
+
+test('部屋：階級と同じ8段階で、広い部屋ほど飾れる数が多い。トロフィー・メダルが増える', c => {
+  run(c, newPlayer);
+  eq(run(c, 'ROOMS.length'), run(c, 'STAGES.length'));
+  ok(run(c, 'ROOMS.every((r,i)=>i===0||r.cap>=ROOMS[i-1].cap)'), '飾れる数');
+  eq(run(c, 'roomItems(S).trophies.length'), 0);
+  run(c, "S.bossWins=2; for(let i=0;i<15;i++)S.logs.push({date:'2026-01-'+String(i+1).padStart(2,'0'),menu:'sole_roll',min:10,xp:5})");
+  eq(run(c, 'roomItems(S).trophies.length'), 3, 'ライバル2＋10日達成');
+  eq(run(c, 'roomItems(S).medals.length'), 1, 'ゴールドの熟練度');
+  ok(run(c, "roomView(S).includes('せまい物置部屋')"), '部屋の名前');
+  ok(run(c, "stageScene(S).includes('家の庭')"), '練習場所');
+});
+
+test('練習タイマー：経過時間は始めた時刻から計算し、一時停止中は増えない', c => {
+  run(c, newPlayer);
+  eq(run(c, 'tElapsed({acc:60000,run:false,start:0})'), 60000);
+  ok(run(c, 'tElapsed({acc:0,run:true,start:Date.now()-120000})') >= 120000, '動いている間は増える');
+  run(c, "S.timer={menu:'sole_roll',goal:15,start:Date.now(),acc:0,run:true}");
+  ok(run(c, "timerView().includes('足裏コロコロ')"), 'タイマー画面');
+});
+
+test('兄弟で使える：選手ごとに別々に保存され、切りかえても記録がまざらない', c => {
+  run(c, newPlayer + "S.coin=500; save();");
+  eq(run(c, 'profMeta().list.length'), 1);
+  eq(run(c, 'KEY'), 'renshu-quest-v1', '1人目は昔からのキー');
+  run(c, 'addProfile()');
+  eq(run(c, 'S'), null, '2人目は新しく作る');
+  eq(run(c, 'KEY'), 'renshu-quest-v1-p1');
+  run(c, "S={c:norm({name:'いもうと',age:8,v:2}),xp:0,coin:0,stats:freshStats(),best:{},logs:[],titles:[],eq:null,tut:1}; save();");
+  run(c, 'switchProfile(0)');
+  eq(run(c, 'S.c.name'), 'テスト'); eq(run(c, 'S.coin'), 500);
+  run(c, 'switchProfile(1)');
+  eq(run(c, 'S.c.name'), 'いもうと'); eq(run(c, 'S.coin'), 0);
+  eq(run(c, 'profMeta().list.map(x=>x.name)'), ['テスト','いもうと']);
+});
+
+test('場所のライバル：その場所で練習を重ね、能力が届くと勝てる。勝つとトロフィー', c => {
+  run(c, newPlayer);
+  eq(run(c, 'PLACE_RIVALS.length'), run(c, 'STAGES.length'));
+  eq(run(c, 'placeRival().R.name'), '庭に来たネコ「ミケ」');
+  const notes = [];
+  run(c, "for(let i=0;i<3;i++)S.logs.unshift({date:'2026-01-01',menu:'sole_roll',min:10,xp:5})");
+  eq(run(c, 'placeCheck([])'), 0, 'ボールタッチが足りない');
+  run(c, "S.stats.touch=(45-40)*3");
+  eq(run(c, 'placeCheck([])'), 200, '勝てる');
+  eq(run(c, 'S.placeWins'), [0]);
+  ok(run(c, "roomItems(S).trophies.some(t=>t.ic==='🎖️')"), '部屋にトロフィー');
+  eq(run(c, 'placeCheck([])'), 0, '2回は勝たない');
+});
+
+test('はじめての練習：ホームに案内が出て、最初の1回だけボーナス（+100 EXP・宝箱）', c => {
+  run(c, newPlayer);
+  ok(run(c, "firstCard().includes('はじめての練習')"), '案内');
+  run(c, "draft={menu:'sole_roll',min:10,rec:''}; doPractice()");
+  ok(run(c, 'S.xp') >= 120, `ボーナス込み（${run(c, 'S.xp')}）`);
+  eq(run(c, 'S.bonusChest'), 1);
+  eq(run(c, 'firstCard()'), '', '2回目からは出ない');
+  const x = run(c, 'S.xp'); run(c, "draft={menu:'sole_roll',min:10,rec:''}; doPractice()");
+  ok(run(c, 'S.xp') - x < 100, '2回目はボーナスなし');
+});
+
+test('更新の読みこみ直しは ホームか設定だけ（入力中・お知らせ中・最初の設定ではしない）', c => {
+  run(c, newPlayer + "ed=null;tab='home';");
+  eq(run(c, 'canReload()'), true); run(c, "tab='settings'"); eq(run(c, 'canReload()'), true);
+  run(c, "tab='practice';"); eq(run(c, 'canReload()'), false);
+  run(c, "tab='home';ed=norm(S.c);"); eq(run(c, 'canReload()'), false);
+  run(c, "ed=null;S=null;"); eq(run(c, 'canReload()'), false);
+});
+
+/* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
+async function nativeTests() {
+  const scheduled = [], prefs = new Map();
+  const Plugins = {
+    LocalNotifications: { cancel: async () => {}, schedule: async o => { scheduled.push(...o.notifications) }, requestPermissions: async () => ({ display: 'granted' }) },
+    Preferences: { get: async o => ({ value: prefs.get(o.key) ?? null }), set: async o => { prefs.set(o.key, o.value) }, remove: async o => { prefs.delete(o.key) } },
+  };
+  const c = makeContext({ Capacitor: { isNativePlatform: () => true, Plugins } });
+  const name = 'アプリ版：リマインダーは7日分まで予約し、今日練習した日は今日の分を出さない';
+  try {
+    run(c, newPlayer + "S.remind='23:59';");
+    await run(c, 'remindSchedule()');
+    ok(scheduled.length === 7, `7件のはず（${scheduled.length}件）`);
+    scheduled.length = 0;
+    run(c, "S.logs.unshift({date:today(),menu:'x',min:10,xp:5})");
+    await run(c, 'remindSchedule()');
+    ok(scheduled.length === 6 && !scheduled.some(n => n.id === 1), '今日の分が残っている');
+    scheduled.length = 0;
+    run(c, 'S.remind=null'); await run(c, 'remindSchedule()');
+    eq(scheduled.length, 0, 'オフなら予約しない');
+    run(c, 'save()'); await new Promise(r => setImmediate(r));
+    ok(JSON.parse(prefs.get('renshu-quest-v1')).c.name === 'テスト', '端末の保存領域にも保存される');
+    pass++; console.log('  ✔ ' + name);
+  } catch (e) { fail++; console.log('  ✘ ' + name + '\n      ' + e.message); }
+}
+
+nativeTests().then(() => {
+  console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
+  process.exit(fail ? 1 : 0);
+});

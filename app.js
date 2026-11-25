@@ -11,6 +11,7 @@ const GRPS=[
   {id:'core',   name:'体幹・バランス',   ic:'🧘', cat:'phy'},
   {id:'iq',     name:'頭のトレーニング', ic:'🧠', cat:'iq'},
   {id:'game',   name:'試合・チーム',     ic:'🏟️', cat:'game'},
+  {id:'df',     name:'ディフェンス',     ic:'🛡️', cat:'tec'},
 ];
 const M=(id,grp,name,lv,gain,d,how,rec)=>Object.assign({id,grp,cat:GRPS.find(g=>g.id===grp).cat,name,lv,gain,d,how,rec:null},rec||{});
 const MENUS=[
@@ -76,6 +77,12 @@ const MENUS=[
   // 試合・チーム
   M('game','game','試合・ミニゲーム',1,{iq:.6,stamina:.5,dribble:.3,kick:.3},'g_game',['試合やミニゲームに参加','練習したことを試してみる','うまくいったことをノートに書こう']),
   M('team','game','チーム練習',1,{iq:.4,stamina:.4,dribble:.3,kick:.3,touch:.3},'g_team',['チームの練習に参加','コーチの話をよく聞く','仲間と声をかけ合う']),
+  // ディフェンス
+  M('df_step','df','守備のサイドステップ',1,{agility:1,balance:.4},'a_side',['ひざを軽く曲げ、低い姿勢で構える','足をクロスさせずに横へステップ','相手を見たまま左右に動く'],{rec:'20秒で何往復？',unit:'回'}),
+  M('df_close','df','寄せてストップ',1,{speed:.6,agility:.6,iq:.3},'a_react',['合図でボール（相手）にダッシュで寄せる','近くなったら小さな歩幅でブレーキ','半身になって止まり、飛びこまない']),
+  M('df_1v1','df','1対1の守備',2,{balance:.8,power:.5,iq:.4},'c_1v1',['家族や友だちにドリブルしてもらう','体を斜めにして、外へ追いこむ','ボールだけでなく相手の腰を見る']),
+  M('df_tackle','df','ボールをうばうタイミング',2,{power:.7,balance:.6,iq:.3},'c_1v1',['相手のタッチが大きくなった瞬間をねらう','足だけでなく体ごと入る','うばったらすぐ前を向く']),
+  M('df_cover','df','守備の位置どりを考える',1,{iq:1},'i_image',['ボール・相手・ゴールを結ぶ線を想像する','その線の上（内側）に立つのが基本','試合の場面を思い出して考えてみよう']),
 ];
 
 /* ===== 図解イラスト（自分のキャラの色で描く・詳しい画面ではボールが動く） ===== */
@@ -259,20 +266,62 @@ const GEAR = [
   {lv:10, name:'オーラ'}, {lv:15, name:'王冠'}, {lv:20, name:'翼'},
 ];
 /* スキル＝呪文。条件にコーディネーション能力（定位・変換・連結・反応・識別・リズム・バランス）の考え方を使う */
+/* 個人技スキル。tier：gold＝とくに難しい技／blue＝技／green＝心がまえ。name が保存のキー（変えない）
+   need:[練習メニュー, 回数] があるものは「あと◯回」を表示する */
+const SKILL_TIER={gold:{name:'金スキル',ic:'🌟'},blue:{name:'技スキル',ic:'⚽'},green:{name:'心がまえ',ic:'🍀'}};
+const SK=(tier,name,how,ok,need)=>({tier,name,how,ok,need});
+const mcount=(s,id)=>s.logs.filter(l=>l.menu===id).length;
+const mneed=(id,n)=>s=>mcount(s,id)>=n;
 const SKILLS = [
-  {name:'またぎフェイント',  how:'ドリブルを3回練習（リズム）',            ok:s=>cnt(s,'dribble')>=3},
-  {name:'ダブルタッチ',      how:'ドリブル60（連結）',                    ok:s=>rt(s,'dribble')>=60},
-  {name:'クライフターン',    how:'アジリティ60・ドリブル55（変換）',       ok:s=>rt(s,'agility')>=60&&rt(s,'dribble')>=55},
-  {name:'ルーレット',        how:'ドリブル75・ボールタッチ65・バランス60（バランス）', ok:s=>rt(s,'dribble')>=75&&rt(s,'touch')>=65&&rt(s,'balance')>=60},
-  {name:'ヒールリフト',      how:'リフティング連続50回（識別）',           ok:s=>(s.best.lift||0)>=50},
-  {name:'高速カットイン',    how:'スピード65・アジリティ60（反応）',       ok:s=>rt(s,'speed')>=65&&rt(s,'agility')>=60},
-  {name:'インステップキック',how:'シュートを3回練習',                      ok:s=>cnt(s,'shoot')>=3},
-  {name:'コントロールシュート',how:'キック65（識別）',                      ok:s=>rt(s,'kick')>=65},
-  {name:'ボレーシュート',    how:'キック60・バランス60（連結）',           ok:s=>rt(s,'kick')>=60&&rt(s,'balance')>=60},
-  {name:'ワンタッチパス',    how:'パスを5回練習（反応）',                  ok:s=>cnt(s,'pass')>=5},
-  {name:'スルーパス',        how:'キック60・判断力65（定位）',             ok:s=>rt(s,'kick')>=60&&rt(s,'iq')>=65},
-  {name:'ハードワーカー',    how:'スタミナ65',                            ok:s=>rt(s,'stamina')>=65},
+  // 金スキル（とくに難しい技）
+  SK('gold','ルーレット','ドリブル75・ボールタッチ65・バランス60',s=>rt(s,'dribble')>=75&&rt(s,'touch')>=65&&rt(s,'balance')>=60),
+  SK('gold','ヒールリフト','リフティング連続50回',s=>(s.best.lift||0)>=50),
+  SK('gold','エラシコ','「エラシコ」を15回練習',mneed('elastico',15),['elastico',15]),
+  SK('gold','無回転シュート','「シュート」を30回練習・キック75',s=>mcount(s,'shoot')>=30&&rt(s,'kick')>=75,['shoot',30]),
+  SK('gold','ノールックパス','「壁パス ワンタッチ」を15回・判断力70',s=>mcount(s,'wall_1t')>=15&&rt(s,'iq')>=70,['wall_1t',15]),
+  SK('gold','ドリブルの魔術師','「コーン相手の1対1」を15回・ドリブル85',s=>mcount(s,'cone_1v1')>=15&&rt(s,'dribble')>=85,['cone_1v1',15]),
+  SK('gold','超高速ドリブル','「スピードドリブル」を15回・スピード75',s=>mcount(s,'speed_drib')>=15&&rt(s,'speed')>=75,['speed_drib',15]),
+  SK('gold','リフティングマスター','リフティング連続200回',s=>(s.best.lift||0)>=200),
+  // 技スキル
+  SK('blue','またぎフェイント','ドリブルを3回練習',s=>cnt(s,'dribble')>=3),
+  SK('blue','ダブルタッチ','ドリブル60',s=>rt(s,'dribble')>=60),
+  SK('blue','クライフターン','アジリティ60・ドリブル55',s=>rt(s,'agility')>=60&&rt(s,'dribble')>=55),
+  SK('blue','高速カットイン','スピード65・アジリティ60',s=>rt(s,'speed')>=65&&rt(s,'agility')>=60),
+  SK('blue','インステップキック','シュートを3回練習',s=>cnt(s,'shoot')>=3),
+  SK('blue','コントロールシュート','キック65',s=>rt(s,'kick')>=65),
+  SK('blue','ボレーシュート','キック60・バランス60',s=>rt(s,'kick')>=60&&rt(s,'balance')>=60),
+  SK('blue','ワンタッチパス','パスを5回練習',s=>cnt(s,'pass')>=5),
+  SK('blue','スルーパス','キック60・判断力65',s=>rt(s,'kick')>=60&&rt(s,'iq')>=65),
+  SK('blue','足裏コントロール','「足裏コロコロ」を7回練習',mneed('sole_roll',7),['sole_roll',7]),
+  SK('blue','インアウト','「インアウト」を5回練習',mneed('inout',5),['inout',5]),
+  SK('blue','L字ターン','「L字（引いて横へ）」を5回練習',mneed('l_drag',5),['l_drag',5]),
+  SK('blue','Vターン','「Vターン」を5回練習',mneed('v_turn',5),['v_turn',5]),
+  SK('blue','ストップ＆ゴー','「ストップ＆ゴー」を5回練習',mneed('stop_go',5),['stop_go',5]),
+  SK('blue','ターンの名手','「ターン練習」を7回練習',mneed('turn_drill',7),['turn_drill',7]),
+  SK('blue','1対1の突破','「コーン相手の1対1」を7回練習',mneed('cone_1v1',7),['cone_1v1',7]),
+  SK('blue','ピタッとトラップ','「トラップ（止めて蹴る）」を7回練習',mneed('trap',7),['trap',7]),
+  SK('blue','浮き球トラップ','「浮き球トラップ」を5回練習',mneed('air_trap',5),['air_trap',5]),
+  SK('blue','ロングフィード','「ロングキック」を5回練習・キック60',s=>mcount(s,'long_kick')>=5&&rt(s,'kick')>=60,['long_kick',5]),
+  SK('blue','四すみシュート','「四すみねらい」を7回練習',mneed('target',7),['target',7]),
+  SK('blue','ヘディング','「ヘディングリフティング」を5回練習',mneed('lift_head',5),['lift_head',5]),
+  SK('blue','爆発ダッシュ','「ダッシュ」を7回練習・スピード60',s=>mcount(s,'dash')>=7&&rt(s,'speed')>=60,['dash',7]),
+  SK('blue','反応スピード','「反応ダッシュ」を7回練習',mneed('react',7),['react',7]),
+  SK('blue','ステップワーク','「ラダー」を7回練習',mneed('ladder',7),['ladder',7]),
+  SK('blue','空中戦','「なわとび（二重跳び）」を7回・パワー60',s=>mcount(s,'jump')>=7&&rt(s,'power')>=60,['jump',7]),
+  SK('blue','両足使い','「両足交互リフティング」を10回練習',mneed('lift_alt',10),['lift_alt',10]),
+  // 心がまえ
+  SK('green','ハードワーカー','スタミナ65',s=>rt(s,'stamina')>=65),
+  SK('green','コツコツ努力家','30日練習する',s=>practiceDays(s)>=30),
+  SK('green','休むのも上手','宿屋で5回休む',s=>s.logs.filter(l=>l.rest).length>=5),
+  SK('green','研究熱心','「練習ノート」を10回書く',mneed('note',10),['note',10]),
+  SK('green','試合で強い','「試合・ミニゲーム」を10回',mneed('game',10),['game',10]),
+  SK('green','チームプレーヤー','「チーム練習」を10回',mneed('team',10),['team',10]),
+  SK('green','ぶれない体幹','「プランク」を10回練習',mneed('core',10),['core',10]),
+  SK('green','負けずぎらい','ライバルに3回勝つ',s=>(s.bossWins||0)>=3),
+  SK('green','自己ベスト更新王','自己ベストを10回更新',s=>s.logs.filter(l=>l.pb).length>=10),
 ];
+/* スキルの進み具合（0〜1）。練習回数で覚えるものだけ */
+const skillProg=(s,k)=>k.need?Math.min(1,mcount(s,k.need[0])/k.need[1]):null;
 
 /* ===== デイリークエスト ===== */
 const QPOOL=[
@@ -351,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.6.5';
+const APP_VERSION='0.16.1';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -380,7 +429,7 @@ function parentGate(){
 /* ===== はじめての人向けの 遊び方 ===== */
 const TUT=[
   {ic:'⚽',b:'smile',t:'練習を記録しよう',m:'ボクは相棒のボルト！ 練習したら「れんしゅう」から記録。経験値（EXP）がたまってレベルが上がり、能力が伸びていくよ。'},
-  {ic:'🏟️',b:'joy',t:'カードが進化する',m:'レベルが上がると、おうちの庭 → 公園 → チーム → トレセン …そしてワールドクラスへ！'},
+  {ic:'🏟️',b:'joy',t:'カードが進化する',m:'レベルが上がると、練習場所が 家の庭 → 公園 → 河川敷 … そして満員のスタジアムへ！ 自分の部屋も広く豪華になっていくよ。'},
   {ic:'📜',b:'serious',t:'クエストとライバル',m:'毎日3つのクエストと、週替わりのライバルに挑戦。クリアするとボーナスがもらえるよ。'},
   {ic:'🪙',b:'chest',t:'コインでショップ',m:'練習するとコインがたまる。ショップでボールやスパイクと交換して、着せ替えしよう。'},
   {ic:'🏨',b:'sleep',t:'休むのも練習',m:'HPが減ったら宿屋で休もう。体は休んでいる間に強くなる。目標は週4日の練習だよ。'},
@@ -397,7 +446,15 @@ function showTutorial(i=0){
 /* ===== バックアップ（機種変更やブラウザのデータ消去に備える） ===== */
 async function exportData(){
   if(!await parentGate())return;
-  const blob=new Blob([JSON.stringify({app:'renshu-quest',v:1,date:new Date().toISOString(),data:S})],{type:'application/json'});
+  const json=JSON.stringify({app:'renshu-quest',v:1,date:new Date().toISOString(),data:S}), name=`renshu-quest-backup-${today()}.json`;
+  if(PL.Filesystem&&PL.Share){
+    try{
+      const w=await PL.Filesystem.writeFile({path:name,data:json,directory:'CACHE',encoding:'utf8'});
+      await PL.Share.share({title:'れんしゅうクエストのバックアップ',files:[w.uri]});
+    }catch(e){}
+    return;
+  }
+  const blob=new Blob([json],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`renshu-quest-backup-${today()}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
   dialog({icon:'💾',title:'バックアップを保存しました',msg:'ファイルは大切に保管してください。'});
@@ -524,10 +581,16 @@ function openChest(){
   else {const c=r<.45?30+Math.floor(Math.random()*4)*10:r<.85?60+Math.floor(Math.random()*5)*10:150;
     S.coin=(S.coin||0)+c; html=`<div class="bigcoin">🪙</div><p style="font-size:26px;font-weight:900;margin:6px 0">${c} コイン</p>${c>=150?'<p class="rare">大当たり！</p>':''}`; sfx('coin')}
   save();
-  const box=document.getElementById('ovbox');
-  box.innerHTML=`<div class="chestopen">${boltImg('chest','big')}</div><h2>宝箱を開けた！</h2>${html}<button class="btn gold" id="chestok">${chestsPending()?'次の宝箱を開ける':'やったね！'}</button>`;
+  const box=document.getElementById('ovbox'), rare=html.includes('class="rare"');
+  box.innerHTML=`<div class="chestwait ${rare?'rarebox':''}" id="chestwait"><div class="chestbig">🎁</div><p class="sub">タップして開けよう！</p></div>`;
   document.getElementById('ov').classList.add('show');
-  document.getElementById('chestok').onclick=()=>{if(chestsPending())openChest();else{closeOv();render()}};
+  const w=document.getElementById('chestwait'); let opened=false;
+  const reveal=()=>{if(opened)return;opened=true;w.classList.add('burst');vib(rare?[60,40,60,40,160]:[50]);
+    setTimeout(()=>{box.innerHTML=`<div class="chestopen ${rare?'rareglow':''}">${boltImg('chest','big')}</div><h2>宝箱を開けた！</h2>${html}<button class="btn gold" id="chestok">${chestsPending()?'次の宝箱を開ける':'やったね！'}</button>`;
+      if(rare)confetti();
+      const ok=document.getElementById('chestok'); if(ok)ok.onclick=()=>{if(chestsPending())openChest();else{document.getElementById('ov').classList.remove('show');render()}};
+    },420)};
+  w.onclick=reveal;
 }
 
 /* ===== 月間チャレンジロード（毎月リセット。報酬は練習で必ずもらえる） ===== */
@@ -584,8 +647,31 @@ function confetti(){
   document.body.appendChild(c); setTimeout(()=>c.remove(),3500);
 }
 
+/* ===== アプリ版（ストア版）だけで使う機能。Webでは何もしない ===== */
+const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const PL=NATIVE?(Capacitor.Plugins||{}):{};
+
 /* ===== データ保存 ===== */
-const KEY='renshu-quest-v1';
+/* 兄弟で使えるように、選手（プロフィール）ごとに別々に保存する。1人目は昔からのキーのまま（データ移行なし） */
+const PKEY='renshu-quest-profiles', MAX_PROF=4;
+const profKey=id=>id?`renshu-quest-v1-p${id}`:'renshu-quest-v1';
+function profMeta(){let m=null;try{m=JSON.parse(localStorage.getItem(PKEY))}catch(e){}
+  m=m&&m.list?m:{cur:0,list:[{id:0}]};
+  m.list.forEach(x=>{if(!x.name){try{const d=JSON.parse(localStorage.getItem(profKey(x.id)));if(d&&d.c){x.name=d.c.name;x.lv=lv(d.xp||0).L;x.av=d.c.avatar||''}}catch(e){}}});   // 一覧に名前がなければ、その選手のデータから読む
+  return m}
+function saveMeta(m){const t=JSON.stringify(m);try{localStorage.setItem(PKEY,t)}catch(e){}if(PL.Preferences)PL.Preferences.set({key:PKEY,value:t}).catch(()=>{})}
+let KEY=profKey(profMeta().cur);
+/* アプリ版は 端末の保存領域（Preferences）にも二重に保存する（WebViewのデータが消えても記録が残る） */
+async function restoreNative(){
+  if(!PL.Preferences)return;
+  try{
+    const restore=async k=>{let ls=null;try{ls=localStorage.getItem(k)}catch(e){}
+      const r=await PL.Preferences.get({key:k});if(!ls&&r&&r.value){try{localStorage.setItem(k,r.value)}catch(e){}}};
+    await restore(PKEY);
+    const m=profMeta(); for(const x of m.list)await restore(profKey(x.id));
+    KEY=profKey(m.cur);
+  }catch(e){}
+}
 let S=null, tab='home', draft={menu:null,min:15,rec:''};
 function load(){try{const t=localStorage.getItem(KEY);if(t)S=JSON.parse(t)}catch(e){}
   if(!S)return;
@@ -594,7 +680,39 @@ function load(){try{const t=localStorage.getItem(KEY);if(t)S=JSON.parse(t)}catch
   if(st.lift!=null&&st.touch==null) S.stats={...freshStats(),dribble:st.dribble||0,touch:st.lift||0,kick:(st.shoot||0)+(st.pass||0),stamina:st.stamina||0};
   else S.stats={...freshStats(),...st};
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){const t=JSON.stringify(S);try{localStorage.setItem(KEY,t)}catch(e){}
+  if(S&&S.c){const m=profMeta(),x=m.list.find(p=>p.id===m.cur);if(x&&(x.name!==S.c.name||x.lv!==lv(S.xp).L||x.av!==S.c.avatar)){x.name=S.c.name;x.lv=lv(S.xp).L;x.av=S.c.avatar||'';saveMeta(m)}}
+  if(PL.Preferences)PL.Preferences.set({key:KEY,value:t}).catch(()=>{});
+  remindSoon();
+}
+/* ===== 練習リマインダー（アプリ版のみ）。毎日決まった時間に ボルトがやさしく声をかける =====
+   今日すでに練習（または休養）していたら、今日の分は出さない。7日先まで予約して、開くたびに予約しなおす */
+const REMIND_TIMES=['16:00','17:00','18:00','19:00','20:00'];
+const REMIND_MSG=['今日の練習、なにをする？ ボルトが待ってるよ！','5分だけでもOK！ ボールにさわってみよう','クエストに挑戦してみよう！ 練習した分だけ強くなるよ','今日も1つ、自己ベストをねらってみる？','つかれている日は宿屋で休むのも練習だよ'];
+let remindT=null;
+function remindSoon(){if(!PL.LocalNotifications)return;clearTimeout(remindT);remindT=setTimeout(remindSchedule,800)}
+async function remindSchedule(){
+  const LN=PL.LocalNotifications; if(!LN||!S)return;
+  try{
+    await LN.cancel({notifications:[1,2,3,4,5,6,7].map(id=>({id}))});
+    if(!S.remind)return;
+    const [h,m]=S.remind.split(':').map(Number), now=new Date(), done=S.logs.some(l=>l.date===today()), list=[];
+    for(let i=0;i<7;i++){
+      const at=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i,h,m,0);
+      if(at<=now||(i===0&&done))continue;
+      list.push({id:i+1,title:'れんしゅうクエスト',body:REMIND_MSG[(at.getDate()+i)%REMIND_MSG.length],schedule:{at},smallIcon:'ic_stat_rq',iconColor:'#D4AF37'});
+    }
+    if(list.length)await LN.schedule({notifications:list});
+  }catch(e){}
+}
+async function setRemind(){
+  const LN=PL.LocalNotifications; if(!LN)return;
+  const cur=S.remind||null, opts=[null,...REMIND_TIMES], next=opts[(opts.indexOf(cur)+1)%opts.length];
+  if(next&&!cur){
+    try{const p=await LN.requestPermissions(); if(p.display!=='granted'){dialog({icon:'🔕',title:'通知がオフになっています',msg:'スマホの「設定」→「通知」で、れんしゅうクエストの通知を許可してください。'});return}}catch(e){return}
+  }
+  S.remind=next; save(); render(); sfx('ok');
+}
 const need=L=>40+L*20;
 function lv(xp){let L=1,r=xp;while(r>=need(L)){r-=need(L);L++}return{L,r,n:need(L)}}
 const has=(s,id)=>s.titles.includes(id);
@@ -631,18 +749,84 @@ function norm(c){
 const MIR=x=>`<g transform="translate(200 0) scale(-1 1)">${x}</g>`;
 
 /* 成長ステージ：レベルで かいほう。ステージが上がるほど 舞台と ポーズが かっこよくなる */
+/* ステージ＝練習する場所（レベルで上がる）。絵は img/stages/stage-1〜8.webp（なければ下のグラデーション） */
 const STAGES=[
-  {lv:1,  name:'おうちの庭',  bg:'linear-gradient(180deg,#5fb3ff 0%,#bfe6ff 52%,#58b04a 52%,#2f7d2a 100%)'},
-  {lv:3,  name:'公園', bg:'linear-gradient(180deg,#ff9a5a 0%,#ffd9a8 50%,#7cc35b 50%,#3f8a3a 100%)'},
-  {lv:6,  name:'チーム入団', bg:'linear-gradient(180deg,#2a6fdb 0%,#9ccaff 48%,#c9a46a 48%,#8b6a3a 100%)'},
-  {lv:10, name:'トレセン',       bg:'linear-gradient(180deg,#0e2a5a 0%,#2d5fa8 48%,#2fa84f 48%,#1d6b33 100%)'},
-  {lv:15, name:'県代表',  bg:'linear-gradient(180deg,#050b1f 0%,#14306b 50%,#2f9e4f 50%,#155c2b 100%)'},
-  {lv:21, name:'地方代表', bg:'linear-gradient(180deg,#0b0620 0%,#3a1f73 50%,#2f9e4f 50%,#155c2b 100%)'},
-  {lv:28, name:'日本代表', bg:'radial-gradient(circle at 50% 38%,#4a8dff 0,#0b2a8a 45%,#030a2a 100%)'},
-  {lv:36, name:'ワールドクラス',   bg:'radial-gradient(circle at 50% 38%,#fff3a0 0,#ff9d00 30%,#7a1f00 65%,#120400 100%)'},
+  {lv:1,  name:'家の庭',           bg:'linear-gradient(180deg,#7cc6ff 0%,#c9ecff 46%,#8a6a45 46%,#8a6a45 49%,#6cbf4f 49%,#3f8f33 100%)'},
+  {lv:3,  name:'近所の公園',       bg:'linear-gradient(180deg,#8fd0ff 0%,#dff3ff 50%,#d9b77c 50%,#b8915a 100%)'},
+  {lv:6,  name:'大きな公園',       bg:'linear-gradient(180deg,#5fb3ff 0%,#bfe6ff 44%,#3f8f3a 44%,#5cb848 60%,#3c8a34 100%)'},
+  {lv:10, name:'河川敷',           bg:'linear-gradient(180deg,#ffb37a 0%,#ffe0b8 36%,#4f8fd6 36%,#2f6fb8 46%,#6cbf4f 46%,#3f8f33 100%)'},
+  {lv:15, name:'小学校のグラウンド', bg:'linear-gradient(180deg,#6fbfff 0%,#cdeeff 40%,#e8e2d4 40%,#e8e2d4 44%,#c49a62 44%,#a37a45 100%)'},
+  {lv:21, name:'フットサルコート', bg:'radial-gradient(circle at 20% 8%,rgba(255,255,255,.7),transparent 14%),radial-gradient(circle at 80% 8%,rgba(255,255,255,.7),transparent 14%),linear-gradient(180deg,#0b1a3a 0%,#1d3b6e 42%,#20a34a 42%,#1a8a3d 100%)'},
+  {lv:28, name:'天然芝のピッチ',   bg:'repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 28px,transparent 28px 56px),linear-gradient(180deg,#3d8fe0 0%,#a9d8ff 40%,#2f9e4f 40%,#1f7a3a 100%)'},
+  {lv:36, name:'満員のスタジアム', bg:'radial-gradient(circle at 15% 5%,#fff 0,transparent 12%),radial-gradient(circle at 85% 5%,#fff 0,transparent 12%),repeating-linear-gradient(90deg,#c0392b 0 6px,#f5b301 6px 12px,#2b59c3 12px 18px,#eaeaea 18px 24px),linear-gradient(180deg,#050b1f 0%,#14306b 24%,transparent 24%,transparent 42%,#2fa84f 42%,#155c2b 100%)'},
 ];
+const stageImg=i=>`url('img/stages/stage-${i+1}.webp')`;
 const POSE_OF=[0,0,1,1,2,3,3,4];
 function stageOf(L){let r=0;STAGES.forEach((x,i)=>{if(L>=x.lv)r=i});return r}
+/* 部屋：階級と同じタイミングで引っこし、広く豪華になる。絵は img/room/room-1〜8.webp（なければグラデーション）
+   cap＝飾れる数（トロフィー・メダル・ボール・くつ）。部屋が広いほど たくさん飾れる */
+const ROOMS=[
+  {name:'せまい物置部屋',   wall:'#8d7b68',wall2:'#6f604f',floor:'#7a6048',cap:2},
+  {name:'小さな子ども部屋', wall:'#d9c7a5',wall2:'#bba984',floor:'#9a7650',cap:3},
+  {name:'サッカー好きの部屋',wall:'#9fc3e8',wall2:'#7ea6d1',floor:'#a77b4f',cap:4},
+  {name:'広めの自分の部屋', wall:'#e8e2d4',wall2:'#cfc6b2',floor:'#b8875a',cap:5},
+  {name:'トロフィールーム', wall:'#2c4a7a',wall2:'#1d355e',floor:'#8a5a33',cap:6},
+  {name:'選手寮の広い部屋', wall:'#3a3f4b',wall2:'#2a2e38',floor:'#6b4a2e',cap:7},
+  {name:'高層マンションの部屋',wall:'#1b2a44',wall2:'#0f1a2e',floor:'#3a2a1e',cap:8},
+  {name:'豪邸の殿堂ルーム', wall:'#4a1d1d',wall2:'#2e0f0f',floor:'#5a3a12',cap:10},
+];
+/* 階級：成長ステージ（舞台）と同じレベルで昇格する、選手としての格 */
+const RANKS=['ビギナー','ルーキー','プレイヤー','レギュラー','エース','プロ','スーパースター','レジェンド'];
+const RANK_COL=['#8D939D','#36A269','#398BDC','#9062D0','#DF9634','#E34F4F','#24B9DF','#D4A52D'];
+const rankTag=(L,cls)=>`<span class="${cls||'ranktag'}" style="background:${RANK_COL[stageOf(L)]}">${rankOf(L)}</span>`;
+const rankOf=L=>RANKS[stageOf(L)];
+/* メダル：ノーマル→ブロンズ→シルバー→ゴールド→プラチナ→ダイヤ */
+const MEDALS=[{name:'ノーマル',k:'beg'},{name:'ブロンズ',k:'brz'},{name:'シルバー',k:'slv'},{name:'ゴールド',k:'gld'},{name:'プラチナ',k:'plt'},{name:'ダイヤ',k:'dia'}];
+/* 能力ランク（S〜G）。数値の帯ごとにメダルの色 */
+function grade(r){
+  const t=[[90,'S',5],[80,'A',4],[70,'B',3],[60,'C',2],[55,'D',1],[50,'E',1],[45,'F',0],[0,'G',0]].find(x=>r>=x[0]);
+  return {g:t[1],m:MEDALS[t[2]],next:r>=90?null:[90,80,70,60,55,50,45].reverse().find(x=>x>r)};
+}
+const gradeTag=r=>{const G=grade(r);return `<b class="grade ${G.m.k}">${G.g}</b>`};
+/* 二つ名：分野ごとに8段階。能力の分野は 能力ランク（G〜S）と同じ段階、練習の分野は その練習の回数で上がる */
+const NICK_STEPS=[0,3,7,15,25,40,60,100];
+const NICKS=[
+  {id:'lift',name:'リフティング',ic:'🔁',grp:'lift',t:['リフティング見習い','ボールバウンサー','リフティング上手','リフティング名人','テクニシャン','ボールマスター','空中の魔術師','リフティング神']},
+  {id:'dribble',name:'ドリブル',ic:'⚡',stat:'dribble',t:['ドリブル見習い','ボール運び上手','ドリブラー','スーパードリブラー','ドリブルスター','ドリブル忍者','突破の魔術師','ドリブルレジェンド']},
+  {id:'speed',name:'スピード',ic:'💨',stat:'speed',t:['かけっこ初心者','かけっこ上手','スプリンター','快速ランナー','スピードスター','疾風ランナー','稲妻ランナー','光速の覇者']},
+  {id:'agility',name:'アジリティ',ic:'🌀',stat:'agility',t:['アジリティ見習い','ステップ上手','クイックステッパー','切り返し名人','俊敏ファイター','ターンの達人','残像ステップ','神速ステップ']},
+  {id:'power',name:'パワー',ic:'💥',stat:'power',t:['パワー見習い','力もち','パワーファイター','タフファイター','パワーエース','怪力ファイター','鋼の戦士','パワーレジェンド']},
+  {id:'stamina',name:'スタミナ',ic:'❤️',stat:'stamina',t:['スタミナ見習い','元気ランナー','持久力ファイター','タフランナー','無限ランナー','鉄人','不屈の鉄人','無限の心臓']},
+  {id:'balance',name:'バランス',ic:'🧘',stat:'balance',t:['バランス見習い','ふんばり上手','体幹ファイター','ぶれない体','当たり負け知らず','鉄の体幹','不動の軸','体幹レジェンド']},
+  {id:'kick',name:'キック力',ic:'🦵',stat:'kick',t:['キック見習い','キッカー','パワーキッカー','ロングキッカー','キャノンキッカー','弾丸キッカー','雷撃キャノン','キックの覇者']},
+  {id:'shoot',name:'シュート',ic:'🥅',menus:['shoot','target'],t:['シュート見習い','ゴールチャレンジャー','シューター','ゴールハンター','ストライカー','エースストライカー','ゴールの魔術師','ゴールレジェンド']},
+  {id:'pass',name:'パス',ic:'🤝',menus:['pass','wall_1t','long_kick'],t:['パス見習い','パス上手','パサー','チャンスメーカー','プレーメーカー','アシストマスター','ピッチの司令塔','パスの魔術師']},
+  {id:'touch',name:'トラップ・タッチ',ic:'🦶',stat:'touch',t:['トラップ見習い','ボールキャッチャー','トラッパー','コントロール名人','ファーストタッチ職人','トラップマスター','吸い付く足','タッチの魔術師']},
+  {id:'df',name:'ディフェンス',ic:'🛡️',grp:'df',t:['守備見習い','守備ファイター','ディフェンダー','ボールハンター','守備職人','鉄壁ディフェンダー','ピッチの番人','伝説の守護者']},
+  {id:'iq',name:'判断力',ic:'🧠',stat:'iq',t:['ひらめき見習い','観察上手','判断上手','ゲームリーダー','戦術家','ピッチの頭脳','先読みの達人','天才司令塔']},
+  {id:'team',name:'チームワーク',ic:'🏟️',grp:'game',t:['仲間づくり見習い','応援マスター','チームプレイヤー','ムードメーカー','チームの支え','頼れるリーダー','キャプテン','絆のレジェンド']},
+];
+const GRADE_IDX={G:0,F:1,E:2,D:3,C:4,B:5,A:6,S:7};
+function nickOf(s,N){
+  if(N.stat){const v=rt(s,N.stat), i=GRADE_IDX[grade(v).g], nx=grade(v).next;return {i,t:N.t[i],cur:v,next:nx,unit:''}}
+  const n=s.logs.filter(l=>!l.rest&&(N.grp?(menuOf(l.menu)||{}).grp===N.grp:N.menus.includes(l.menu))).length;
+  let i=0; NICK_STEPS.forEach((x,j)=>{if(n>=x)i=j});
+  return {i,t:N.t[i],cur:n,next:NICK_STEPS[i+1]??null,unit:'回'};
+}
+/* 二つ名が上がったものを調べる（初めては記録だけ） */
+function nickUps(){
+  const first=!S.nick; S.nick=S.nick||{}; const ups=[];
+  NICKS.forEach(N=>{const x=nickOf(S,N);if(!first&&x.i>(S.nick[N.id]??0))ups.push({N,x});S.nick[N.id]=Math.max(x.i,S.nick[N.id]??0)});
+  return ups;
+}
+/* 練習メニューの熟練度：同じメニューを続けた回数でメダルが上がる */
+const MASTERY=[1,3,7,15,30,50];
+function mastery(s,id){
+  const n=s.logs.filter(l=>l.menu===id).length; let i=-1; MASTERY.forEach((x,j)=>{if(n>=x)i=j});
+  return {n,i,m:i>=0?MEDALS[i]:null,next:MASTERY[i+1]||null};
+}
+const medalTag=(M,small)=>M.m?`<span class="medal ${M.m.k}${small?' sm':''}">${M.m.name}</span>`:'';
+
 /* 画像（img/m1_3.png など）が あれば それを、なければ コードの イラストを ひょうじ */
 /* ===== AIイラストのキャラ（選んで使う） ===== */
 const AVATARS=[
@@ -816,7 +1000,7 @@ const POS_SHORT={'ウイング':'WG','トップ下':'OMF','ストライカー':'
 function cardView(s,L,i,opt={}){
   const st=STAGES[i], c=dressed(s,opt.over), lk=opt.locked;
   const bgi=BGS.find(x=>x.id===({...wear(s),...(opt.over||{})}).bg);
-  const bgStyle=bgi&&bgi.bg?`background-image:${bgi.bg}`:`background-image:url('img/bg_${i+1}.jpg'),${st.bg}`;
+  const bgStyle=bgi&&bgi.bg?`background-image:${bgi.bg}`:`background-image:${stageImg(i)},${st.bg}`;
   return `<div class="pc s${i} ${opt.mini?'mini':''} ${lk?'locked':''}">
     <div class="pc-bg" style="${bgStyle}"></div><div class="pc-fx"></div>
     <div class="pc-num ${String(c.num).length>2?'n3':''}">${c.num}</div>
@@ -898,7 +1082,7 @@ function editView(){
       <div class="row numrow"><button class="chip" data-nd="-1" aria-label="1つ減らす">−</button><input type="text" id="cnum" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="10" aria-label="背番号" value="${esc(numText(ed.num))}"><button class="chip" data-nd="1" aria-label="1つ増やす">＋</button></div></div>`:''}
     <div class="card">${t.items.map(itemView).join('')}</div>
     <div class="row"><button class="btn ghost" id="rand" style="flex:1">おまかせ</button><button class="btn gold" id="edok" style="flex:2">${S?'決定':'このキャラで始める'}</button></div>
-    ${S?'<button class="btn ghost" id="edcancel" style="margin-top:14px;font-size:15px">キャンセル</button>':''}
+    ${S||profMeta().list.length>1?'<button class="btn ghost" id="edcancel" style="margin-top:14px;font-size:15px">キャンセル</button>':''}
   </div>`;
 }
 function itemView(it){
@@ -949,7 +1133,9 @@ function bindEdit(){
     else S.c=ed;
     const isNew=!S.tut;ed=null;save();go('home');if(isNew)showTutorial();
   };
-  const cc=document.getElementById('edcancel'); if(cc) cc.onclick=()=>{ed=null;go('settings')};
+  const cc=document.getElementById('edcancel'); if(cc) cc.onclick=()=>{ed=null;
+    if(!S){const m=profMeta(), x=m.list.find(p=>p.id===m.cur); if(x&&!x.name){m.list=m.list.filter(p=>p!==x)} m.cur=m.list[0].id; saveMeta(m); KEY=profKey(m.cur); load(); tab='settings'; render(); return}
+    go('settings')};
 }
 
 /* ===== 画面 ===== */
@@ -962,7 +1148,8 @@ function render(){
   nav.classList.remove('hide');
   nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(S)wear(S);
-  app.innerHTML={home:homeView,practice:practiceView,skill:titlesView,log:logView,settings:settingsView,shop:shopView,wardrobe:wardrobeView,report:reportView}[tab]();
+  app.innerHTML={timer:timerView,status:statusView,home:homeView,practice:practiceView,skill:titlesView,log:logView,settings:settingsView,shop:shopView,wardrobe:wardrobeView,report:reportView}[tab]();
+  if(tab==='timer')bindTimer();
   if(tab==='shop')bindShop();
   if(tab==='wardrobe')bindWardrobe();
   if(tab==='report')bindReport();
@@ -978,7 +1165,7 @@ function render(){
 }
 
 function recoverHP(){
-  if(S.hp==null){S.hp=100;S.hpDay=today()}
+  if(S.hp==null||!S.hpDay){S.hp=S.hp??100;S.hpDay=today()}
   if(S.hpDay!==today()){const d=Math.round((new Date(today())-new Date(S.hpDay))/864e5);S.hp=Math.min(100,S.hp+40*Math.max(1,d));S.hpDay=today()}
 }
 function weekKey(){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -1004,6 +1191,91 @@ function bossCard(){
     <p class="sub" style="margin:4px 0 0">撃破条件：${m.name}の記録で <b style="color:var(--ink)">${B.target}${m.unit}${m.lower?' 以内':' 以上'}</b></p></div></div>
     <p class="sub" style="margin:8px 0 0">${B.beaten?'🎉 撃破済み！ 来週は新しいライバルが登場するよ':'ほうしゅう：100 EXP・🪙150'}</p></div>`;
 }
+/* ===== 練習場所ごとのライバルとストーリー =====
+   新しい場所に着くとライバルが登場。その場所で練習を重ね、能力を上げると勝てる（勝つとトロフィー） */
+const PLACE_RIVALS=[
+  {name:'庭に来たネコ「ミケ」',ic:'🐈',need:3,stat:'touch',v:45,intro:'庭にネコのミケがやってきた！ ボールにじゃれついて離れない…。やさしいボールタッチで、ミケからボールを守ろう！',win:'ミケはボールをあきらめて、日なたでお昼寝を始めた。「庭の練習はばっちりだね！」とボルト。'},
+  {name:'公園のヌシ「ケンタ」',ic:'🧢',need:5,stat:'dribble',v:50,intro:'近所の公園には、年上のケンタがいる。「ここでボールをけりたいなら、オレを抜いてみな！」',win:'「…やるじゃん。また一緒にやろうぜ！」ケンタが笑って手を出した。初めてのサッカー仲間だ！'},
+  {name:'芝生のスピード王「ハヤテ」',ic:'💨',need:6,stat:'speed',v:55,intro:'大きな公園の芝生で、風のように走る子がいる。ハヤテだ。「かけっこで勝負しよう！」',win:'ゴールまで競り合って、ついにハヤテに勝った！「次は負けないからな！」'},
+  {name:'河川敷のキャノン「ゴウ」',ic:'🎯',need:7,stat:'kick',v:58,intro:'夕焼けの河川敷。ドーン！と土手まで届くシュートを打つゴウ。「キック勝負だ。オレより強いボールをけってみろ！」',win:'キミのシュートがゴウのシュートより遠くへ！「…すげえ。オマエ、本物だな」'},
+  {name:'6年生キャプテン「タイガ」',ic:'🐯',need:8,stat:'iq',v:60,intro:'小学校のグラウンドには、チームをまとめる6年生のタイガ。「サッカーは頭も使うんだ。オレの守備、読めるか？」',win:'タイガの動きを読んで、スルーパスが通った！「いい判断だ。チームに必要な選手だよ」'},
+  {name:'ナイターの魔術師「ルカ」',ic:'🌙',need:9,stat:'agility',v:64,intro:'照明に照らされたフットサルコート。くるくると相手をかわすルカ。「ボクのステップについてこられる？」',win:'ルカの切り返しに、最後までついていけた！「キミとならもっとうまくなれそう」'},
+  {name:'トレセンのエース「ソラ」',ic:'⭐',need:10,stat:'balance',v:66,intro:'きれいな天然芝のピッチ。選ばれた選手だけが集まる場所で、エースのソラが待っていた。「ここからが本当の勝負だよ」',win:'ぶつかり合いでも倒れずに、ソラからボールをうばった！「…キミが新しいエースだ」'},
+  {name:'世界の壁「レオン」',ic:'👑',need:12,stat:'ovr',v:72,intro:'満員のスタジアム。大歓声の中、世界中で活躍するレオンが立ちはだかる。「キミの全部を見せてくれ」',win:'スタジアムがゆれるほどの大歓声！ キミはついに世界の壁をこえた。伝説の始まりだ！'},
+];
+const prVal=(s,R)=>R.stat==='ovr'?ovr(s):rt(s,R.stat);
+const prStat=R=>R.stat==='ovr'?'総合':statName(R.stat);
+const nonRest=s=>s.logs.filter(l=>!l.rest).length;
+function placeRival(){
+  const i=stageOf(lv(S.xp).L);
+  if(!S.place||S.place.i!==i)S.place={i,from:nonRest(S),beaten:false};
+  const R=PLACE_RIVALS[i], cnt=Math.max(0,nonRest(S)-S.place.from), val=prVal(S,R);
+  return {i,R,cnt,val,beaten:S.place.beaten};
+}
+/* 練習のたびに勝てたか調べる */
+function placeCheck(notes){
+  const P=placeRival(); if(P.beaten||P.cnt<P.R.need||P.val<P.R.v)return 0;
+  S.place.beaten=true; S.placeWins=S.placeWins||[]; if(!S.placeWins.includes(P.i))S.placeWins.push(P.i);
+  notes.push(`⚔️ <b>${P.R.name}</b> に勝った！ 🎖️ トロフィーが部屋に飾られたよ`);
+  notes.push(`💬 ${P.R.win}`);
+  return 200;
+}
+function placeRivalCard(){
+  const P=placeRival(), R=P.R, a=Math.min(1,P.cnt/R.need), b=Math.min(1,(P.val-40)/Math.max(1,R.v-40));
+  return `<div class="card prcard ${P.beaten?'beaten':''}"><h3>📍 ${STAGES[P.i].name}のライバル</h3>
+    <div class="row" style="margin-top:8px;align-items:flex-start"><span class="bossic">${R.ic}</span><div style="flex:1"><b style="font-size:17px">${R.name}</b>
+    <p class="prstory">${P.beaten?R.win:R.intro}</p></div></div>
+    ${P.beaten?`<p class="sub" style="margin:6px 0 0">🎖️ 勝利！ 次の場所（${STAGES[P.i+1]?STAGES[P.i+1].name+'・Lv.'+STAGES[P.i+1].lv:'もうない！ 最高の選手だ'}）で新しいライバルが待ってるよ</p>`
+    :`<div class="prneed"><span>ここで練習 ${Math.min(P.cnt,R.need)}/${R.need}回</span><i><b style="width:${a*100}%"></b></i></div>
+      <div class="prneed"><span>${prStat(R)} ${P.val}/${R.v}</span><i><b style="width:${Math.max(0,b)*100}%"></b></i></div>
+      <p class="sub" style="margin:6px 0 0">ほうしゅう：🪙200・🎖️トロフィー</p>`}</div>`;
+}
+/* 部屋に飾るもの（練習でもらったものが増えていく） */
+function roomItems(s){
+  const L=lv(s.xp).L, R=ROOMS[stageOf(L)], days=practiceDays(s);
+  const trophies=[];
+  (s.placeWins||[]).forEach(k=>trophies.push({ic:'🎖️',t:`${PLACE_RIVALS[k].name}に勝利`}));
+  for(let k=0;k<(s.bossWins||0);k++)trophies.push({ic:'🏆',t:'ライバル撃破'});
+  [[10,'🥉'],[30,'🥈'],[60,'🥇'],[100,'👑']].forEach(([d,ic])=>{if(days>=d)trophies.push({ic,t:`練習${d}日達成`})});
+  const medals=MENUS.map(m=>({m,q:mastery(s,m.id)})).filter(x=>x.q.i>=3).sort((a,b)=>b.q.i-a.q.i).map(x=>({k:x.q.m.k,t:`${x.m.name}：${x.q.m.name}`}));
+  const own=(list)=>list.filter(it=>(s.inv||[]).includes(it.id)&&it.img);
+  return {R,trophies,medals,balls:own(BALLS),boots:own(BOOTS),kits:own(KITS),posters:STAGES.slice(0,stageOf(L)+1)};
+}
+function roomView(s){
+  const L=lv(s.xp).L, i=stageOf(L), X=roomItems(s), R=X.R, cap=R.cap, c=dressed(s);
+  const more=(n)=>n>cap?`<em class="rmore">+${n-cap}</em>`:'';
+  const bg=`url('img/room/room-${i+1}.webp'),linear-gradient(180deg,${R.wall} 0%,${R.wall2} 62%,${R.floor} 62%,${R.floor} 100%)`;
+  return `<div class="room r${i}" style="background-image:${bg}" onclick="roomInfo()">
+    <div class="rposters">${X.posters.map((st,k)=>`<i title="${st.name}" style="background-image:${stageImg(k)},${st.bg}"></i>`).join('')}</div>
+    <div class="rshelf rtro"><b>トロフィー</b><div>${X.trophies.slice(0,cap).map(x=>`<span title="${x.t}">${x.ic}</span>`).join('')||'<small>まだない</small>'}${more(X.trophies.length)}</div></div>
+    <div class="rshelf rmed"><b>メダル</b><div>${X.medals.slice(0,cap).map(x=>`<span class="rmedal ${x.k}" title="${x.t}"></span>`).join('')||'<small>まだない</small>'}${more(X.medals.length)}</div></div>
+    <div class="rchar">${charView(c,L,i)}</div>
+    <div class="rfloor rballs">${X.balls.slice(0,cap).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
+    <div class="rfloor rboots">${X.boots.slice(0,Math.max(1,cap-1)).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
+    <div class="rname">🏠 ${R.name}</div>
+  </div>`;
+}
+function roomInfo(){
+  const i=stageOf(lv(S.xp).L), nx=ROOMS[i+1], X=roomItems(S);
+  dialog({icon:'🏠',title:ROOMS[i].name,msg:`トロフィー ${X.trophies.length}個・メダル ${X.medals.length}個・ボール ${X.balls.length}個・スパイク ${X.boots.length}足<br><br>トロフィーはライバルに勝ったり、練習日数を重ねるともらえるよ。メダルは同じ練習を続けて「ゴールド」以上になると飾れるよ。${nx?`<br><br>Lv.${STAGES[i+1].lv}で「${nx.name}」に引っこし！ もっとたくさん飾れるようになるよ。`:'<br><br>最高の部屋だ！'}`});
+}
+/* 練習画面の上：今の練習場所に大きなマイキャラ */
+function stageScene(s){
+  const L=lv(s.xp).L, i=stageOf(L), st=STAGES[i], nx=STAGES[i+1], c=dressed(s);
+  return `<div class="scene s${i}" style="background-image:${stageImg(i)},${st.bg}">
+    <div class="scene-place">📍 ${st.name}</div>
+    <div class="scene-char">${charView(c,L,i)}</div>
+    <div class="scene-foot"><b>Lv.${L}</b> ${rankTag(L)}<span>${nx?`次は「${nx.name}」Lv.${nx.lv}`:'最高の舞台！'}</span></div>
+  </div>`;
+}
+/* はじめての人向け：最初の練習へ案内する（かんたんな練習を3つ） */
+function firstCard(){
+  if(S.logs.some(l=>!l.rest))return '';
+  const picks=['sole_roll','lift','dash'].map(menuOf).filter(Boolean);
+  return `<div class="card firstcard"><h3>🎯 はじめての練習をしよう！</h3>
+    <p class="sub" style="margin:6px 0 10px">5分だけでもOK。最初の練習でボーナス（+100 EXP・🪙50・🎁宝箱）がもらえるよ！</p>
+    <div class="firstpicks">${picks.map(m=>`<button onclick="draft={menu:'${m.id}',min:10,rec:''};go('practice')"><div class="mthumb">${diag(m.d)}</div><b>${m.name}</b></button>`).join('')}</div></div>`;
+}
 function homeView(){
   recoverHP();dailyCheck();
   const {L,r,n}=lv(S.xp);
@@ -1013,20 +1285,24 @@ function homeView(){
   const t=TITLES.find(x=>x.id===S.eq);
   return `<div class="top">
     <button class="coin" onclick="go('shop')" style="position:absolute;right:14px;top:12px;z-index:5">🪙 ${S.coin||0}</button>
-    ${cardView(S,L,stageOf(L))}
+    ${profChip()}
+    ${roomView(S)}
     ${t?`<div class="title-badge" style="margin-top:10px">${t.ic} ${t.name}</div><br>`:''}
-    <div class="lv">Lv. ${L}</div> <span class="jobtag">${J.name}</span>
+    <div class="lv">Lv. ${L}</div> ${rankTag(L)} <span class="jobtag">${J.name}</span>
     <div class="xpbar"><i style="width:${r/n*100}%"></i></div>
     <div class="xptext">次のレベルまで あと${n-r} EXP</div>
     <div class="hprow"><b>HP</b><div class="hpbar"><i style="width:${hp}%;background:${hp<25?'#ff4d4d':hp<50?'#ffb020':'#3ee08f'}"></i></div><span>${hp}/100</span></div>
   </div>
   <div class="wrap">
-    <div class="row" style="margin:4px 0 16px"><button class="btn gold" onclick="go('practice')" style="flex:2">練習を記録する</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
+    ${firstCard()}
+    <button class="btn gold" onclick="go('practice')" style="margin:4px 0 10px">練習を記録する</button>
+    <div class="row" style="margin:0 0 16px"><button class="btn ghost" onclick="go('status')" style="flex:1">つよさ</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
     ${buddyCard()}
     ${parentMsgCard()}
     ${hp<25?`<div class="card warn">⚠ HPが少なくなっています。疲れがたまるとケガをしやすくなるよ。今日は宿屋で休もう。</div>`:''}
     ${chestCard()}
     ${weekCard()}
+    ${placeRivalCard()}
     ${questCard()}
     ${roadCard()}
     ${bossCard()}
@@ -1050,12 +1326,12 @@ let pgrp='touch';
 const stars=lv=>`<span class="stars">${'★'.repeat(lv)}<i>${'★'.repeat(3-lv)}</i></span>`;
 function practiceView(){
   const m=menuOf(draft.menu), boost=boostStats();
-  if(!m) return `<div class="wrap">
+  if(!m) return `${stageScene(S)}<div class="wrap">
     <h2 style="margin:8px 0 4px">何を練習した？</h2>
     <p class="sub" style="margin:0 0 12px">🌱＝今の年齢で伸びやすい練習（経験×1.5）　★＝むずかしさ</p>
     <div class="gtabs">${GRPS.map(g=>`<button class="gtab ${g.id===pgrp?'on':''}" data-g="${g.id}"><span>${g.ic}</span>${g.name}</button>`).join('')}</div>
     <div class="mlist">${SPORT.menus.filter(x=>x.grp===pgrp).map(x=>`<button class="mitem" data-m="${x.id}"><div class="mthumb">${diag(x.d)}</div>
-      <div class="minfo"><b>${x.name}</b>${stars(x.lv)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span></div>
+      <div class="minfo"><b>${x.name}</b>${stars(x.lv)}${medalTag(mastery(S,x.id),1)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span></div>
       ${boost.includes(Object.keys(x.gain)[0])?'<em class="nobi">🌱</em>':''}</button>`).join('')}</div>
   </div>`;
   return `<div class="wrap">
@@ -1065,6 +1341,7 @@ function practiceView(){
       <ol class="how">${m.how.map(h=>`<li>${h}</li>`).join('')}</ol>
       <div class="legend"><span><i style="background:#ffd84a"></i>ボールの動き</span><span><i style="background:#eaf2ff"></i>人の動き</span><span><i style="background:#ff8a00"></i>コーン</span></div>
     </div>
+    ${(()=>{const Q=mastery(S,m.id);return `<div class="card mastcard"><h3>熟練度 ${medalTag(Q)||'<span class="sub">まだ練習していない</span>'}</h3><p class="sub" style="margin:6px 0 0">この練習をした回数：<b style="color:var(--ink)">${Q.n}回</b>${Q.next?`　次のメダルまで あと${Q.next-Q.n}回`:'　最高ランク！'}</p>${SKILLS.filter(k=>k.need&&k.need[0]===m.id&&!(S.skills||[]).includes(k.name)).map(k=>`<p class="sub" style="margin:4px 0 0">${SKILL_TIER[k.tier].ic} あと${Math.max(0,k.need[1]-Q.n)}回で「${k.name}」を習得できるかも</p>`).join('')}</div>`})()}
     <div class="card"><h3>上がる能力</h3><p style="margin:6px 0 0">${Object.entries(m.gain).map(([id,w])=>`${statName(id)}<b class="gmark">${w>=1?'◎':w>=.4?'○':'△'}</b>`).join('　')}${boost.includes(Object.keys(m.gain)[0])?'　<span class="nobitag">🌱 のびどき</span>':''}</p></div>
     <div class="card"><h3>練習時間</h3>
       <div class="big"><span id="minv">${draft.min}</span> 分</div>
@@ -1074,10 +1351,55 @@ function practiceView(){
       <input type="number" id="rec" inputmode="decimal" step="${m.dec?'0.1':'1'}" min="0" ${m.max?`max="${m.max}"`:''} value="${esc(draft.rec)}" placeholder="—">
       <p class="sub" style="margin:8px 0 0">今の自己ベスト：<b>${S.best[m.id]!=null?S.best[m.id]+m.unit:'まだなし'}</b></p>
       <div class="hint">自己ベストを更新するとボーナス +30 EXP</div></div>`:''}
+    ${draft.timed?`<div class="card timedone">⏱ タイマーで <b>${draft.min}分</b> 練習したよ！ 記録があれば入れて「記録する」を押そう</div>`:''}
+    <button class="btn ghost timerbtn" id="tstart">⏱ タイマーで練習する（${draft.min}分）</button>
     <button class="btn gold" id="save">記録する　<span id="xpv">+${calcXP()}</span> EXP</button>
   </div>`;
 }
 function calcXP(){return draft.min*2}
+/* ===== 練習タイマー：スタートすると時間を数え、ボルトが声をかける。終わるとそのまま記録へ =====
+   時間は「始めた時刻」から計算するので、画面を閉じても続きから数えられる */
+const TIMER_TALK=['いいね！ その調子！','ボールをよく見て！','ナイスタッチ！','あと少し！ がんばれ！','フォームを意識しよう！','呼吸を整えてね','キミならできる！','すごい集中力だ！'];
+let timerTick=null, wakeLock=null;
+const tElapsed=T=>T.acc+(T.run?Date.now()-T.start:0);
+function timerView(){
+  const T=S.timer, m=menuOf(T.menu), L=lv(S.xp).L, i=stageOf(L), st=STAGES[i];
+  return `<div class="tview" style="background-image:${stageImg(i)},${st.bg}">
+    <div class="tmenu">${m.name}</div>
+    <div class="tchar">${charView(dressed(S),L,i)}</div>
+    <div class="tclock"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="tbg"/><circle cx="60" cy="60" r="52" class="tfg" id="tring" pathLength="100"/></svg>
+      <div><b id="ttime">0:00</b><small>目標 ${T.goal}分</small></div></div>
+    <div class="ttalk">${boltImg('cheer')}<div class="bubble" id="ttalk">スタート！ いっしょにがんばろう！</div></div>
+    <div class="tbtns"><button class="btn ghost" id="tpause">${T.run?'一時停止':'再開'}</button><button class="btn gold" id="tend">終わって記録</button></div>
+    <button class="tquit" id="tquit">やめる</button>
+  </div>`;
+}
+function bindTimer(){
+  const T=S.timer; if(!T){go('practice');return}
+  document.getElementById('nav').classList.add('hide');
+  try{if(navigator.wakeLock&&!wakeLock)navigator.wakeLock.request('screen').then(w=>wakeLock=w).catch(()=>{})}catch(e){}
+  let lastTalk=-1, half=false, done=false;
+  const upd=()=>{
+    if(!document.getElementById('ttime')){clearInterval(timerTick);return}
+    const ms=tElapsed(T), sec=Math.floor(ms/1000), p=Math.min(100,ms/(T.goal*600));
+    document.getElementById('ttime').textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+    document.getElementById('tring').style.strokeDasharray=`${p} 100`;
+    const k=Math.floor(sec/30); if(T.run&&k!==lastTalk&&sec>0){lastTalk=k;document.getElementById('ttalk').textContent=TIMER_TALK[k%TIMER_TALK.length]}
+    if(!half&&p>=50){half=true;if(T.run){sfx('ok');document.getElementById('ttalk').textContent='半分まできた！ ナイス！'}}
+    if(!done&&p>=100){done=true;sfx('level');vib([80,60,80]);document.getElementById('ttalk').textContent='目標達成！ 「終わって記録する」を押そう！';document.querySelector('.tclock').classList.add('goal')}
+  };
+  clearInterval(timerTick); timerTick=setInterval(upd,500); upd();
+  document.getElementById('tpause').onclick=()=>{if(T.run){T.acc=tElapsed(T);T.run=false}else{T.start=Date.now();T.run=true}save();go('timer')};
+  const stop=()=>{clearInterval(timerTick);try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null};
+  document.getElementById('tend').onclick=()=>{
+    const min=Math.max(5,Math.min(90,Math.round(tElapsed(T)/60000/5)*5));
+    stop(); draft={menu:T.menu,min,rec:'',timed:true}; S.timer=null; save(); go('practice');
+  };
+  document.getElementById('tquit').onclick=async()=>{
+    if(!await dialog({icon:'⏱',title:'タイマーをやめる？',msg:'この練習は記録されません。',ok:'やめる',cancel:'続ける'}))return;
+    stop(); S.timer=null; save(); go('practice');
+  };
+}
 function bindPractice(){
   document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{pgrp=b.dataset.g;const y=window.scrollY;render();window.scrollTo(0,y)});
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{draft.menu=b.dataset.m;draft.rec='';render()});
@@ -1088,6 +1410,8 @@ function bindPractice(){
   if(rc)rc.oninput=e=>{draft.rec=e.target.value};
   const sv=document.getElementById('save');
   if(sv)sv.onclick=doPractice;
+  const ts=document.getElementById('tstart');
+  if(ts)ts.onclick=()=>{S.timer={menu:draft.menu,goal:draft.min,start:Date.now(),acc:0,run:true};save();go('timer')};
 }
 function checkQuests(){
   S.qd=S.qd||{}; const d=today(), done=S.qd[d]=S.qd[d]||[];
@@ -1107,6 +1431,7 @@ function doPractice(){
   const m=menuOf(draft.menu);
   let xp=calcXP(), notes=[], coin=draft.min, pb=false;
   const rec=draft.rec===''?null:Number(draft.rec);
+  const first=!S.logs.some(l=>!l.rest);
   if(rec!=null&&(isNaN(rec)||rec<0||(m.max&&rec>m.max))){dialog({icon:'🔢',title:'記録の数字を確かめてね',msg:m.max?`0〜${m.max}の数字で入力してね。`:'0以上の数字で入力してね。'});return}
   if(rec!=null){
     const b=S.best[m.id], better=b==null||(m.lower?rec<b:rec>b);
@@ -1119,7 +1444,10 @@ function doPractice(){
   notes.unshift(...(ups.length?ups:[`${statName(Object.keys(m.gain)[0])}の経験がたまった（もうすぐアップ）`]));
   if(Object.keys(m.gain).some(id=>boost.includes(id))) notes.push('🌱 のびどきボーナス ×1.5');
   if(jobMult(J,Object.keys(m.gain)[0])>1) notes.push(`⚽ ${J.name}の職業ボーナス`);
+  const mb=mastery(S,m.id).i;
   S.logs.unshift({date:today(),menu:m.id,min:draft.min,rec,xp,pb});
+  if(first){xp+=100;coin+=50;S.bonusChest=(S.bonusChest||0)+1;notes.unshift('🎉 はじめての練習ボーナス！ +100 EXP・🪙50・🎁宝箱')}
+  {const ma=mastery(S,m.id);if(ma.i>mb)notes.push(`🏅 「${m.name}」の熟練度が <b>${ma.m.name}</b> に上がった！`)}
   S.hp=Math.max(0,S.hp-draft.min/2);
   const q=checkQuests(); xp+=q.xp; coin+=q.coin; notes.push(...q.notes);
   const bb=checkBoss(m,rec); xp+=bb.xp; coin+=bb.coin; notes.push(...bb.notes);
@@ -1144,18 +1472,21 @@ function unlocks(){
   if(newT.length&&!S.eq)S.eq=newT[newT.length-1].id;
   const newS=SKILLS.filter(k=>!S.skills.includes(k.name)&&k.ok(S));
   newS.forEach(k=>S.skills.push(k.name));
-  return {newT,newS};
+  const newN=nickUps();
+  return {newT,newS,newN};
 }
 function gain(xp,notes,coin=0){
   const before=lv(S.xp).L;
   S.xp+=xp;
   const after=lv(S.xp).L;
   if(after>before){S.bp=(S.bp||0)+3*(after-before);notes.push(`育成ポイント +${3*(after-before)}`)}
-  if(stageOf(after)>stageOf(before)){const R=STAGES[stageOf(after)];notes.push(`ステージアップ！ <b>${R.name}</b>に進出！`)}
-  const {newT,newS}=unlocks();
+  if(stageOf(after)>stageOf(before)){const R=STAGES[stageOf(after)];notes.push(`昇格！ 階級が <b>${rankOf(after)}</b> になった！`);notes.push(`📍 練習場所が <b>${R.name}</b> にレベルアップ！`);notes.push(`🏠 部屋が <b>${ROOMS[stageOf(after)].name}</b> に引っこした！`)}
+  const {newT,newS,newN}=unlocks();
+  newN.forEach(({N,x})=>notes.push(`${N.ic} ${N.name}の二つ名が <b>「${x.t}」</b> になった！`));
   const gear=GEAR.filter(g=>g.lv>before&&g.lv<=after);
   coin+=newT.length*30+(stageOf(after)>stageOf(before)?200:0);
   coin+=roadGain(xp,notes);
+  coin+=placeCheck(notes);
   if(Math.floor((totalMin())/60)>Math.floor((totalMin()-(S.logs[0]&&!S.logs[0].rest?S.logs[0].min:0))/60)&&S.logs[0]&&!S.logs[0].rest)notes.push('🎁 宝箱をゲット！ ホームで開けよう');
   if(coin){S.coin=(S.coin||0)+coin;notes.push(`🪙 コイン +${coin}`)}
   save();tab='home';render();
@@ -1164,23 +1495,45 @@ function gain(xp,notes,coin=0){
 function allot(id){
   if(!(S.bp>0))return;
   S.stats[id]=Math.max(S.stats[id],(rt(S,id)-40)*3)+3; S.bp--;
-  const {newT,newS}=unlocks();
+  const {newT,newS,newN}=unlocks();
   if(newT.length)S.coin=(S.coin||0)+newT.length*30;
   save();render();
-  if(newT.length||newS.length)showResult(0,1,1,newT,[],newT.length?[`🪙 コイン +${newT.length*30}`]:[],newS);
+  const nn=newN.map(({N,x})=>`${N.ic} ${N.name}の二つ名が <b>「${x.t}」</b> になった！`);
+  if(newT.length||newS.length||nn.length)showResult(0,1,1,newT,[],[...(newT.length?[`🪙 コイン +${newT.length*30}`]:[]),...nn],newS);
 }
+/* 全画面のカットイン演出（昇格・引っこしなど）。タップで次へ */
+function cutin({kicker,title,color='#f5b301',lines=[],L,i}){
+  return new Promise(res=>{
+    const d=document.createElement('div'); d.className='cutin';
+    const c=dressed(S);
+    d.innerHTML=`<div class="cut-rays" style="--c:${color}"></div><div class="cut-band" style="--c:${color}"></div>
+      <div class="cut-char">${charView(c,L,i)}</div>
+      <div class="cut-text"><small>${kicker}</small><h1 style="--c:${color}">${title}</h1>${lines.map(x=>`<p>${x}</p>`).join('')}<em>タップして続ける</em></div>`;
+    document.body.appendChild(d); sfx('stage'); vib([40,40,120]);
+    requestAnimationFrame(()=>d.classList.add('on'));
+    setTimeout(()=>d.onclick=()=>{d.classList.add('off');setTimeout(()=>{d.remove();res()},250)},600);
+  });
+}
+const vib=p=>{try{if(S&&S.sound!==false&&navigator.vibrate)navigator.vibrate(p)}catch(e){}};
 function showResult(xp,b,a,newT,gear,notes,newS=[]){
+  if(stageOf(a)>stageOf(b)&&!showResult.cut){
+    const i=stageOf(a);
+    showResult.cut=1;
+    cutin({kicker:'昇格！',title:rankOf(a),color:RANK_COL[i],L:a,i,lines:[`📍 練習場所：<b>${STAGES[i].name}</b>`,`🏠 新しい部屋：<b>${ROOMS[i].name}</b>`,`⚔️ 新しいライバル：<b>${PLACE_RIVALS[i].name}</b>`]})
+      .then(()=>{showResult(xp,b,a,newT,gear,notes,newS);showResult.cut=0});
+    return;
+  }
   const up=a>b, awk=stageOf(a)>stageOf(b);
   sfx(awk?'stage':up?'level':'ok');
-  if(up)confetti();
+  if(up){confetti();vib([30,30,60])}
   let items=notes.map(n=>`<li>${n}</li>`).join('');
   gear.forEach(g=>items+=`<li>新しい装備：${g.name}</li>`);
-  newS.forEach(k=>items+=`<li>スキル習得：${k.name}</li>`);
+  newS.forEach(k=>items+=`<li>スキル習得：<span class="skchip ${k.tier}">${k.name}</span></li>`);
   newT.forEach(t=>items+=`<li>称号ゲット：${t.ic} ${t.name}</li>`);
   document.getElementById('ovbox').innerHTML=`
     <div class="star">${boltImg(awk?'trophy':up?'joy':newT.length||newS.length?'wow':'cheer','big')}</div>
-    <h2>${awk?'ステージアップ！':up?'レベルアップ！':xp?'+'+xp+' EXP':'習得！'}</h2>
-    ${up?`<p style="font-size:22px;font-weight:800;margin:0">Lv.${b} → <span style="color:var(--gold)">Lv.${a}</span></p><p class="sub">+${xp} EXP</p>`:'<p class="sub">よくがんばったね！</p>'}
+    <h2 class="${up?'lvtitle':''}">${awk?'昇格！':up?'レベルアップ！':xp?'+'+xp+' EXP':'習得！'}</h2>
+    ${up?`<div class="lvflip"><span class="old">Lv.${b}</span><span class="arrow">▶</span><span class="new">Lv.${a}</span></div><p class="sub">+${xp} EXP</p>`:'<p class="sub">よくがんばったね！</p>'}
     <ul>${items}</ul>
     <button class="btn" onclick="document.getElementById('ov').classList.remove('show')">やったね！</button>`;
   document.getElementById('ov').classList.add('show');
@@ -1197,6 +1550,106 @@ function collection(){
   const all=TITLES.length+SKILLS.length+STAGES.length+items.length;
   return {have,all,p:Math.round(have/all*100)};
 }
+function skillBoard(){
+  const got=S.skills||[];
+  return Object.entries(SKILL_TIER).map(([t,T])=>{
+    const L=SKILLS.filter(k=>k.tier===t);
+    return `<h3 class="skhead ${t}">${T.ic} ${T.name}　<small>${L.filter(k=>got.includes(k.name)).length}/${L.length}</small></h3>
+    <div class="skgrid">${L.map(k=>{const ok=got.includes(k.name), pr=skillProg(S,k);
+      return ok?`<div class="skchip ${t}">${k.name}</div>`
+        :`<div class="skchip lock"><b>？？？</b><small>${k.how}</small>${pr!=null?`<span class="tprog"><i style="width:${pr*100}%"></i></span>`:''}</div>`}).join('')}</div>`}).join('');
+}
+/* ===== 選手カードを画像で保存（保護者確認つき。画像は端末の中で作り、外部には送らない） ===== */
+const CARD_SKY=[['#7cc6ff','#6cbf4f'],['#8fd0ff','#c9a46a'],['#5fb3ff','#4fa944'],['#ffb37a','#5cb848'],['#6fbfff','#b8915a'],['#0b1a3a','#20a34a'],['#3d8fe0','#2f9e4f'],['#050b1f','#2fa84f']];
+const loadImg=src=>new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=src});
+async function makeCardImage(){
+  const W=1080,H=1350, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d');
+  try{await document.fonts.ready}catch(e){}
+  const L=lv(S.xp).L, i=stageOf(L), c=dressed(S), col=RANK_COL[i];
+  // 背景：練習場所の絵（なければ空と地面）
+  const bg=await loadImg(`img/stages/stage-${i+1}.webp`);
+  if(bg){const sc=Math.max(W/bg.width,H/bg.height);g.drawImage(bg,(W-bg.width*sc)/2,(H-bg.height*sc)/2,bg.width*sc,bg.height*sc)}
+  else{const [sky,gr]=CARD_SKY[i];let gd=g.createLinearGradient(0,0,0,H);gd.addColorStop(0,sky);gd.addColorStop(.55,i===5||i===7?'#2a4a8a':'#ffffff');gd.addColorStop(.551,gr);gd.addColorStop(1,'#0b2a14');g.fillStyle=gd;g.fillRect(0,0,W,H)}
+  // 光
+  const rg=g.createRadialGradient(W/2,H*.42,40,W/2,H*.42,W*.7); rg.addColorStop(0,'rgba(255,255,255,.35)'); rg.addColorStop(1,'rgba(0,0,0,.45)'); g.fillStyle=rg; g.fillRect(0,0,W,H);
+  // 背番号
+  g.font='italic 520px "Dela Gothic One"'; g.textAlign='center'; g.strokeStyle='rgba(255,255,255,.22)'; g.lineWidth=6; g.strokeText(String(c.num||''),W*.6,H*.62);
+  // キャラ
+  let ch=null;
+  if(c.avatar){ch=await loadImg(`img/chars/${c.avatar}_${i+1}.webp`)||await loadImg(`img/chars/${c.avatar}.webp`)}
+  else{const svg=charSVG(c,L,POSE_OF[i]).replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');ch=await loadImg('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg))}
+  if(ch){const h=H*.62, w=ch.width*h/ch.height; g.shadowColor='rgba(0,0,0,.5)'; g.shadowBlur=30; g.drawImage(ch,(W-w)/2,H*.16,w,h); g.shadowBlur=0}
+  // 下の帯
+  let gb=g.createLinearGradient(0,H*.78,W,H); gb.addColorStop(0,'rgba(5,10,25,.92)'); gb.addColorStop(1,'rgba(5,10,25,.98)'); g.fillStyle=gb; g.fillRect(0,H*.78,W,H*.22);
+  g.fillStyle=col; g.fillRect(0,H*.78,W,10);
+  g.textAlign='left'; g.fillStyle='#fff'; g.font='96px "Dela Gothic One"'; g.fillText(S.c.name,60,H*.78+130);
+  g.font='bold 44px "Noto Sans JP"'; g.fillStyle='#cfe0ff'; g.fillText(`Lv.${L}　${rankOf(L)}　${jobOf(S).name}`,60,H*.78+205);
+  const top=NICKS.map(N=>({N,x:nickOf(S,N)})).sort((a,b)=>b.x.i-a.x.i)[0];
+  g.font='bold 40px "Noto Sans JP"'; g.fillStyle='#ffd54a'; g.fillText(`二つ名：${top.x.t}`,60,H*.78+262);
+  // 左上：総合
+  g.font='italic 170px "Dela Gothic One"'; g.fillStyle='#fff'; g.shadowColor=col; g.shadowBlur=30; g.fillText(String(ovr(S)),50,200); g.shadowBlur=0;
+  g.font='bold 40px "Noto Sans JP"'; g.fillText('総合',60,250);
+  // 右上：場所
+  g.textAlign='right'; g.font='bold 40px "Noto Sans JP"'; g.fillStyle='rgba(0,0,0,.45)'; const tw=g.measureText(`📍 ${STAGES[i].name}`).width; g.fillRect(W-60-tw-24,60,tw+48,64); g.fillStyle='#fff'; g.fillText(`📍 ${STAGES[i].name}`,W-60,107);
+  // アプリ名
+  g.font='34px "Dela Gothic One"'; g.fillStyle='rgba(255,255,255,.8)'; g.fillText('れんしゅうクエスト',W-50,H-40);
+  // ふち
+  g.strokeStyle=col; g.lineWidth=18; g.strokeRect(9,9,W-18,H-18);
+  return cv;
+}
+async function saveCardImage(){
+  if(!await parentGate())return;
+  const cv=await makeCardImage(), name=`renshu-quest-${today()}.png`;
+  if(PL.Filesystem&&PL.Share){
+    try{const w=await PL.Filesystem.writeFile({path:name,data:cv.toDataURL('image/png').split(',')[1],directory:'CACHE'});await PL.Share.share({title:'選手カード',files:[w.uri]})}catch(e){}
+    return;
+  }
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  const file=new File([blob],name,{type:'image/png'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'選手カード'});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  dialog({icon:'📸',title:'選手カードを保存しました',msg:'写真やファイルのアプリから見られます。'});
+}
+function statusView(){
+  const {L,r,n}=lv(S.xp), J=jobOf(S), w=wear(S), c=norm(S.c);
+  const item=(cat,id)=>(SHOP.find(x=>x.cat===cat).items.find(i=>i.id===id)||{}).name||'—';
+  const got=SKILLS.filter(k=>(S.skills||[]).includes(k.name)).sort((a,b)=>'gold,blue,green'.indexOf(a.tier)-'gold,blue,green'.indexOf(b.tier));
+  return `<div class="wrap stv">
+    <div class="row" style="margin:4px 0 10px;justify-content:space-between"><button class="chip mini" onclick="go('home')">‹ ホーム</button><button class="chip mini gold" onclick="saveCardImage()">📸 選手カードを保存</button></div>
+    <div class="dqwin stv-top">
+      <div class="stv-l">
+        <div class="stv-name">${esc(c.name)}</div>
+        <div>${rankTag(L,'stv-rank')}</div>
+        <div class="stv-row"><span>職業</span><b>${J.name}</b></div>
+        <div class="stv-row"><span>レベル</span><b>${L}</b></div>
+        <div class="stv-row"><span>EXP</span><b>${S.xp}</b></div>
+        <div class="stv-row"><span>次まで</span><b>${n-r}</b></div>
+        <div class="stv-row"><span>総合</span><b>${ovr(S)}</b></div>
+        <div class="stv-row"><span>コイン</span><b>${S.coin||0}</b></div>
+      </div>
+      <div class="stv-r">${SPORT.stats.map(x=>{const v=rt(S,x.id);return `<div class="stv-st"><span>${x.name}</span>${gradeTag(v)}<b>${v}</b></div>`}).join('')}</div>
+    </div>
+    <div class="dqwin stv-bot">
+      <div class="stv-char">${cardView(S,L,stageOf(L),{mini:1})}</div>
+      <div class="stv-eq">
+        <div class="stv-eqh">そうび</div>
+        <div class="stv-row"><span>⚽ ボール</span><b>${item('ball',w.ball)}</b></div>
+        <div class="stv-row"><span>👟 スパイク</span><b>${item('boot',w.boot)}</b></div>
+        <div class="stv-row"><span>👕 ユニフォーム</span><b>${item('kit',w.kit)}</b></div>
+        <div class="stv-row"><span>🏟️ 背景</span><b>${item('bg',w.bg)}</b></div>
+        <button class="chip mini" onclick="go('wardrobe')" style="margin-top:8px">着せ替え ›</button>
+      </div>
+    </div>
+    <div class="dqwin"><div class="stv-eqh">二つ名</div>
+      <div class="nicklist">${NICKS.map(N=>{const x=nickOf(S,N);return `<div class="nick"><span class="nic">${N.ic}</span><span class="nmain"><small>${N.name}</small><b>${x.t}</b></span><span class="nlv">${'★'.repeat(x.i+1)}<i>${'★'.repeat(7-x.i)}</i></span>${x.next!=null?`<span class="nnext">次まで あと${x.next-x.cur}${x.unit||''}</span>`:'<span class="nnext">最高！</span>'}</div>`}).join('')}</div>
+      <p class="sub" style="margin:8px 0 0">能力の分野は能力ランク（G〜S）で、練習の分野はその練習をした回数で上がるよ。</p></div>
+    <div class="dqwin"><div class="stv-eqh">個人技スキル　<small>${got.length} / ${SKILLS.length}</small></div>
+      <div class="skgrid">${got.length?got.map(k=>`<div class="skchip ${k.tier}">${k.name}</div>`).join(''):'<p class="sub" style="margin:4px 0">まだ習得していないよ。練習を続けてみよう！</p>'}</div>
+      <button class="chip mini" onclick="go('skill')" style="margin-top:10px">スキル一覧 ›</button></div>
+    <div class="dqwin"><div class="stv-eqh">能力ランクの見かた</div>
+      <p class="sub" style="margin:4px 0 0;line-height:1.9">${[['G・F',0],['E・D',1],['C',2],['B',3],['A',4],['S',5]].map(([g,i])=>`<span class="medal ${MEDALS[i].k} sm">${MEDALS[i].name}</span> ${g}`).join('　')}</p></div>
+  </div>`;
+}
 function titlesView(){
   const got=S.titles.length, C=collection();
   return `<div class="wrap">
@@ -1209,11 +1662,11 @@ function titlesView(){
       return ok?`<button class="t ${on?'eq':''}" data-job="${j.id}" style="font:inherit;text-align:left;cursor:pointer;color:inherit"><span class="ic">${j.up?'👑':j.id==='none'?'🔰':'⚽'}</span><span><b>${j.name}${j.up?' <small class="upj">上級職</small>':''}</b><span class="sub">${on?'✔ 今の職業':'伸びやすい：'+grow}</span></span></button>`
       :`<div class="t lock"><span class="ic">🔒</span><span><b>${j.name} <small class="upj">上級職</small></b><span class="sub">条件：${j.how}</span></span></div>`}).join('')}</div>
 
-    <h2 style="margin:20px 0 4px">スキル（呪文）</h2>
-    <p class="sub" style="margin:0 0 12px">練習を続けると技を習得できるよ。</p>
-    <div class="tlist">${SKILLS.map(k=>{const ok=(S.skills||[]).includes(k.name);return `<div class="t ${ok?'':'lock'}"><span class="ic">${ok?'🔥':'🔒'}</span><span><b>${ok?k.name:'？？？'}</b><span class="sub">${k.how}</span></span></div>`}).join('')}</div>
+    <h2 style="margin:20px 0 4px">個人技スキル</h2>
+    <p class="sub" style="margin:0 0 10px">同じ練習を続けたり、能力を上げたりすると技を習得できるよ。${(S.skills||[]).length} / ${SKILLS.length}</p>
+    ${skillBoard()}
     <h2 style="margin:20px 0 4px">成長カード</h2>
-    <p class="sub" style="margin:0 0 12px">おうちの庭からワールドクラスまで。レベルが上がると次のステージへ。</p>
+    <p class="sub" style="margin:0 0 12px">家の庭から満員のスタジアムまで。レベルが上がると次の練習場所へ。</p>
     <div class="cgrid">${STAGES.map((r,i)=>cardView(S,r.lv,i,{mini:1,locked:lv(S.xp).L<r.lv})).join('')}</div>
     <h2 style="margin:20px 0 4px">称号</h2>
     <p class="sub" style="margin:0 0 12px">${got} / ${TITLES.length}  獲得。タップでカードに表示する称号を選べるよ。</p>
@@ -1274,7 +1727,7 @@ function logView(){
     </div>
   </div>`;
 }
-async function resetAll(){if(!await parentGate())return;if(await dialog({icon:'⚠️',title:'本当に全部消していい？',msg:'キャラ・記録・コインがすべて消えます。元には戻せません。先にバックアップを保存しておくと安心です。',ok:'全部消す',cancel:'やめる',danger:true})){try{localStorage.removeItem(KEY)}catch(e){}S=null;ed=null;render()}}
+async function resetAll(){if(!await parentGate())return;if(await dialog({icon:'⚠️',title:'本当に全部消していい？',msg:'今の選手のキャラ・記録・コインがすべて消えます（ほかの選手は残ります）。元には戻せません。先にバックアップを保存しておくと安心です。',ok:'全部消す',cancel:'やめる',danger:true})){try{localStorage.removeItem(KEY)}catch(e){}if(PL.Preferences)PL.Preferences.remove({key:KEY}).catch(()=>{});if(PL.LocalNotifications)PL.LocalNotifications.cancel({notifications:[1,2,3,4,5,6,7].map(id=>({id}))}).catch(()=>{});S=null;ed=null;render()}}
 let shopCat=0, wardCat=0;
 const ITEM_DESC={ball:'練習で使うボール。カードのキャラが持つよ',boot:'足元をかっこよく',kit:'特別なデザインのユニフォーム',bg:'カードの背景が変わるよ'};
 function shopView(){
@@ -1391,9 +1844,41 @@ function parentMsgCard(){
   const m=S.pmsg; if(!m||m.read)return '';
   return `<div class="card pmsgcard"><h3>📣 おうちの人から</h3><p style="margin:8px 0 12px;line-height:1.7;font-weight:700">${esc(m.t)}</p>${m.gift?`<p class="sub" style="margin:0 0 10px">ごほうび 🪙${m.gift} つき！</p>`:''}<button class="btn gold" id="pread">ありがとう！</button></div>`;
 }
+/* ===== 選手の切りかえ（兄弟で使う） ===== */
+function switchProfile(id){
+  const m=profMeta(); if(m.cur===id){go('home');return}
+  if(S)save(); m.cur=id; saveMeta(m); KEY=profKey(id);
+  S=null; ed=null; draft={menu:null,min:15,rec:''}; load(); tab='home'; render(); remindSoon();
+  if(S)dialog({icon:'👋',title:`${esc(S.c.name)}に切りかえたよ`,msg:'練習の記録は選手ごとに別々に保存されます。'});
+}
+function addProfile(){
+  const m=profMeta(); if(m.list.length>=MAX_PROF){dialog({icon:'👥',title:`選手は${MAX_PROF}人までです`});return}
+  const id=Math.max(...m.list.map(x=>x.id))+1; m.list.push({id}); saveMeta(m); switchProfile(id);
+}
+async function deleteProfile(id){
+  const m=profMeta(), x=m.list.find(p=>p.id===id); if(!x||m.list.length<2)return;
+  if(!await parentGate())return;
+  if(!await dialog({icon:'⚠️',title:`「${esc(x.name||'名前なし')}」を消していい？`,msg:'この選手の記録がすべて消えます。元には戻せません。',ok:'消す',cancel:'やめる',danger:true}))return;
+  try{localStorage.removeItem(profKey(id))}catch(e){} if(PL.Preferences)PL.Preferences.remove({key:profKey(id)}).catch(()=>{});
+  m.list=m.list.filter(p=>p.id!==id); if(m.cur===id){m.cur=m.list[0].id}
+  saveMeta(m); KEY=profKey(m.cur); S=null; ed=null; load(); tab='settings'; render();
+}
+function profilesCard(){
+  const m=profMeta();
+  return `<div class="card"><h3>選手の切りかえ（兄弟で使う）</h3>
+    <p class="sub" style="margin:6px 0 8px">1台のスマホで${MAX_PROF}人まで。記録は選手ごとに別々です。</p>
+    ${m.list.map(x=>`<div class="profrow ${x.id===m.cur?'on':''}"><button class="setrow" onclick="switchProfile(${x.id})"><span>${x.av?`<img src="img/chars/${x.av}.webp" alt="">`:'👤'} ${esc(x.name||'（作成中）')}${x.lv?` <small>Lv.${x.lv}</small>`:''}</span><span class="arr">${x.id===m.cur?'✔ 使用中':'切りかえ'}</span></button>${m.list.length>1?`<button class="profdel" onclick="deleteProfile(${x.id})" aria-label="消す">✕</button>`:''}</div>`).join('')}
+    ${m.list.length<MAX_PROF?`<button class="setrow" onclick="addProfile()"><span>＋ 新しい選手を追加</span><span class="arr">›</span></button>`:''}
+  </div>`;
+}
+function profChip(){
+  const m=profMeta(); if(m.list.length<2)return '';
+  return `<button class="profchip" onclick="go('settings')">👥 ${esc(S.c.name)} ▾</button>`;
+}
 function settingsView(){
   return `<div class="wrap">
     <h2 style="margin:8px 0 12px">設定</h2>
+    ${profilesCard()}
     <div class="card"><h3>プロフィール</h3>
       <button class="setrow" onclick="go('edit')"><span>キャラ・名前・背番号を変える</span><span class="arr">›</span></button>
       <button class="setrow" onclick="go('wardrobe')"><span>着せ替え</span><span class="arr">›</span></button>
@@ -1401,11 +1886,16 @@ function settingsView(){
     </div>
     <div class="card"><h3>保護者の方へ</h3>
       <button class="setrow" onclick="openReport()"><span>保護者レポート・応援メッセージ</span><span class="arr">›</span></button>
+      <button class="setrow" onclick="saveCardImage()"><span>選手カードを画像で保存</span><span class="arr">›</span></button>
       <button class="setrow" onclick="openPrivacy()"><span>プライバシーポリシー</span><span class="arr">›</span></button>
     </div>
     <div class="card"><h3>サウンド</h3>
       <button class="setrow" onclick="S.sound=S.sound===false;save();render();sfx('ok')"><span>効果音・振動</span><span class="arr">${S.sound===false?'オフ':'オン'}</span></button>
     </div>
+    ${PL.LocalNotifications?`<div class="card"><h3>練習リマインダー</h3>
+      <p class="sub" style="margin:6px 0 4px;line-height:1.6">毎日この時間に、ボルトが練習の声かけをします。その日に練習した日は鳴りません。</p>
+      <button class="setrow" onclick="setRemind()"><span>通知する時間</span><span class="arr">${S.remind||'オフ'}</span></button>
+    </div>`:''}
     <div class="card"><h3>遊び方</h3>
       <button class="setrow" onclick="showTutorial()"><span>遊び方をもう一度見る</span><span class="arr">›</span></button>
     </div>
@@ -1415,15 +1905,41 @@ function settingsView(){
       <button class="setrow" onclick="importData()"><span>バックアップから読みこむ</span><span class="arr">›</span></button>
       <button class="setrow danger" onclick="resetAll()"><span>最初からやり直す</span><span class="arr">›</span></button>
     </div>
+    ${swReg?'<button class="btn ghost" style="font-size:15px" onclick="checkUpdate()">新しい版があるか確認する</button>':''}
     <p class="sub" style="text-align:center">れんしゅうクエスト ver ${APP_VERSION}</p>
   </div>`;
 }
-function go(t){tab=t;render()}
+function go(t){tab=t;render();applyUpdate()}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.tab));
+/* ===== アプリの更新 =====
+   新しい版が届いたら読みこみ直す。入力中・お知らせ表示中は待って、ホームか設定にいるときだけ */
+let swReg=null, updReady=false;
+function canReload(){
+  if(!S||ed||!['home','settings'].includes(tab))return false;
+  if(document.getElementById('ov').classList.contains('show'))return false;
+  const a=document.activeElement; return !(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+function applyUpdate(){if(updReady&&canReload()){updReady=false;location.reload()}}
+async function checkUpdate(){
+  try{await swReg.update()}catch(e){await dialog({icon:'📶',title:'確認できませんでした',msg:'インターネットにつながっているか確かめて、もう一度試してね。'});return}
+  if(updReady){applyUpdate();return}
+  if(!swReg.installing&&!swReg.waiting) dialog({icon:'✅',title:'最新の版です',msg:`いまの版は ver ${APP_VERSION} だよ。`});
+}
+function startUpdater(){
+  const sw=navigator.serviceWorker; let had=!!sw.controller;
+  sw.addEventListener('controllerchange',()=>{if(had){updReady=true;applyUpdate()}had=true});
+  sw.register('sw.js',{updateViaCache:'none'}).then(r=>{if(!window.Capacitor)swReg=r;
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){r.update().catch(()=>{});applyUpdate()}});
+  }).catch(()=>{});
+}
 /* 予期しないエラーが起きても 固まらないように */
 let errShown=false;
 window.addEventListener('error',()=>{if(errShown)return;errShown=true;
   try{dialog({icon:'⚠️',title:'問題が発生しました',msg:'アプリを読みこみ直します。記録は保存されています。',ok:'読みこみ直す'}).then(()=>location.reload())}catch(e){}});
-load();render();
-if(S&&!S.tut){S.tut=1;save()} // 既存ユーザーには 遊び方を 自動では出さない
-if('serviceWorker' in navigator&&window.isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{});
+(async()=>{
+  await restoreNative();
+  load();if(S&&S.timer)tab='timer';render();
+  if(S&&!S.tut){S.tut=1;save()} // 既存ユーザーには 遊び方を 自動では出さない
+  remindSoon();
+  if(!NATIVE&&'serviceWorker' in navigator&&window.isSecureContext)startUpdater();   // 新しい版を確かめて読みこみ直す（Web版のみ）
+})();
