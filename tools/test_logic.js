@@ -117,7 +117,10 @@ test('イラストのキャラを選ぶと カードはイラストで表示（�
   run(c, newPlayer + "S.c.avatar='idea-3';");
   ok(run(c, "cardView(S,1,0).includes('img/chars/idea-3_1.webp')"), 'イラスト');
   run(c, "S.c.avatar='';"); ok(run(c, `cardView(S,1,0).includes('<svg class="char"')`), 'コードの絵');
-  eq(run(c, 'AVATARS.length'), 10);
+  eq(run(c, 'AVATARS.length'), 11);
+  const ids = JSON.parse(run(c, 'JSON.stringify(AVATARS.map(a=>a.id))'));
+  eq(new Set(ids).size, ids.length);
+  for (const id of ids) ok(require('fs').existsSync(require('path').join(__dirname, '../img/chars', id + '.webp')), id + ' の画像がある');
 });
 
 console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
