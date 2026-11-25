@@ -3,13 +3,14 @@
 - 余白を切り落とし、正方形に整える
 使い方:
   python tools/slice_sheet.py 入力画像 列数 行数 出力フォルダ 名前1,名前2,...  [--size 512] [--tol 40]
+  （1人だけの画像は 列数1 行数1。--holes と --shadow は -h で説明）
 例:
   python tools/slice_sheet.py img/sheets/characters-idea.webp 5 2 img/chars idea-1,idea-2,...
 """
 import argparse, os
 from PIL import Image, ImageDraw, ImageFilter
 
-def remove_bg(im, tol):
+def remove_bg(im, tol, holes=(), shadow=0, band=3):
     im = im.convert('RGBA')
     w, h = im.size
     # 四すみ＋四辺の中点から、背景を塗りつぶして透明にする（つながっている部分だけ）
@@ -21,12 +22,36 @@ def remove_bg(im, tol):
         if a == 0:
             continue
         ImageDraw.floodfill(im, s, marker, thresh=tol)
+    # 外側とつながっていない背景（腕の内側のすき間など）は、場所を指定して消す
+    for x, y in holes:
+        c = im.getpixel((x, y))
+        if c[3] and max(abs(c[k] - bgs[0][k]) for k in range(3)) > tol:
+            raise SystemExit(f'--holes の {x},{y} は背景の色ではありません（{c[:3]}）')
+        if c[3]:
+            ImageDraw.floodfill(im, (x, y), marker, thresh=tol)
     px = im.load()
     for y in range(h):
         for x in range(w):
             if px[x, y] == marker:
                 px[x, y] = (0, 0, 0, 0)
-    return defringe(im, bgs)
+    if shadow:
+        drop_shadow(im, shadow)
+    return defringe(im, bgs, band)
+
+def drop_shadow(im, top):
+    """足元の影：高さ top（割合）より下で、透明部分とつながった灰色だけを消す（輪郭線で止まる）"""
+    w, h = im.size
+    px = im.load()
+    y0 = int(h * top)
+    stack = [(x, y) for y in range(y0, h) for x in range(w) if px[x, y][3] == 0]
+    while stack:
+        x, y = stack.pop()
+        for nx, ny in ((x+1, y), (x-1, y), (x, y+1), (x, y-1)):
+            if 0 <= nx < w and y0 <= ny < h:
+                r, g, b, a = px[nx, ny]
+                if a and min(r, g, b) > 90 and max(r, g, b) - min(r, g, b) < 45:
+                    px[nx, ny] = (0, 0, 0, 0)
+                    stack.append((nx, ny))
 
 def defringe(im, seed_colors, band=3, full=60):
     """ふちの色戻し：背景（灰色）と混ざった ふちの画素から背景の色を取りのぞき、
@@ -124,7 +149,11 @@ def main():
     ap.add_argument('--size', type=int, default=512); ap.add_argument('--tol', type=int, default=40)
     ap.add_argument('--pad', type=float, default=0.0, help='外側の余白（割合）')
     ap.add_argument('--keep', type=float, default=0.03, help='これより小さい かけら（本体比）を消す。記号を残したいときは小さく')
+    ap.add_argument('--holes', default='', help='外側とつながっていない背景を消す。マス内の座標を "x,y;x,y" で（1マスの画像向け）')
+    ap.add_argument('--shadow', type=float, default=0.0, help='足元の影を消す。この高さ（割合。例 0.92）より下の灰色が対象')
+    ap.add_argument('--band', type=int, default=3, help='ふちの色戻しの幅（px）。大きな1人絵で輪郭線の内側が欠けるときは 1 に')
     a = ap.parse_args()
+    holes = [tuple(int(n) for n in e.split(',')) for e in a.holes.split(';') if e]
     names = [n.strip() for n in a.names.split(',') if n.strip()]
     sheet = Image.open(a.src).convert('RGBA')
     W, H = sheet.size
@@ -135,7 +164,7 @@ def main():
     for j in range(a.rows):
         for i in range(a.cols):
             box = (round(x0+i*cw), round(y0+j*ch), round(x0+(i+1)*cw), round(y0+(j+1)*ch))
-            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol), a.keep))
+            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol, holes, a.shadow, a.band), a.keep))
             if cell.width > a.size:
                 cell = cell.resize((a.size, a.size), Image.LANCZOS)
             name = names[k] if k < len(names) else f'item-{k+1}'

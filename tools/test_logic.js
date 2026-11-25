@@ -118,7 +118,25 @@ test('イラストのキャラを選ぶと カードはイラストで表示（�
   run(c, newPlayer + "S.c.avatar='idea-3';");
   ok(run(c, "cardView(S,1,0).includes('img/chars/idea-3_1.webp')"), 'イラスト');
   run(c, "S.c.avatar='';"); ok(run(c, `cardView(S,1,0).includes('<svg class="char"')`), 'コードの絵');
-  eq(run(c, 'AVATARS.length'), 10);
+  eq(run(c, 'AVATARS.length'), 11);
+  const ids = JSON.parse(run(c, 'JSON.stringify(AVATARS.map(a=>a.id))'));
+  eq(new Set(ids).size, ids.length);
+  for (const id of ids) ok(require('fs').existsSync(require('path').join(__dirname, '../img/chars', id + '.webp')), id + ' の画像がある');
+});
+
+test('背番号は1〜999だけ（全角も読み取る）。最初の設定に入力欄がある', c => {
+  eq(run(c, "parseNum('7')"), 7); eq(run(c, "parseNum('１０')"), 10); eq(run(c, "parseNum(99)"), 99); eq(run(c, "parseNum('100')"), 100); eq(run(c, "parseNum('９９９')"), 999);
+  for (const v of ["''", "'0'", "'00'", "'abc'", 'null', 'undefined']) eq(run(c, `parseNum(${v})`), null);
+  run(c, "S=null;ed=norm({name:''});edTab=0;");
+  ok(run(c, `editView().includes('id="cnum"')`), '入力欄');
+  ok(run(c, "!ED.flatMap(t=>t.items).some(i=>i.k==='num')"), 'ユニフォームのタブには重ねて出さない');
+});
+
+test('ボルトの一言：名前は「〇〇選手」と呼び、記号は安全な形にする', c => {
+  run(c, newPlayer + "S.c.name='か';S.logs=[{date:today(),min:10,menu:MENUS[0].id}];");
+  ok(run(c, "buddyLines().some(x=>x.t.startsWith('か選手、今日もナイス練習！'))"), '名前と分かる');
+  run(c, "S.c.name='A<b>';");
+  ok(run(c, "buddyLines().every(x=>!x.t.includes('<b>'))"), 'タグがそのまま入らない');
 });
 
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */

@@ -495,8 +495,8 @@ function buddyLines(){
   if(hp<25) L.push({f:'worry',t:'つかれてるみたい…。今日は宿屋でゆっくり休もう。休むのも練習だよ！'});
   if(rested) L.push({f:'sleep',t:'今日は宿屋でおやすみ…。しっかり休んで、明日またがんばろう。'});
   const pend=chestsPending(); if(pend) L.push({f:'chest',t:`宝箱が${pend}個あるよ！ 開けてみて！`});
-  if(td.length) L.push({f:'joy',t:`今日もナイス練習、${nm}！ 明日もいっしょにがんばろう！`});
-  else if(!rested) L.push({f:'serious',t:q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}、今日はどんな練習をする？`});
+  if(td.length) L.push({f:'joy',t:`${nm}選手、今日もナイス練習！ 明日もいっしょにがんばろう！`});
+  else if(!rested) L.push({f:'serious',t:q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}選手、今日はどんな練習をする？`});
   if(S.boss&&!S.boss.beaten) L.push({f:'wow',t:`今週のライバル「${BOSSES[S.boss.idx].name}」が待ってるよ！`});
   if(wd>=WEEK_GOAL) L.push({f:'trophy',t:'今週の目標達成！ キミは最高だ！'});
   else if(wd>0) L.push({f:'cheer',t:`あと${WEEK_GOAL-wd}日で今週の目標達成だよ！`});
@@ -508,7 +508,7 @@ function buddyLines(){
 }
 function buddyNext(){
   buddyIdx++; const L=buddyLines(), x=L[buddyIdx%L.length];
-  document.querySelector('.buddycard .bubble').textContent=x.t;
+  document.querySelector('.buddycard .bubble').innerHTML=x.t;   // 名前は buddyLines で esc ずみ
   const im=document.querySelector('.buddycard .boltimg'); im.src=`img/bolt/bolt-${BOLT[x.f]}.webp`;
   im.classList.remove('hop'); void im.offsetWidth; im.classList.add('hop');
 }
@@ -699,7 +699,7 @@ function stageOf(L){let r=0;STAGES.forEach((x,i)=>{if(L>=x.lv)r=i});return r}
 /* ===== AIイラストのキャラ（選んで使う） ===== */
 const AVATARS=[
   {id:'idea-1',name:'ツンツン',sex:'m'},{id:'idea-2',name:'ブロンド',sex:'m'},{id:'idea-3',name:'メガネ',sex:'m'},
-  {id:'idea-4',name:'あか髪',sex:'m'},{id:'idea-5',name:'ぎん髪',sex:'m'},
+  {id:'idea-4',name:'あか髪',sex:'m'},{id:'idea-5',name:'ぎん髪',sex:'m'},{id:'idea-11',name:'ちゃ髪',sex:'m'},
   {id:'idea-6',name:'ポニーテール',sex:'f'},{id:'idea-7',name:'ロング',sex:'f'},{id:'idea-8',name:'ふわふわ',sex:'f'},
   {id:'idea-9',name:'みつあみ',sex:'f'},{id:'idea-10',name:'おだんご',sex:'f'},
 ];
@@ -758,7 +758,7 @@ function charSVG(cIn,L,poseIdx){
   h+=`<g clip-path="url(#${u}t)">${pat}<path d="M117 110 L140 110 L140 170 L115 170Z" fill="#000" opacity=".13"/></g>`;
   h+=`<path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z" fill="none" ${O}/>`;
   h+=`<path d="M88 116 L100 131 L112 116" fill="${sk}" stroke="${c2==='#ffffff'?'#fff':c2}" stroke-width="4" stroke-linejoin="round"/>`;
-  h+=`<text x="100" y="155" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text>`;
+  h+=`<text x="100" y="155" text-anchor="middle" font-size="${String(c.num).length>2?17:20}" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text>`;
   h+=`</g>`;
   // あたま
   h+=`<rect x="93" y="108" width="14" height="12" fill="${sk}"/><rect x="93" y="108" width="14" height="6" fill="#000" opacity=".1"/>`;
@@ -821,7 +821,7 @@ function itemSVG(cat,it){
     return `<svg viewBox="52 108 96 62"><defs><linearGradient id="${u}k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}"/><stop offset="1" stop-color="${c2}"/></linearGradient><clipPath id="${u}t"><path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z"/></clipPath></defs>
       ${sl}${MIR(sl)}<path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z" fill="${col}"/><g clip-path="url(#${u}t)">${patSVG(c,u,col,c2)}</g>
       <path d="M76 120 Q100 112 124 120 L132 160 Q100 166 68 160Z" fill="none" ${O}/><path d="M88 116 L100 131 L112 116" fill="#0a1124" stroke="${c2==='#ffffff'?'#fff':c2}" stroke-width="4" stroke-linejoin="round"/>
-      <text x="100" y="155" text-anchor="middle" font-size="18" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text></svg>`}
+      <text x="100" y="155" text-anchor="middle" font-size="${String(c.num).length>2?16:18}" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1.2" paint-order="stroke" font-family="sans-serif">${c.num}</text></svg>`}
   return '';
 }
 function itemIcon(cat,it){
@@ -871,7 +871,7 @@ function cardView(s,L,i,opt={}){
   const bgStyle=bgi&&bgi.bg?`background-image:${bgi.bg}`:`background-image:url('img/bg_${i+1}.jpg'),${st.bg}`;
   return `<div class="pc s${i} ${opt.mini?'mini':''} ${lk?'locked':''}">
     <div class="pc-bg" style="${bgStyle}"></div><div class="pc-fx"></div>
-    <div class="pc-num">${c.num}</div>
+    <div class="pc-num ${String(c.num).length>2?'n3':''}">${c.num}</div>
     <div class="pc-char">${charView(c,L,i)}</div>
     <div class="pc-ovr"><b>${lk?'?':ovr(s)}</b><span>${lk?'':jobOf(s).short}</span></div>
     <div class="pc-stage">${st.name}</div>
@@ -920,7 +920,6 @@ const ED=[
     {k:'color',label:'メインカラー',type:'col'},
     {k:'color2',label:'サブカラー',type:'col'},
     {k:'pattern',label:'柄',type:'opt',opts:['無地','縦じま','横じま','ハーフ','たすき']},
-    {k:'num',label:'背番号',type:'num',min:1,max:99},
     {k:'pants',label:'パンツの色',type:'col'},
     {k:'sock',label:'ソックスの色',type:'col'},
     {k:'bootCol',label:'スパイクの色',type:'col'},
@@ -929,6 +928,10 @@ const ED=[
     {k:'acc',label:'アクセサリー',type:'opt',opts:['なし','メガネ','リストバンド','星のピン']},
   ]},
 ];
+/* 背番号：1〜999。全角の数字も半角にして読み取る。正しくないときは null */
+const NUM_MIN=1, NUM_MAX=999;
+function numText(v){return String(v==null?'':v).replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0)).replace(/[^0-9]/g,'').slice(0,3)}
+function parseNum(v){const t=numText(v),n=t===''?NaN:+t;return n>=NUM_MIN&&n<=NUM_MAX?n:null}
 let ed=null, edTab=0, edPose=0;
 function edPreview(){return ed.avatar?avatarView(norm(ed),STAGES[edPose].lv,edPose):charSVG(ed,STAGES[edPose].lv,POSE_OF[edPose])}
 function editView(){
@@ -941,8 +944,10 @@ function editView(){
   <div class="wrap">
     ${edTab===0?`<div class="card"><h3>キャラクターを選ぶ</h3><p class="sub" style="margin:4px 0 10px">イラストのキャラから選ぶか、自分で作るかを選べるよ</p>
       <div class="avgrid"><button class="avopt ${!ed.avatar?'on':''}" data-av="">${charSVG({...ed,avatar:''},1,0)}<span>自分で作る</span></button>${AVATARS.map(A=>`<button class="avopt ${ed.avatar===A.id?'on':''}" data-av="${A.id}"><img src="img/chars/${A.id}.webp" alt=""><span>${A.name}</span></button>`).join('')}</div></div>`:''}
-    ${edTab>0&&ed.avatar?`<div class="card hint" style="margin-bottom:14px">イラストのキャラを選んでいるときは、顔・目・髪・小物の設定は使われません（ユニフォームの背番号はカードに使われます）。「体」タブで「自分で作る」を選ぶと使えるよ。</div>`:''}
-    ${edTab===0?`<div class="card"><h3>名前</h3><input type="text" id="cname" maxlength="10" placeholder="名前を入力" value="${esc(ed.name||'')}" style="margin-top:8px"></div>`:''}
+    ${edTab>0&&ed.avatar?`<div class="card hint" style="margin-bottom:14px">イラストのキャラを選んでいるときは、顔・目・髪・小物の設定は使われません（背番号はカードに使われます）。「体」タブで「自分で作る」を選ぶと使えるよ。</div>`:''}
+    ${edTab===0?`<div class="card"><h3>名前</h3><input type="text" id="cname" maxlength="10" placeholder="名前を入力" value="${esc(ed.name||'')}" style="margin-top:8px"></div>
+    <div class="card"><h3>背番号</h3><p class="sub" style="margin:4px 0 8px">${NUM_MIN}〜${NUM_MAX}の好きな番号を入れてね</p>
+      <div class="row numrow"><button class="chip" data-nd="-1" aria-label="1つ減らす">−</button><input type="text" id="cnum" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="10" aria-label="背番号" value="${esc(numText(ed.num))}"><button class="chip" data-nd="1" aria-label="1つ増やす">＋</button></div></div>`:''}
     <div class="card">${t.items.map(itemView).join('')}</div>
     <div class="row"><button class="btn ghost" id="rand" style="flex:1">おまかせ</button><button class="btn gold" id="edok" style="flex:2">${S?'決定':'このキャラで始める'}</button></div>
     ${S?'<button class="btn ghost" id="edcancel" style="margin-top:14px;font-size:15px">キャンセル</button>':''}
@@ -968,6 +973,14 @@ function bindEdit(){
   app.querySelectorAll('[data-rk]').forEach(i=>i.oninput=()=>{ed[i.dataset.rk]=+i.value;pv()});
   app.querySelectorAll('[data-nk]').forEach(b=>b.onclick=()=>{const k=b.dataset.nk;const it=ED.flatMap(t=>t.items).find(i=>i.k===k);ed[k]=Math.min(it.max,Math.max(it.min,ed[k]+ +b.dataset.d));re()});
   const nm=document.getElementById('cname'); if(nm) nm.oninput=()=>{ed.name=nm.value};
+  const nb=document.getElementById('cnum');
+  if(nb){
+    const put=()=>{const t=numText(nb.value);if(nb.value!==t)nb.value=t;const n=parseNum(t);ed.num=n==null?'':n;pv()};
+    nb.oninput=e=>{if(!e.isComposing)put()};   // 日本語入力の変換中は 待つ
+    nb.oncompositionend=put;
+    nb.onfocus=()=>nb.select();
+    app.querySelectorAll('[data-nd]').forEach(b=>b.onclick=()=>{nb.value=Math.min(NUM_MAX,Math.max(NUM_MIN,(+numText(nb.value)||0)+ +b.dataset.nd));put()});
+  }
   document.getElementById('rand').onclick=()=>{
     const pick=a=>a[Math.floor(Math.random()*a.length)];
     ED.forEach(t=>t.items.forEach(it=>{
@@ -981,7 +994,9 @@ function bindEdit(){
   document.getElementById('edok').onclick=()=>{
     const name=(ed.name||'').trim();
     if(!name){edTab=0;re();dialog({icon:'✏️',title:'名前を入力してね',msg:'「体」タブで名前を入れてから始めよう。'});return}
-    ed.name=name;
+    const num=parseNum(ed.num);
+    if(num==null){edTab=0;re();dialog({icon:'👕',title:'背番号を入力してね',msg:`「体」タブで${NUM_MIN}〜${NUM_MAX}の番号を入れてから始めよう。`});return}
+    ed.name=name;ed.num=num;
     if(!S) S={c:ed,xp:0,stats:freshStats(),best:{},logs:[],titles:[],eq:null};
     else S.c=ed;
     const isNew=!S.tut;ed=null;save();go('home');if(isNew)showTutorial();
