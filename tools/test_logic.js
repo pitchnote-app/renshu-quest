@@ -253,6 +253,22 @@ test('更新の読みこみ直しは ホームか設定だけ（入力中・お�
   run(c, "ed=null;S=null;"); eq(run(c, 'canReload()'), false);
 });
 
+test('練習ノート：ホームで書くと記録・クエストに入り、きろくで読める（書き直しではEXPは増えない）', c => {
+  run(c, newPlayer + "tab='home';draft={menu:'lift',min:20,rec:'5'};");
+  eq(run(c, "saveNote({good:'  ',bad:'',next:''})"), false, '空は保存しない');
+  eq(run(c, 'S.logs.length'), 0);
+  eq(run(c, "saveNote({good:' できた<b> ',next:'あ'.repeat(999)})"), true);
+  eq(run(c, 'S.logs.length'), 1); eq(run(c, 'S.logs[0].menu+S.logs[0].min'), 'note5');
+  eq(run(c, 'S.logs[0].note.good'), 'できた<b>'); eq(run(c, 'S.logs[0].note.next.length'), 300);
+  ok(run(c, "QPOOL.find(q=>q.id==='q9').ok(S.logs)"), 'クエストの条件');
+  eq(run(c, 'draft.menu+draft.min'), 'lift20', '書きかけの練習は残る');
+  const h = run(c, 'logView()'); ok(h.includes('できた&lt;b&gt;') && !h.includes('できた<b>'), 'きろくに出る・記号は安全な形');
+  const xp = run(c, 'S.xp');
+  run(c, "saveNote({good:'書き直し'},todayNote())");
+  eq(run(c, 'S.xp'), xp, 'EXPは増えない'); eq(run(c, 'S.logs.length'), 1); eq(run(c, 'S.logs[0].note.good'), '書き直し');
+  run(c, "S.logs.push({date:'2026-01-01',menu:'note',min:15,xp:30});logView();");   // 文章のない昔の記録
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();

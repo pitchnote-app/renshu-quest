@@ -168,6 +168,18 @@ nav button{font-size:11px;font-weight:700}
 .quest span{color:var(--main2);font-weight:900;width:16px}
 .quest em{margin-left:auto;font-style:normal;font-size:11px;color:var(--sub);white-space:nowrap}
 .quest.done{color:var(--sub);text-decoration:line-through}
+/* 練習ノート */
+.questbtn{width:100%;background:none;border:0;border-bottom:1px dashed var(--line);color:var(--ink);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.questbtn u{text-underline-offset:3px}.questbtn em{color:var(--gold2)}
+.bnote{display:block;margin-top:8px;font:inherit;font-weight:800;color:#1c1405;background:#f3cf6a;border:0;border-radius:10px;padding:8px 14px;cursor:pointer}
+.ov .box:has(.notebook){max-height:calc(100dvh - 32px);overflow-y:auto}
+.notebook{text-align:left}.notebook h2,.notebook>.sub{text-align:center}
+.notebook label{display:block;margin-bottom:10px}.notebook label b{display:block;font-size:14px;margin-bottom:4px}
+.notebook textarea{font-size:16px}
+.noteitem{padding:10px 0;border-bottom:1px dashed var(--line)}
+.noteitem p{margin:6px 0 0;font-size:14px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.noteitem small{display:block;color:var(--sub);font-size:11px}
+.noted{color:var(--gold2);font-size:14px}
 .bosscard{border:1px solid #7a2a2a;background:linear-gradient(135deg,#2a0f1a,var(--card))}
 .bosscard.beaten{opacity:.7}
 .bossic{font-size:44px;filter:drop-shadow(0 0 8px rgba(255,80,80,.6))}
