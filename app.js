@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.18.0';
+const APP_VERSION='0.18.1';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1767,7 +1767,7 @@ function settingsView(){
       <button class="setrow" onclick="importData()"><span>バックアップから読みこむ</span><span class="arr">›</span></button>
       <button class="setrow danger" onclick="resetAll()"><span>最初からやり直す</span><span class="arr">›</span></button>
     </div>
-    ${swReg?'<button class="btn ghost" style="font-size:15px" onclick="checkUpdate()">新しい版があるか確認する</button>':''}
+    ${swReg?'<button class="btn ghost" style="font-size:15px" onclick="checkUpdate()">最新バージョンにする</button>':''}
     <p class="sub" style="text-align:center">れんしゅうクエスト ver ${APP_VERSION}</p>
   </div>`;
 }
@@ -1785,7 +1785,7 @@ function applyUpdate(){if(updReady&&canReload()){updReady=false;location.reload(
 async function checkUpdate(){
   try{await swReg.update()}catch(e){await dialog({icon:'📶',title:'確認できませんでした',msg:'インターネットにつながっているか確かめて、もう一度試してね。'});return}
   if(updReady){applyUpdate();return}
-  if(!swReg.installing&&!swReg.waiting) dialog({icon:'✅',title:'最新の版です',msg:`いまの版は ver ${APP_VERSION} だよ。`});
+  if(!swReg.installing&&!swReg.waiting) dialog({icon:'✅',title:'最新バージョンです',msg:`いまは ver ${APP_VERSION} だよ。`});
 }
 function startUpdater(){
   const sw=navigator.serviceWorker; let had=!!sw.controller;
