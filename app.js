@@ -351,7 +351,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.6.4';
+const APP_VERSION='0.6.5';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -487,8 +487,8 @@ function buddyLines(){
   if(hp<25) L.push({f:'worry',t:'つかれてるみたい…。今日は宿屋でゆっくり休もう。休むのも練習だよ！'});
   if(rested) L.push({f:'sleep',t:'今日は宿屋でおやすみ…。しっかり休んで、明日またがんばろう。'});
   const pend=chestsPending(); if(pend) L.push({f:'chest',t:`宝箱が${pend}個あるよ！ 開けてみて！`});
-  if(td.length) L.push({f:'joy',t:`今日もナイス練習、${nm}！ 明日もいっしょにがんばろう！`});
-  else if(!rested) L.push({f:'serious',t:q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}、今日はどんな練習をする？`});
+  if(td.length) L.push({f:'joy',t:`${nm}選手、今日もナイス練習！ 明日もいっしょにがんばろう！`});
+  else if(!rested) L.push({f:'serious',t:q?`今日はなにを練習する？ クエスト「${q.t}」に挑戦してみよう！`:`${nm}選手、今日はどんな練習をする？`});
   if(S.boss&&!S.boss.beaten) L.push({f:'wow',t:`今週のライバル「${BOSSES[S.boss.idx].name}」が待ってるよ！`});
   if(wd>=WEEK_GOAL) L.push({f:'trophy',t:'今週の目標達成！ キミは最高だ！'});
   else if(wd>0) L.push({f:'cheer',t:`あと${WEEK_GOAL-wd}日で今週の目標達成だよ！`});
@@ -500,7 +500,7 @@ function buddyLines(){
 }
 function buddyNext(){
   buddyIdx++; const L=buddyLines(), x=L[buddyIdx%L.length];
-  document.querySelector('.buddycard .bubble').textContent=x.t;
+  document.querySelector('.buddycard .bubble').innerHTML=x.t;   // 名前は buddyLines で esc ずみ
   const im=document.querySelector('.buddycard .boltimg'); im.src=`img/bolt/bolt-${BOLT[x.f]}.webp`;
   im.classList.remove('hop'); void im.offsetWidth; im.classList.add('hop');
 }
