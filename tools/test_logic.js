@@ -131,5 +131,12 @@ test('背番号は1〜999だけ（全角も読み取る）。最初の設定に�
   ok(run(c, "!ED.flatMap(t=>t.items).some(i=>i.k==='num')"), 'ユニフォームのタブには重ねて出さない');
 });
 
+test('ボルトの一言：名前は「〇〇選手」と呼び、記号は安全な形にする', c => {
+  run(c, newPlayer + "S.c.name='か';S.logs=[{date:today(),min:10,menu:MENUS[0].id}];");
+  ok(run(c, "buddyLines().some(x=>x.t.startsWith('か選手、今日もナイス練習！'))"), '名前と分かる');
+  run(c, "S.c.name='A<b>';");
+  ok(run(c, "buddyLines().every(x=>!x.t.includes('<b>'))"), 'タグがそのまま入らない');
+});
+
 console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
 process.exit(fail ? 1 : 0);
