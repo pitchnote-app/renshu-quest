@@ -16,7 +16,7 @@
 ## ファイル構成
 - `index.html` 骨組み／`app.css` デザイン（ネイビー×ゴールド）／`app.js` アプリ本体（すべてのロジック）
 - `sw.js` オフライン用（`VERSION`）／`manifest.webmanifest`／`privacy.html`
-- `img/chars/` キャラのイラスト（`idea-1`〜`idea-11`、ステージ別は `idea-番号_ステージ.webp`）
+- `img/chars/` キャラのイラスト（`idea-1`〜`idea-10` の10人、ステージ別は `idea-番号_ステージ.webp`）
 - `img/items/` ショップのアイテム（`ball-N` `boot-N` `kit-N`）／`img/bolt/` 相棒ボルトの表情（`bolt-1`〜`10`）
 - `img/sheets/` AIで作った元のシート画像（公開ビルドには含めない）
 - `fonts/` 同梱フォント（SIL OFL）／`android/` Android版（Capacitor）
@@ -30,10 +30,11 @@
 
 ## AIイラスト（ChatGPTなどで作った画像）の取りこみ方
 - 画像は `docs/AIシート用プロンプト.md` のプロンプトで「1枚に格子状に複数」作ってもらう（背景は単色グレー）。
+- 背景が透明な画像で作ってもらうのがいちばんきれい（ツールが自動で見分けて、背景消しをせずに切り分ける）。
 - 受け取ったシートは `img/sheets/` に保存し、`tools/slice_sheet.py` で切り出す（背景透明化・ふちの色戻し・はみ出し除去・WebP出力）。
   - 例：`python tools/slice_sheet.py img/sheets/xxx.webp 5 2 img/items ball-1,ball-2,... --size 320 --tol 30`
   - 1人だけの画像は列数・行数を `1 1` に。腕のすき間の背景は `--holes "x,y;x,y"`、足元の影は `--shadow 0.92`、輪郭の内側が欠けるときは `--band 1`
-  - 例：`python tools/slice_sheet.py img/sheets/chara-11.webp 1 1 img/chars idea-11 --size 512 --tol 30 --holes "640,560;378,544;379,268;380,278;467,27" --shadow 0.92 --band 1`
+  - 例：`python tools/slice_sheet.py img/sheets/xxx.webp 1 1 img/chars idea-N --size 512 --tol 30 --holes "640,560;378,544;379,268;380,278;467,27" --shadow 0.92 --band 1`
   - 何人も並ぶシートは、マス番号を付けて指定する（例 `--holes "2:243,161"`）。白い消し残りは `--clear "マス番号:x0,y0,x1,y1"`（最後に `!` で中身を全部消す）。`characters-idea.webp` の設定は `docs/キャラ切り出し設定.md`
   - 小さな記号（Zzz など）を残したいときは `--keep 0.008`
   - キャラ8段階シート（4列×2行）の例：`python tools/slice_sheet.py img/sheets/idea-3-stages.webp 4 2 img/chars idea-3_1,...,idea-3_8 --size 512 --tol 30 --auto-holes 6 --hole-area 150 --xs 0,390,880,1215,1774`

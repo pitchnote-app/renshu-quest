@@ -675,6 +675,7 @@ function load(){try{const t=localStorage.getItem(KEY);if(t)S=JSON.parse(t)}catch
   if(!S)return;
   S.ver=S.ver||2;
   if(S.c&&!S.c.avatar)S.c.avatar=defaultAvatar(S.c);   // 「自分で作る」は廃止 → イラストのキャラへ
+  if(S.c&&!AVATARS.some(a=>a.id===S.c.avatar))S.c.avatar=defaultAvatar(S.c);   // なくなったキャラ（ちゃ髪など）→ 最初のキャラへ
   const st=S.stats||{};
   if(st.lift!=null&&st.touch==null) S.stats={...freshStats(),dribble:st.dribble||0,touch:st.lift||0,kick:(st.shoot||0)+(st.pass||0),stamina:st.stamina||0};
   else S.stats={...freshStats(),...st};
@@ -830,7 +831,7 @@ const medalTag=(M,small)=>M.m?`<span class="medal ${M.m.k}${small?' sm':''}">${M
 /* ===== AIイラストのキャラ（選んで使う） ===== */
 const AVATARS=[
   {id:'idea-1',name:'ツンツン',sex:'m'},{id:'idea-2',name:'ブロンド',sex:'m'},{id:'idea-3',name:'メガネ',sex:'m'},
-  {id:'idea-4',name:'あか髪',sex:'m'},{id:'idea-5',name:'ぎん髪',sex:'m'},{id:'idea-11',name:'ちゃ髪',sex:'m'},
+  {id:'idea-4',name:'あか髪',sex:'m'},{id:'idea-5',name:'ぎん髪',sex:'m'},
   {id:'idea-6',name:'ポニーテール',sex:'f'},{id:'idea-7',name:'ロング',sex:'f'},{id:'idea-8',name:'ふわふわ',sex:'f'},
   {id:'idea-9',name:'みつあみ',sex:'f'},{id:'idea-10',name:'おだんご',sex:'f'},
 ];
