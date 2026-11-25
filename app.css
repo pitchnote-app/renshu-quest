@@ -518,3 +518,5 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .firstpicks button{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:6px;color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
 .firstpicks .mthumb{width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:8px}
 .firstpicks .mthumb svg{width:100%;height:100%}
+.room .rhanger{position:absolute;right:3%;top:44%;width:30%;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:1px;z-index:1;border-top:3px solid #8a6a45;padding-top:3px}
+.room .rhanger img{width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
