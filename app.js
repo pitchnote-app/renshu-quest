@@ -400,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.13.0';
+const APP_VERSION='0.14.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1506,12 +1506,63 @@ function skillBoard(){
       return ok?`<div class="skchip ${t}">${k.name}</div>`
         :`<div class="skchip lock"><b>？？？</b><small>${k.how}</small>${pr!=null?`<span class="tprog"><i style="width:${pr*100}%"></i></span>`:''}</div>`}).join('')}</div>`}).join('');
 }
+/* ===== 選手カードを画像で保存（保護者確認つき。画像は端末の中で作り、外部には送らない） ===== */
+const CARD_SKY=[['#7cc6ff','#6cbf4f'],['#8fd0ff','#c9a46a'],['#5fb3ff','#4fa944'],['#ffb37a','#5cb848'],['#6fbfff','#b8915a'],['#0b1a3a','#20a34a'],['#3d8fe0','#2f9e4f'],['#050b1f','#2fa84f']];
+const loadImg=src=>new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=src});
+async function makeCardImage(){
+  const W=1080,H=1350, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d');
+  try{await document.fonts.ready}catch(e){}
+  const L=lv(S.xp).L, i=stageOf(L), c=dressed(S), col=RANK_COL[i];
+  // 背景：練習場所の絵（なければ空と地面）
+  const bg=await loadImg(`img/stages/stage-${i+1}.webp`);
+  if(bg){const sc=Math.max(W/bg.width,H/bg.height);g.drawImage(bg,(W-bg.width*sc)/2,(H-bg.height*sc)/2,bg.width*sc,bg.height*sc)}
+  else{const [sky,gr]=CARD_SKY[i];let gd=g.createLinearGradient(0,0,0,H);gd.addColorStop(0,sky);gd.addColorStop(.55,i===5||i===7?'#2a4a8a':'#ffffff');gd.addColorStop(.551,gr);gd.addColorStop(1,'#0b2a14');g.fillStyle=gd;g.fillRect(0,0,W,H)}
+  // 光
+  const rg=g.createRadialGradient(W/2,H*.42,40,W/2,H*.42,W*.7); rg.addColorStop(0,'rgba(255,255,255,.35)'); rg.addColorStop(1,'rgba(0,0,0,.45)'); g.fillStyle=rg; g.fillRect(0,0,W,H);
+  // 背番号
+  g.font='italic 520px "Dela Gothic One"'; g.textAlign='center'; g.strokeStyle='rgba(255,255,255,.22)'; g.lineWidth=6; g.strokeText(String(c.num||''),W*.6,H*.62);
+  // キャラ
+  let ch=null;
+  if(c.avatar){ch=await loadImg(`img/chars/${c.avatar}_${i+1}.webp`)||await loadImg(`img/chars/${c.avatar}.webp`)}
+  else{const svg=charSVG(c,L,POSE_OF[i]).replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');ch=await loadImg('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg))}
+  if(ch){const h=H*.62, w=ch.width*h/ch.height; g.shadowColor='rgba(0,0,0,.5)'; g.shadowBlur=30; g.drawImage(ch,(W-w)/2,H*.16,w,h); g.shadowBlur=0}
+  // 下の帯
+  let gb=g.createLinearGradient(0,H*.78,W,H); gb.addColorStop(0,'rgba(5,10,25,.92)'); gb.addColorStop(1,'rgba(5,10,25,.98)'); g.fillStyle=gb; g.fillRect(0,H*.78,W,H*.22);
+  g.fillStyle=col; g.fillRect(0,H*.78,W,10);
+  g.textAlign='left'; g.fillStyle='#fff'; g.font='96px "Dela Gothic One"'; g.fillText(S.c.name,60,H*.78+130);
+  g.font='bold 44px "Noto Sans JP"'; g.fillStyle='#cfe0ff'; g.fillText(`Lv.${L}　${rankOf(L)}　${jobOf(S).name}`,60,H*.78+205);
+  const top=NICKS.map(N=>({N,x:nickOf(S,N)})).sort((a,b)=>b.x.i-a.x.i)[0];
+  g.font='bold 40px "Noto Sans JP"'; g.fillStyle='#ffd54a'; g.fillText(`二つ名：${top.x.t}`,60,H*.78+262);
+  // 左上：総合
+  g.font='italic 170px "Dela Gothic One"'; g.fillStyle='#fff'; g.shadowColor=col; g.shadowBlur=30; g.fillText(String(ovr(S)),50,200); g.shadowBlur=0;
+  g.font='bold 40px "Noto Sans JP"'; g.fillText('総合',60,250);
+  // 右上：場所
+  g.textAlign='right'; g.font='bold 40px "Noto Sans JP"'; g.fillStyle='rgba(0,0,0,.45)'; const tw=g.measureText(`📍 ${STAGES[i].name}`).width; g.fillRect(W-60-tw-24,60,tw+48,64); g.fillStyle='#fff'; g.fillText(`📍 ${STAGES[i].name}`,W-60,107);
+  // アプリ名
+  g.font='34px "Dela Gothic One"'; g.fillStyle='rgba(255,255,255,.8)'; g.fillText('れんしゅうクエスト',W-50,H-40);
+  // ふち
+  g.strokeStyle=col; g.lineWidth=18; g.strokeRect(9,9,W-18,H-18);
+  return cv;
+}
+async function saveCardImage(){
+  if(!await parentGate())return;
+  const cv=await makeCardImage(), name=`renshu-quest-${today()}.png`;
+  if(PL.Filesystem&&PL.Share){
+    try{const w=await PL.Filesystem.writeFile({path:name,data:cv.toDataURL('image/png').split(',')[1],directory:'CACHE'});await PL.Share.share({title:'選手カード',files:[w.uri]})}catch(e){}
+    return;
+  }
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  const file=new File([blob],name,{type:'image/png'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'選手カード'});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  dialog({icon:'📸',title:'選手カードを保存しました',msg:'写真やファイルのアプリから見られます。'});
+}
 function statusView(){
   const {L,r,n}=lv(S.xp), J=jobOf(S), w=wear(S), c=norm(S.c);
   const item=(cat,id)=>(SHOP.find(x=>x.cat===cat).items.find(i=>i.id===id)||{}).name||'—';
   const got=SKILLS.filter(k=>(S.skills||[]).includes(k.name)).sort((a,b)=>'gold,blue,green'.indexOf(a.tier)-'gold,blue,green'.indexOf(b.tier));
   return `<div class="wrap stv">
-    <button class="chip mini" onclick="go('home')" style="margin:4px 0 10px">‹ ホーム</button>
+    <div class="row" style="margin:4px 0 10px;justify-content:space-between"><button class="chip mini" onclick="go('home')">‹ ホーム</button><button class="chip mini gold" onclick="saveCardImage()">📸 選手カードを保存</button></div>
     <div class="dqwin stv-top">
       <div class="stv-l">
         <div class="stv-name">${esc(c.name)}</div>
@@ -1782,6 +1833,7 @@ function settingsView(){
     </div>
     <div class="card"><h3>保護者の方へ</h3>
       <button class="setrow" onclick="openReport()"><span>保護者レポート・応援メッセージ</span><span class="arr">›</span></button>
+      <button class="setrow" onclick="saveCardImage()"><span>選手カードを画像で保存</span><span class="arr">›</span></button>
       <button class="setrow" onclick="openPrivacy()"><span>プライバシーポリシー</span><span class="arr">›</span></button>
     </div>
     <div class="card"><h3>サウンド</h3>
