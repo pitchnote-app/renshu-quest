@@ -15,7 +15,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 
 // 撮る画面と、上にのせる説明文
 const SHOTS = [
-  { tab: 'home', file: '1-home', cap: '練習するほど<br><em>自分の選手が強くなる</em>' },
+  { tab: 'home', file: '1-home', cap: '練習するほど<br><em>部屋も選手も豪華になる</em>' },
   { tab: 'status', file: '2-status', cap: '能力ランクと階級で<br><em>成長がひと目でわかる</em>' },
   { tab: 'practice', file: '3-practice', cap: '57種類の練習メニューを<br><em>イラストでわかりやすく</em>' },
   { tab: 'skill', file: '4-skill', cap: '練習を続けて<br><em>個人技スキルを習得</em>', js: "document.querySelector('.skhead').scrollIntoView()" },

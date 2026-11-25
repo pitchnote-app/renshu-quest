@@ -188,6 +188,7 @@ def main():
     ap.add_argument('--band', type=int, default=3, help='ふちの色戻しの幅（px）。大きな1人絵で輪郭線の内側が欠けるときは 1 に')
     ap.add_argument('--auto-holes', type=int, default=0, help='囲まれた背景を自動で消す（背景色からの許容差。例 4）。格子状のシート向け')
     ap.add_argument('--hole-area', type=int, default=300, help='--auto-holes で消す最小の広さ（画素数）')
+    ap.add_argument('--raw', action='store_true', help='背景の絵（風景・部屋）用：透明にせず、そのまま切り分けるだけ')
     ap.add_argument('--xs', default='', help='列の区切り位置（px）を手で指定。エフェクトがとなりのマスにはみ出すとき。例 0,390,880,1215,1774')
     ap.add_argument('--ys', default='', help='行の区切り位置（px）を手で指定')
     a = ap.parse_args()
@@ -204,9 +205,14 @@ def main():
     for j in range(a.rows):
         for i in range(a.cols):
             box = (xs[i], ys[j], xs[i+1], ys[j+1])
-            cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol, holes, a.shadow, a.band, a.auto_holes, a.hole_area), a.keep))
-            if cell.width > a.size:
-                cell = cell.resize((a.size, a.size), Image.LANCZOS)
+            if a.raw:
+                cell = sheet.crop(box).convert('RGB')
+                if cell.width > a.size:
+                    cell = cell.resize((a.size, round(cell.height * a.size / cell.width)), Image.LANCZOS)
+            else:
+                cell = trim_square(drop_fragments(remove_bg(sheet.crop(box), a.tol, holes, a.shadow, a.band, a.auto_holes, a.hole_area), a.keep))
+                if cell.width > a.size:
+                    cell = cell.resize((a.size, a.size), Image.LANCZOS)
             name = names[k] if k < len(names) else f'item-{k+1}'
             cell.save(os.path.join(a.out, name + '.webp'), 'WEBP', quality=86, method=6)  # 軽い WebP で保存
             print(f'{name}.webp  {cell.width}px')

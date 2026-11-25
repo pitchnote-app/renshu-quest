@@ -400,7 +400,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.9.1';
+const APP_VERSION='0.10.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -429,7 +429,7 @@ function parentGate(){
 /* ===== はじめての人向けの 遊び方 ===== */
 const TUT=[
   {ic:'⚽',b:'smile',t:'練習を記録しよう',m:'ボクは相棒のボルト！ 練習したら「れんしゅう」から記録。経験値（EXP）がたまってレベルが上がり、能力が伸びていくよ。'},
-  {ic:'🏟️',b:'joy',t:'カードが進化する',m:'レベルが上がると、おうちの庭 → 公園 → チーム → トレセン …そしてワールドクラスへ！'},
+  {ic:'🏟️',b:'joy',t:'カードが進化する',m:'レベルが上がると、練習場所が 家の庭 → 公園 → 河川敷 … そして満員のスタジアムへ！ 自分の部屋も広く豪華になっていくよ。'},
   {ic:'📜',b:'serious',t:'クエストとライバル',m:'毎日3つのクエストと、週替わりのライバルに挑戦。クリアするとボーナスがもらえるよ。'},
   {ic:'🪙',b:'chest',t:'コインでショップ',m:'練習するとコインがたまる。ショップでボールやスパイクと交換して、着せ替えしよう。'},
   {ic:'🏨',b:'sleep',t:'休むのも練習',m:'HPが減ったら宿屋で休もう。体は休んでいる間に強くなる。目標は週4日の練習だよ。'},
@@ -732,18 +732,32 @@ function norm(c){
 const MIR=x=>`<g transform="translate(200 0) scale(-1 1)">${x}</g>`;
 
 /* 成長ステージ：レベルで かいほう。ステージが上がるほど 舞台と ポーズが かっこよくなる */
+/* ステージ＝練習する場所（レベルで上がる）。絵は img/stages/stage-1〜8.webp（なければ下のグラデーション） */
 const STAGES=[
-  {lv:1,  name:'おうちの庭',  bg:'linear-gradient(180deg,#5fb3ff 0%,#bfe6ff 52%,#58b04a 52%,#2f7d2a 100%)'},
-  {lv:3,  name:'公園', bg:'linear-gradient(180deg,#ff9a5a 0%,#ffd9a8 50%,#7cc35b 50%,#3f8a3a 100%)'},
-  {lv:6,  name:'チーム入団', bg:'linear-gradient(180deg,#2a6fdb 0%,#9ccaff 48%,#c9a46a 48%,#8b6a3a 100%)'},
-  {lv:10, name:'トレセン',       bg:'linear-gradient(180deg,#0e2a5a 0%,#2d5fa8 48%,#2fa84f 48%,#1d6b33 100%)'},
-  {lv:15, name:'県代表',  bg:'linear-gradient(180deg,#050b1f 0%,#14306b 50%,#2f9e4f 50%,#155c2b 100%)'},
-  {lv:21, name:'地方代表', bg:'linear-gradient(180deg,#0b0620 0%,#3a1f73 50%,#2f9e4f 50%,#155c2b 100%)'},
-  {lv:28, name:'日本代表', bg:'radial-gradient(circle at 50% 38%,#4a8dff 0,#0b2a8a 45%,#030a2a 100%)'},
-  {lv:36, name:'ワールドクラス',   bg:'radial-gradient(circle at 50% 38%,#fff3a0 0,#ff9d00 30%,#7a1f00 65%,#120400 100%)'},
+  {lv:1,  name:'家の庭',           bg:'linear-gradient(180deg,#7cc6ff 0%,#c9ecff 46%,#8a6a45 46%,#8a6a45 49%,#6cbf4f 49%,#3f8f33 100%)'},
+  {lv:3,  name:'近所の公園',       bg:'linear-gradient(180deg,#8fd0ff 0%,#dff3ff 50%,#d9b77c 50%,#b8915a 100%)'},
+  {lv:6,  name:'大きな公園',       bg:'linear-gradient(180deg,#5fb3ff 0%,#bfe6ff 44%,#3f8f3a 44%,#5cb848 60%,#3c8a34 100%)'},
+  {lv:10, name:'河川敷',           bg:'linear-gradient(180deg,#ffb37a 0%,#ffe0b8 36%,#4f8fd6 36%,#2f6fb8 46%,#6cbf4f 46%,#3f8f33 100%)'},
+  {lv:15, name:'小学校のグラウンド', bg:'linear-gradient(180deg,#6fbfff 0%,#cdeeff 40%,#e8e2d4 40%,#e8e2d4 44%,#c49a62 44%,#a37a45 100%)'},
+  {lv:21, name:'フットサルコート', bg:'radial-gradient(circle at 20% 8%,rgba(255,255,255,.7),transparent 14%),radial-gradient(circle at 80% 8%,rgba(255,255,255,.7),transparent 14%),linear-gradient(180deg,#0b1a3a 0%,#1d3b6e 42%,#20a34a 42%,#1a8a3d 100%)'},
+  {lv:28, name:'天然芝のピッチ',   bg:'repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 28px,transparent 28px 56px),linear-gradient(180deg,#3d8fe0 0%,#a9d8ff 40%,#2f9e4f 40%,#1f7a3a 100%)'},
+  {lv:36, name:'満員のスタジアム', bg:'radial-gradient(circle at 15% 5%,#fff 0,transparent 12%),radial-gradient(circle at 85% 5%,#fff 0,transparent 12%),repeating-linear-gradient(90deg,#c0392b 0 6px,#f5b301 6px 12px,#2b59c3 12px 18px,#eaeaea 18px 24px),linear-gradient(180deg,#050b1f 0%,#14306b 24%,transparent 24%,transparent 42%,#2fa84f 42%,#155c2b 100%)'},
 ];
+const stageImg=i=>`url('img/stages/stage-${i+1}.webp')`;
 const POSE_OF=[0,0,1,1,2,3,3,4];
 function stageOf(L){let r=0;STAGES.forEach((x,i)=>{if(L>=x.lv)r=i});return r}
+/* 部屋：階級と同じタイミングで引っこし、広く豪華になる。絵は img/room/room-1〜8.webp（なければグラデーション）
+   cap＝飾れる数（トロフィー・メダル・ボール・くつ）。部屋が広いほど たくさん飾れる */
+const ROOMS=[
+  {name:'せまい物置部屋',   wall:'#8d7b68',wall2:'#6f604f',floor:'#7a6048',cap:2},
+  {name:'小さな子ども部屋', wall:'#d9c7a5',wall2:'#bba984',floor:'#9a7650',cap:3},
+  {name:'サッカー好きの部屋',wall:'#9fc3e8',wall2:'#7ea6d1',floor:'#a77b4f',cap:4},
+  {name:'広めの自分の部屋', wall:'#e8e2d4',wall2:'#cfc6b2',floor:'#b8875a',cap:5},
+  {name:'トロフィールーム', wall:'#2c4a7a',wall2:'#1d355e',floor:'#8a5a33',cap:6},
+  {name:'選手寮の広い部屋', wall:'#3a3f4b',wall2:'#2a2e38',floor:'#6b4a2e',cap:7},
+  {name:'高層マンションの部屋',wall:'#1b2a44',wall2:'#0f1a2e',floor:'#3a2a1e',cap:8},
+  {name:'豪邸の殿堂ルーム', wall:'#4a1d1d',wall2:'#2e0f0f',floor:'#5a3a12',cap:10},
+];
 /* 階級：成長ステージ（舞台）と同じレベルで昇格する、選手としての格 */
 const RANKS=['ビギナー','ルーキー','プレイヤー','レギュラー','エース','プロ','スーパースター','レジェンド'];
 const RANK_COL=['#8D939D','#36A269','#398BDC','#9062D0','#DF9634','#E34F4F','#24B9DF','#D4A52D'];
@@ -969,7 +983,7 @@ const POS_SHORT={'ウイング':'WG','トップ下':'OMF','ストライカー':'
 function cardView(s,L,i,opt={}){
   const st=STAGES[i], c=dressed(s,opt.over), lk=opt.locked;
   const bgi=BGS.find(x=>x.id===({...wear(s),...(opt.over||{})}).bg);
-  const bgStyle=bgi&&bgi.bg?`background-image:${bgi.bg}`:`background-image:url('img/bg_${i+1}.jpg'),${st.bg}`;
+  const bgStyle=bgi&&bgi.bg?`background-image:${bgi.bg}`:`background-image:${stageImg(i)},${st.bg}`;
   return `<div class="pc s${i} ${opt.mini?'mini':''} ${lk?'locked':''}">
     <div class="pc-bg" style="${bgStyle}"></div><div class="pc-fx"></div>
     <div class="pc-num ${String(c.num).length>2?'n3':''}">${c.num}</div>
@@ -1157,6 +1171,43 @@ function bossCard(){
     <p class="sub" style="margin:4px 0 0">撃破条件：${m.name}の記録で <b style="color:var(--ink)">${B.target}${m.unit}${m.lower?' 以内':' 以上'}</b></p></div></div>
     <p class="sub" style="margin:8px 0 0">${B.beaten?'🎉 撃破済み！ 来週は新しいライバルが登場するよ':'ほうしゅう：100 EXP・🪙150'}</p></div>`;
 }
+/* 部屋に飾るもの（練習でもらったものが増えていく） */
+function roomItems(s){
+  const L=lv(s.xp).L, R=ROOMS[stageOf(L)], days=practiceDays(s);
+  const trophies=[];
+  for(let k=0;k<(s.bossWins||0);k++)trophies.push({ic:'🏆',t:'ライバル撃破'});
+  [[10,'🥉'],[30,'🥈'],[60,'🥇'],[100,'👑']].forEach(([d,ic])=>{if(days>=d)trophies.push({ic,t:`練習${d}日達成`})});
+  const medals=MENUS.map(m=>({m,q:mastery(s,m.id)})).filter(x=>x.q.i>=3).sort((a,b)=>b.q.i-a.q.i).map(x=>({k:x.q.m.k,t:`${x.m.name}：${x.q.m.name}`}));
+  const own=(list)=>list.filter(it=>(s.inv||[]).includes(it.id)&&it.img);
+  return {R,trophies,medals,balls:own(BALLS),boots:own(BOOTS),kits:own(KITS),posters:STAGES.slice(0,stageOf(L)+1)};
+}
+function roomView(s){
+  const L=lv(s.xp).L, i=stageOf(L), X=roomItems(s), R=X.R, cap=R.cap, c=dressed(s);
+  const more=(n)=>n>cap?`<em class="rmore">+${n-cap}</em>`:'';
+  const bg=`url('img/room/room-${i+1}.webp'),linear-gradient(180deg,${R.wall} 0%,${R.wall2} 62%,${R.floor} 62%,${R.floor} 100%)`;
+  return `<div class="room r${i}" style="background-image:${bg}" onclick="roomInfo()">
+    <div class="rposters">${X.posters.map((st,k)=>`<i title="${st.name}" style="background-image:${stageImg(k)},${st.bg}"></i>`).join('')}</div>
+    <div class="rshelf rtro"><b>トロフィー</b><div>${X.trophies.slice(0,cap).map(x=>`<span title="${x.t}">${x.ic}</span>`).join('')||'<small>まだない</small>'}${more(X.trophies.length)}</div></div>
+    <div class="rshelf rmed"><b>メダル</b><div>${X.medals.slice(0,cap).map(x=>`<span class="rmedal ${x.k}" title="${x.t}"></span>`).join('')||'<small>まだない</small>'}${more(X.medals.length)}</div></div>
+    <div class="rchar">${charView(c,L,i)}</div>
+    <div class="rfloor rballs">${X.balls.slice(0,cap).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
+    <div class="rfloor rboots">${X.boots.slice(0,Math.max(1,cap-1)).map(it=>`<img src="${it.img}" alt="">`).join('')}</div>
+    <div class="rname">🏠 ${R.name}</div>
+  </div>`;
+}
+function roomInfo(){
+  const i=stageOf(lv(S.xp).L), nx=ROOMS[i+1], X=roomItems(S);
+  dialog({icon:'🏠',title:ROOMS[i].name,msg:`トロフィー ${X.trophies.length}個・メダル ${X.medals.length}個・ボール ${X.balls.length}個・スパイク ${X.boots.length}足<br><br>トロフィーはライバルに勝ったり、練習日数を重ねるともらえるよ。メダルは同じ練習を続けて「ゴールド」以上になると飾れるよ。${nx?`<br><br>Lv.${STAGES[i+1].lv}で「${nx.name}」に引っこし！ もっとたくさん飾れるようになるよ。`:'<br><br>最高の部屋だ！'}`});
+}
+/* 練習画面の上：今の練習場所に大きなマイキャラ */
+function stageScene(s){
+  const L=lv(s.xp).L, i=stageOf(L), st=STAGES[i], nx=STAGES[i+1], c=dressed(s);
+  return `<div class="scene s${i}" style="background-image:${stageImg(i)},${st.bg}">
+    <div class="scene-place">📍 ${st.name}</div>
+    <div class="scene-char">${charView(c,L,i)}</div>
+    <div class="scene-foot"><b>Lv.${L}</b> ${rankTag(L)}<span>${nx?`次は「${nx.name}」Lv.${nx.lv}`:'最高の舞台！'}</span></div>
+  </div>`;
+}
 function homeView(){
   recoverHP();dailyCheck();
   const {L,r,n}=lv(S.xp);
@@ -1166,7 +1217,7 @@ function homeView(){
   const t=TITLES.find(x=>x.id===S.eq);
   return `<div class="top">
     <button class="coin" onclick="go('shop')" style="position:absolute;right:14px;top:12px;z-index:5">🪙 ${S.coin||0}</button>
-    ${cardView(S,L,stageOf(L))}
+    ${roomView(S)}
     ${t?`<div class="title-badge" style="margin-top:10px">${t.ic} ${t.name}</div><br>`:''}
     <div class="lv">Lv. ${L}</div> ${rankTag(L)} <span class="jobtag">${J.name}</span>
     <div class="xpbar"><i style="width:${r/n*100}%"></i></div>
@@ -1204,7 +1255,7 @@ let pgrp='touch';
 const stars=lv=>`<span class="stars">${'★'.repeat(lv)}<i>${'★'.repeat(3-lv)}</i></span>`;
 function practiceView(){
   const m=menuOf(draft.menu), boost=boostStats();
-  if(!m) return `<div class="wrap">
+  if(!m) return `${stageScene(S)}<div class="wrap">
     <h2 style="margin:8px 0 4px">何を練習した？</h2>
     <p class="sub" style="margin:0 0 12px">🌱＝今の年齢で伸びやすい練習（経験×1.5）　★＝むずかしさ</p>
     <div class="gtabs">${GRPS.map(g=>`<button class="gtab ${g.id===pgrp?'on':''}" data-g="${g.id}"><span>${g.ic}</span>${g.name}</button>`).join('')}</div>
@@ -1309,7 +1360,7 @@ function gain(xp,notes,coin=0){
   S.xp+=xp;
   const after=lv(S.xp).L;
   if(after>before){S.bp=(S.bp||0)+3*(after-before);notes.push(`育成ポイント +${3*(after-before)}`)}
-  if(stageOf(after)>stageOf(before)){const R=STAGES[stageOf(after)];notes.push(`昇格！ 階級が <b>${rankOf(after)}</b> になった！`);notes.push(`ステージアップ！ <b>${R.name}</b>に進出！`)}
+  if(stageOf(after)>stageOf(before)){const R=STAGES[stageOf(after)];notes.push(`昇格！ 階級が <b>${rankOf(after)}</b> になった！`);notes.push(`📍 練習場所が <b>${R.name}</b> にレベルアップ！`);notes.push(`🏠 部屋が <b>${ROOMS[stageOf(after)].name}</b> に引っこした！`)}
   const {newT,newS,newN}=unlocks();
   newN.forEach(({N,x})=>notes.push(`${N.ic} ${N.name}の二つ名が <b>「${x.t}」</b> になった！`));
   const gear=GEAR.filter(g=>g.lv>before&&g.lv<=after);
@@ -1422,7 +1473,7 @@ function titlesView(){
     <p class="sub" style="margin:0 0 10px">同じ練習を続けたり、能力を上げたりすると技を習得できるよ。${(S.skills||[]).length} / ${SKILLS.length}</p>
     ${skillBoard()}
     <h2 style="margin:20px 0 4px">成長カード</h2>
-    <p class="sub" style="margin:0 0 12px">おうちの庭からワールドクラスまで。レベルが上がると次のステージへ。</p>
+    <p class="sub" style="margin:0 0 12px">家の庭から満員のスタジアムまで。レベルが上がると次の練習場所へ。</p>
     <div class="cgrid">${STAGES.map((r,i)=>cardView(S,r.lv,i,{mini:1,locked:lv(S.xp).L<r.lv})).join('')}</div>
     <h2 style="margin:20px 0 4px">称号</h2>
     <p class="sub" style="margin:0 0 12px">${got} / ${TITLES.length}  獲得。タップでカードに表示する称号を選べるよ。</p>

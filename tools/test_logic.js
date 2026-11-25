@@ -181,6 +181,18 @@ test('個人技スキル：練習回数で習得し、名前の重複がない�
   ok(run(c, "statusView().includes('足裏コントロール')"), 'つよさ画面に表示');
 });
 
+test('部屋：階級と同じ8段階で、広い部屋ほど飾れる数が多い。トロフィー・メダルが増える', c => {
+  run(c, newPlayer);
+  eq(run(c, 'ROOMS.length'), run(c, 'STAGES.length'));
+  ok(run(c, 'ROOMS.every((r,i)=>i===0||r.cap>=ROOMS[i-1].cap)'), '飾れる数');
+  eq(run(c, 'roomItems(S).trophies.length'), 0);
+  run(c, "S.bossWins=2; for(let i=0;i<15;i++)S.logs.push({date:'2026-01-'+String(i+1).padStart(2,'0'),menu:'sole_roll',min:10,xp:5})");
+  eq(run(c, 'roomItems(S).trophies.length'), 3, 'ライバル2＋10日達成');
+  eq(run(c, 'roomItems(S).medals.length'), 1, 'ゴールドの熟練度');
+  ok(run(c, "roomView(S).includes('せまい物置部屋')"), '部屋の名前');
+  ok(run(c, "stageScene(S).includes('家の庭')"), '練習場所');
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();

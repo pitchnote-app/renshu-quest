@@ -54,7 +54,8 @@
 - 階級 `RANKS`（ステージと同じレベルで昇格）／能力ランクS〜G `grade()`／メダル `MEDALS`（ビギナー→ダイヤ）／練習の熟練度 `mastery()`
 - 二つ名 `NICKS`（14分野×8段階。能力の分野は能力ランク、練習の分野は回数で上がる）／階級の色 `RANK_COL`
 - 個人技スキル `SKILLS`（金・技・心がまえの札。`name` は保存のキーなので変えない）／つよさ画面 `statusView()`
-- 成長ステージ8段階 `STAGES`（おうちの庭→公園→チーム入団→トレセン→県代表→地方代表→日本代表→ワールドクラス）
+- 練習場所8段階 `STAGES`（家の庭→近所の公園→大きな公園→河川敷→小学校のグラウンド→フットサルコート→天然芝のピッチ→満員のスタジアム）。練習画面の上 `stageScene()`、絵は `img/stages/stage-N.webp`
+- 部屋（マイページ）8段階 `ROOMS`・`roomView()`：階級と同時に引っこし、広く豪華に。飾り（トロフィー・メダル・ボール・くつ・ポスター）が増える。絵は `img/room/room-N.webp`
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
 - ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）／相棒ボルト `buddyLines()`・`BOLT`
 - イラストのキャラ `AVATARS`・`avatarView()`
