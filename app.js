@@ -351,7 +351,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.6.2';
+const APP_VERSION='0.7.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -397,7 +397,15 @@ function showTutorial(i=0){
 /* ===== バックアップ（機種変更やブラウザのデータ消去に備える） ===== */
 async function exportData(){
   if(!await parentGate())return;
-  const blob=new Blob([JSON.stringify({app:'renshu-quest',v:1,date:new Date().toISOString(),data:S})],{type:'application/json'});
+  const json=JSON.stringify({app:'renshu-quest',v:1,date:new Date().toISOString(),data:S}), name=`renshu-quest-backup-${today()}.json`;
+  if(PL.Filesystem&&PL.Share){
+    try{
+      const w=await PL.Filesystem.writeFile({path:name,data:json,directory:'CACHE',encoding:'utf8'});
+      await PL.Share.share({title:'れんしゅうクエストのバックアップ',files:[w.uri]});
+    }catch(e){}
+    return;
+  }
+  const blob=new Blob([json],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`renshu-quest-backup-${today()}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
   dialog({icon:'💾',title:'バックアップを保存しました',msg:'ファイルは大切に保管してください。'});
@@ -584,8 +592,21 @@ function confetti(){
   document.body.appendChild(c); setTimeout(()=>c.remove(),3500);
 }
 
+/* ===== アプリ版（ストア版）だけで使う機能。Webでは何もしない ===== */
+const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const PL=NATIVE?(Capacitor.Plugins||{}):{};
+
 /* ===== データ保存 ===== */
 const KEY='renshu-quest-v1';
+/* アプリ版は 端末の保存領域（Preferences）にも二重に保存する（WebViewのデータが消えても記録が残る） */
+async function restoreNative(){
+  if(!PL.Preferences)return;
+  try{
+    let ls=null; try{ls=localStorage.getItem(KEY)}catch(e){}
+    const r=await PL.Preferences.get({key:KEY});
+    if(!ls&&r&&r.value){try{localStorage.setItem(KEY,r.value)}catch(e){}}
+  }catch(e){}
+}
 let S=null, tab='home', draft={menu:null,min:15,rec:''};
 function load(){try{const t=localStorage.getItem(KEY);if(t)S=JSON.parse(t)}catch(e){}
   if(!S)return;
@@ -594,7 +615,38 @@ function load(){try{const t=localStorage.getItem(KEY);if(t)S=JSON.parse(t)}catch
   if(st.lift!=null&&st.touch==null) S.stats={...freshStats(),dribble:st.dribble||0,touch:st.lift||0,kick:(st.shoot||0)+(st.pass||0),stamina:st.stamina||0};
   else S.stats={...freshStats(),...st};
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){const t=JSON.stringify(S);try{localStorage.setItem(KEY,t)}catch(e){}
+  if(PL.Preferences)PL.Preferences.set({key:KEY,value:t}).catch(()=>{});
+  remindSoon();
+}
+/* ===== 練習リマインダー（アプリ版のみ）。毎日決まった時間に ボルトがやさしく声をかける =====
+   今日すでに練習（または休養）していたら、今日の分は出さない。7日先まで予約して、開くたびに予約しなおす */
+const REMIND_TIMES=['16:00','17:00','18:00','19:00','20:00'];
+const REMIND_MSG=['今日の練習、なにをする？ ボルトが待ってるよ！','5分だけでもOK！ ボールにさわってみよう','クエストに挑戦してみよう！ 練習した分だけ強くなるよ','今日も1つ、自己ベストをねらってみる？','つかれている日は宿屋で休むのも練習だよ'];
+let remindT=null;
+function remindSoon(){if(!PL.LocalNotifications)return;clearTimeout(remindT);remindT=setTimeout(remindSchedule,800)}
+async function remindSchedule(){
+  const LN=PL.LocalNotifications; if(!LN||!S)return;
+  try{
+    await LN.cancel({notifications:[1,2,3,4,5,6,7].map(id=>({id}))});
+    if(!S.remind)return;
+    const [h,m]=S.remind.split(':').map(Number), now=new Date(), done=S.logs.some(l=>l.date===today()), list=[];
+    for(let i=0;i<7;i++){
+      const at=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i,h,m,0);
+      if(at<=now||(i===0&&done))continue;
+      list.push({id:i+1,title:'れんしゅうクエスト',body:REMIND_MSG[(at.getDate()+i)%REMIND_MSG.length],schedule:{at},smallIcon:'ic_stat_rq',iconColor:'#D4AF37'});
+    }
+    if(list.length)await LN.schedule({notifications:list});
+  }catch(e){}
+}
+async function setRemind(){
+  const LN=PL.LocalNotifications; if(!LN)return;
+  const cur=S.remind||null, opts=[null,...REMIND_TIMES], next=opts[(opts.indexOf(cur)+1)%opts.length];
+  if(next&&!cur){
+    try{const p=await LN.requestPermissions(); if(p.display!=='granted'){dialog({icon:'🔕',title:'通知がオフになっています',msg:'スマホの「設定」→「通知」で、れんしゅうクエストの通知を許可してください。'});return}}catch(e){return}
+  }
+  S.remind=next; save(); render(); sfx('ok');
+}
 const need=L=>40+L*20;
 function lv(xp){let L=1,r=xp;while(r>=need(L)){r-=need(L);L++}return{L,r,n:need(L)}}
 const has=(s,id)=>s.titles.includes(id);
@@ -963,7 +1015,7 @@ function render(){
 }
 
 function recoverHP(){
-  if(S.hp==null){S.hp=100;S.hpDay=today()}
+  if(S.hp==null||!S.hpDay){S.hp=S.hp??100;S.hpDay=today()}
   if(S.hpDay!==today()){const d=Math.round((new Date(today())-new Date(S.hpDay))/864e5);S.hp=Math.min(100,S.hp+40*Math.max(1,d));S.hpDay=today()}
 }
 function weekKey(){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -1259,7 +1311,7 @@ function logView(){
     </div>
   </div>`;
 }
-async function resetAll(){if(!await parentGate())return;if(await dialog({icon:'⚠️',title:'本当に全部消していい？',msg:'キャラ・記録・コインがすべて消えます。元には戻せません。先にバックアップを保存しておくと安心です。',ok:'全部消す',cancel:'やめる',danger:true})){try{localStorage.removeItem(KEY)}catch(e){}S=null;ed=null;render()}}
+async function resetAll(){if(!await parentGate())return;if(await dialog({icon:'⚠️',title:'本当に全部消していい？',msg:'キャラ・記録・コインがすべて消えます。元には戻せません。先にバックアップを保存しておくと安心です。',ok:'全部消す',cancel:'やめる',danger:true})){try{localStorage.removeItem(KEY)}catch(e){}if(PL.Preferences)PL.Preferences.remove({key:KEY}).catch(()=>{});if(PL.LocalNotifications)PL.LocalNotifications.cancel({notifications:[1,2,3,4,5,6,7].map(id=>({id}))}).catch(()=>{});S=null;ed=null;render()}}
 let shopCat=0, wardCat=0;
 const ITEM_DESC={ball:'練習で使うボール。カードのキャラが持つよ',boot:'足元をかっこよく',kit:'特別なデザインのユニフォーム',bg:'カードの背景が変わるよ'};
 function shopView(){
@@ -1391,6 +1443,10 @@ function settingsView(){
     <div class="card"><h3>サウンド</h3>
       <button class="setrow" onclick="S.sound=S.sound===false;save();render();sfx('ok')"><span>効果音・振動</span><span class="arr">${S.sound===false?'オフ':'オン'}</span></button>
     </div>
+    ${PL.LocalNotifications?`<div class="card"><h3>練習リマインダー</h3>
+      <p class="sub" style="margin:6px 0 4px;line-height:1.6">毎日この時間に、ボルトが練習の声かけをします。その日に練習した日は鳴りません。</p>
+      <button class="setrow" onclick="setRemind()"><span>通知する時間</span><span class="arr">${S.remind||'オフ'}</span></button>
+    </div>`:''}
     <div class="card"><h3>遊び方</h3>
       <button class="setrow" onclick="showTutorial()"><span>遊び方をもう一度見る</span><span class="arr">›</span></button>
     </div>
@@ -1409,6 +1465,10 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.ta
 let errShown=false;
 window.addEventListener('error',()=>{if(errShown)return;errShown=true;
   try{dialog({icon:'⚠️',title:'問題が発生しました',msg:'アプリを読みこみ直します。記録は保存されています。',ok:'読みこみ直す'}).then(()=>location.reload())}catch(e){}});
-load();render();
-if(S&&!S.tut){S.tut=1;save()} // 既存ユーザーには 遊び方を 自動では出さない
-if('serviceWorker' in navigator&&window.isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{});
+(async()=>{
+  await restoreNative();
+  load();render();
+  if(S&&!S.tut){S.tut=1;save()} // 既存ユーザーには 遊び方を 自動では出さない
+  remindSoon();
+  if(!NATIVE&&'serviceWorker' in navigator&&window.isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();

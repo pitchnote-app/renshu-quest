@@ -8,16 +8,17 @@ function el() {
     querySelectorAll: () => [], querySelector: () => null, appendChild() {}, remove() {}, click() {}, addEventListener() {} },
     { get: (t, k) => (k in t ? t[k] : undefined), set: (t, k, v) => { t[k] = v; return true } });
 }
-function makeContext() {
+function makeContext(extra) {
   const store = new Map();
   const doc = { getElementById: () => el(), querySelectorAll: () => [], querySelector: () => null, createElement: () => el(), body: el() };
   const ctx = {
-    console, Math, Date, JSON, Promise, setTimeout: () => 0, Set, Map, Object, Array, Number, String, Proxy, Blob: function () {},
+    console, Math, Date, JSON, Promise, setTimeout: () => 0, clearTimeout() {}, Set, Map, Object, Array, Number, String, Proxy, Blob: function () {},
     URL: { createObjectURL: () => '', revokeObjectURL() {} },
     document: doc, navigator: {}, location: { reload() {} }, matchMedia: () => ({ matches: true }),
     localStorage: { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) },
     addEventListener() {}, isSecureContext: false, scrollTo() {}, scrollY: 0,
   };
+  Object.assign(ctx, extra || {});
   ctx.window = ctx;
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'), ctx, { filename: 'app.js' });
@@ -120,5 +121,33 @@ test('イラストのキャラを選ぶと カードはイラストで表示（�
   eq(run(c, 'AVATARS.length'), 10);
 });
 
-console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
-process.exit(fail ? 1 : 0);
+/* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
+async function nativeTests() {
+  const scheduled = [], prefs = new Map();
+  const Plugins = {
+    LocalNotifications: { cancel: async () => {}, schedule: async o => { scheduled.push(...o.notifications) }, requestPermissions: async () => ({ display: 'granted' }) },
+    Preferences: { get: async o => ({ value: prefs.get(o.key) ?? null }), set: async o => { prefs.set(o.key, o.value) }, remove: async o => { prefs.delete(o.key) } },
+  };
+  const c = makeContext({ Capacitor: { isNativePlatform: () => true, Plugins } });
+  const name = 'アプリ版：リマインダーは7日分まで予約し、今日練習した日は今日の分を出さない';
+  try {
+    run(c, newPlayer + "S.remind='23:59';");
+    await run(c, 'remindSchedule()');
+    ok(scheduled.length === 7, `7件のはず（${scheduled.length}件）`);
+    scheduled.length = 0;
+    run(c, "S.logs.unshift({date:today(),menu:'x',min:10,xp:5})");
+    await run(c, 'remindSchedule()');
+    ok(scheduled.length === 6 && !scheduled.some(n => n.id === 1), '今日の分が残っている');
+    scheduled.length = 0;
+    run(c, 'S.remind=null'); await run(c, 'remindSchedule()');
+    eq(scheduled.length, 0, 'オフなら予約しない');
+    run(c, 'save()'); await new Promise(r => setImmediate(r));
+    ok(JSON.parse(prefs.get('renshu-quest-v1')).c.name === 'テスト', '端末の保存領域にも保存される');
+    pass++; console.log('  ✔ ' + name);
+  } catch (e) { fail++; console.log('  ✘ ' + name + '\n      ' + e.message); }
+}
+
+nativeTests().then(() => {
+  console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
+  process.exit(fail ? 1 : 0);
+});

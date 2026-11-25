@@ -11,3 +11,5 @@ ios/App/Pods/
 # バックアップファイル（個人の記録が入るため）
 renshu-quest-backup-*.json
 dist/
+# ストア画像の撮影途中のファイル
+store/*/raw/

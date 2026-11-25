@@ -1,0 +1,53 @@
+# アプリ版（Android / iPhone）をクラウドで組み立てて、壊れていないか確認する
+# - Android：テスト用の APK を作って「Artifacts」からダウンロードできるようにする（家族のスマホで試せる）
+# - iPhone：Mac がなくても、GitHub のクラウドの Mac でビルドが通るか確認する（署名・ストア提出は Apple 登録後）
+name: Native builds
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - run: npm ci
+      - name: ロジックのテスト
+        run: node tools/test_logic.js
+      - name: 公開用ファイルを作ってアプリに入れる
+        run: python tools/build.py && npx cap sync android
+      - name: テスト用 APK を作る
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: renshu-quest-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: npm ci
+      - name: 公開用ファイルを作ってアプリに入れる
+        run: python tools/build.py && npx cap sync ios
+      - name: iPhone 版をビルド（シミュレーター用・署名なし）
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -40
+          test ${PIPESTATUS[0]} -eq 0

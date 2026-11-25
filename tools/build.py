@@ -9,7 +9,7 @@ import hashlib, os, re, shutil
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 DIST = os.path.join(ROOT, 'dist')
-FILES = ['index.html', 'privacy.html', 'app.css', 'app.js', 'sw.js', 'manifest.webmanifest']
+FILES = ['index.html', 'privacy.html', 'support.html', 'app.css', 'app.js', 'sw.js', 'manifest.webmanifest']
 DIRS = ['icons', 'img', 'fonts']
 
 def main():
