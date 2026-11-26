@@ -67,6 +67,8 @@
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
 - ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）／相棒ボルト `buddyLines()`・`BOLT`
 - イラストのキャラ `AVATARS`・`avatarView()`
+- データの守り：`fixData()`（保存データ・バックアップの形を確かめて直す。新しい項目を足したらここにも足す）／読めないデータは `キー-broken` に控え／`onCrash()`・`rescueView()`（くり返すエラーで安全モード）／バックアップを読む前の記録は `UNDO_KEY()` に1つ取っておき `undoImport()` で戻す
+- Android の戻るボタン `onBack()`（`@capacitor/app`）：お知らせを閉じる→ホームへ→アプリを裏に下げる
 
 ## やってはいけないこと
 - 秘密情報（パスワード・APIキーなど）をコミットしない。

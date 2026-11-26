@@ -308,6 +308,7 @@ async function nativeTests() {
   const c = makeContext({ Capacitor: { isNativePlatform: () => true, Plugins } });
   const name = 'アプリ版：リマインダーは7日分まで予約し、今日練習した日は今日の分を出さない';
   try {
+    await new Promise(r => setImmediate(r));   // アプリの起動処理（保存データの読みこみ）が終わるのを待つ
     run(c, newPlayer + "S.remind='23:59';");
     await run(c, 'remindSchedule()');
     const d = new Date(), late = d.getHours() === 23 && d.getMinutes() >= 59;   // 23:59 を過ぎていたら今日の分は出ない
@@ -324,6 +325,30 @@ async function nativeTests() {
     pass++; console.log('  ✔ ' + name);
   } catch (e) { fail++; console.log('  ✘ ' + name + '\n      ' + e.message); }
 }
+
+test('こわれた保存データでも起動できる（足りない所を補い、ホームが表示できる）', c => {
+  run(c, newPlayer + "save();");
+  run(c, "{const d=JSON.parse(localStorage.getItem(KEY));d.logs=null;d.titles='x';d.stats=5;d.xp='abc';d.coin=-3;d.hp=999;d.timer=7;localStorage.setItem(KEY,JSON.stringify(d));load();}");
+  eq(run(c, 'Array.isArray(S.logs)&&Array.isArray(S.titles)&&Array.isArray(S.skills)'), true);
+  eq(run(c, '[S.xp,S.coin,S.hp,S.timer===undefined]'), [0, 0, 100, true]);
+  eq(run(c, 'typeof S.stats.speed'), 'number', '能力は初期値で補う');
+  ok(run(c, 'homeView().length') > 100, 'ホームの画面が作れる');
+  // 中身がこわれた記録（日付なし・文字だけ）はすてて、正しい記録は新しい順に並べる
+  run(c, "{const d=JSON.parse(localStorage.getItem(KEY));d.logs=[{date:'2026-01-02',menu:'m1',min:10,xp:20},'x',{menu:'m1'},{date:'2026-03-01',rest:true,xp:10}];localStorage.setItem(KEY,JSON.stringify(d));load();}");
+  eq(run(c, 'S.logs.map(l=>l.date)'), ['2026-03-01', '2026-01-02']);
+});
+
+test('読めない保存データは消さずに控えを残す', c => {
+  run(c, "localStorage.setItem(KEY,'{こわれた');load();");
+  eq(run(c, 'S'), null);
+  eq(run(c, "localStorage.getItem(KEY+'-broken')"), '{こわれた');
+});
+
+test('バックアップの形を確かめる：選手がないものは読まない、古い形は補って読む', c => {
+  eq(run(c, 'fixData(null)'), null); eq(run(c, 'fixData({logs:[]})'), null); eq(run(c, "fixData('abc')"), null);
+  run(c, "var d=fixData({c:{name:'たろう',avatar:'idea-99'},xp:120})");
+  eq(run(c, '[d.c.name,d.c.avatar,d.xp,d.logs.length,d.coin]'), ['たろう', null, 120, 0, 0]);
+});
 
 nativeTests().then(() => {
   console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);

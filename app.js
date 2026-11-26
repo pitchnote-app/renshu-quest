@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.20.1';
+const APP_VERSION='0.21.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -442,32 +442,46 @@ function showTutorial(i=0){
 /* ===== バックアップ（機種変更やブラウザのデータ消去に備える） ===== */
 async function exportData(){
   if(!await parentGate())return;
-  const json=JSON.stringify({app:'renshu-quest',v:1,date:new Date().toISOString(),data:S}), name=`renshu-quest-backup-${today()}.json`;
+  await saveBackupFile(S);
+}
+/* バックアップのファイルを作って、保存（Web）または共有（アプリ版）する。data は記録のかたまり（壊れていてもそのまま入れる） */
+async function saveBackupFile(data){
+  const json=JSON.stringify({app:'renshu-quest',v:1,date:new Date().toISOString(),data}), name=`renshu-quest-backup-${today()}.json`;
   if(PL.Filesystem&&PL.Share){
     try{
       const w=await PL.Filesystem.writeFile({path:name,data:json,directory:'CACHE',encoding:'utf8'});
       await PL.Share.share({title:'れんしゅうクエストのバックアップ',files:[w.uri]});
-    }catch(e){}
+    }catch(e){if(!/cancel/i.test(String(e&&e.message)))await dialog({icon:'⚠️',title:'バックアップを保存できませんでした',msg:'スマホの空き容量を確かめて、もう一度試してください。'})}
     return;
   }
   const blob=new Blob([json],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`renshu-quest-backup-${today()}.json`;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
-  dialog({icon:'💾',title:'バックアップを保存しました',msg:'ファイルは大切に保管してください。'});
+  await dialog({icon:'💾',title:'バックアップを保存しました',msg:'ファイルは大切に保管してください。'});
 }
+const UNDO_KEY=()=>KEY+'-before-import';   // バックアップを読みこむ前の記録（1つだけ取っておく）
+function hasUndo(){try{return !!localStorage.getItem(UNDO_KEY())}catch(e){return false}}
 async function importData(){
   if(!await parentGate())return;
   const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json,.json';
   inp.onchange=async()=>{
     const f=inp.files[0]; if(!f)return;
-    try{
-      const j=JSON.parse(await f.text());
-      if(j.app!=='renshu-quest'||!j.data||!j.data.c)throw 0;
-      if(!await dialog({icon:'📥',title:'バックアップを読みこむ？',msg:'今の記録は上書きされます。元には戻せません。',ok:'読みこむ',cancel:'やめる',danger:true}))return;
-      S=j.data; save(); load(); go('home'); dialog({icon:'✅',title:'読みこみました'});
-    }catch(e){dialog({icon:'⚠️',title:'読みこめませんでした',msg:'れんしゅうクエストのバックアップファイルを選んでね。'})}
+    let d=null;
+    try{const j=JSON.parse(await f.text()); if(j&&j.app==='renshu-quest')d=fixData(j.data)}catch(e){}
+    if(!d){dialog({icon:'⚠️',title:'読みこめませんでした',msg:'れんしゅうクエストのバックアップファイルを選んでね。'});return}
+    if(!await dialog({icon:'📥',title:`「${esc(d.c.name||'名前なし')}」の記録を読みこむ？`,msg:'今の記録は上書きされます。読みこむ前の記録は1つだけ取っておくので、「せってい」から戻せます。',ok:'読みこむ',cancel:'やめる',danger:true}))return;
+    if(S){try{localStorage.setItem(UNDO_KEY(),JSON.stringify(S))}catch(e){}}
+    S=d; save(); go('home'); dialog({icon:'✅',title:'読みこみました'});
   };
   inp.click();
+}
+async function undoImport(){
+  if(!await parentGate())return;
+  let d=null; try{d=fixData(JSON.parse(localStorage.getItem(UNDO_KEY())))}catch(e){}
+  if(!d){dialog({icon:'⚠️',title:'戻せる記録がありません'});return}
+  if(!await dialog({icon:'↩️',title:'読みこむ前の記録に戻す？',msg:`「${esc(d.c.name||'名前なし')}」の記録に戻します。今の記録は消えます。`,ok:'戻す',cancel:'やめる',danger:true}))return;
+  S=d; save(); try{localStorage.removeItem(UNDO_KEY())}catch(e){}
+  go('home'); dialog({icon:'✅',title:'元に戻しました'});
 }
 
 /* ===== 効果音・振動（音声ファイルなし。Web Audio で その場で鳴らす） ===== */
@@ -671,7 +685,27 @@ async function restoreNative(){
   }catch(e){}
 }
 let S=null, tab='home', draft={menu:null,min:15,rec:''};
-function load(){try{const t=localStorage.getItem(KEY);if(t)S=JSON.parse(t)}catch(e){}
+/* 記録のかたまりの形を確かめて、こわれている所を直す（アップデートの移行もれ・途中で止まった保存・古いバックアップ対策）。
+   選手（c）がなければ null。それ以外は、使える所を残して足りない所を初期値で補う */
+function fixData(d){
+  const obj=x=>x&&typeof x==='object'&&!Array.isArray(x), num=(x,def=0)=>typeof x==='number'&&isFinite(x)&&x>=0?x:def;
+  if(!obj(d)||!obj(d.c))return null;
+  if(typeof d.c.name!=='string')d.c.name=String(d.c.name??'');
+  d.c.name=d.c.name.slice(0,20);
+  if(d.c.avatar!=null&&!AVATARS.some(a=>a.id===d.c.avatar))d.c.avatar=null;   // 知らないキャラ名は入れない（下の load で最初のキャラへ）
+  ['logs','titles','skills','frozen','inv'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[]});
+  d.logs=d.logs.filter(l=>obj(l)&&typeof l.date==='string'&&/^\d{4}-\d\d-\d\d$/.test(l.date));
+  d.logs.forEach(l=>{if('min' in l)l.min=num(l.min);if('xp' in l)l.xp=num(l.xp)});
+  d.logs.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);   // 新しい順（同じ日の中の順番はそのまま）
+  ['titles','skills','frozen','inv'].forEach(k=>{d[k]=d[k].filter(x=>typeof x==='string')});
+  ['stats','best','qd'].forEach(k=>{if(!obj(d[k]))d[k]={}});
+  d.xp=num(d.xp); d.coin=num(d.coin);
+  if(d.hp!=null)d.hp=Math.min(100,num(d.hp,100));
+  ['timer','boss','place','season','pmsg','wear'].forEach(k=>{if(d[k]!=null&&!obj(d[k]))delete d[k]});
+  return d;
+}
+function load(){S=null;let t=null;try{t=localStorage.getItem(KEY);if(t)S=fixData(JSON.parse(t))}catch(e){}
+  if(t&&!S){try{if(!localStorage.getItem(KEY+'-broken'))localStorage.setItem(KEY+'-broken',t)}catch(e){}}   // 読めなかった記録も、消さずに控えを残す
   if(!S)return;
   S.ver=S.ver||2;
   if(S.c&&!S.c.avatar)S.c.avatar=defaultAvatar(S.c);   // 「自分で作る」は廃止 → イラストのキャラへ
@@ -1325,6 +1359,7 @@ function checkBoss(m,rec){
 function doPractice(){
   recoverHP();
   const m=menuOf(draft.menu), past=isPast(draft.date), day=past?draft.date:today(), thisWeek=day>=weekKey();
+  if(!m)return;   // 連打などで、記録したあとの古いボタンが押されたとき
   let xp=calcXP(), notes=[], coin=draft.min, pb=false;
   const rec=draft.rec===''?null:Number(draft.rec);
   const first=!S.logs.some(l=>!l.rest);
@@ -1799,6 +1834,7 @@ function settingsView(){
       <p class="sub" style="margin:6px 0 4px;line-height:1.6">記録はこの端末の中にだけ保存され、外部には送信されません。機種変更に備えて、ときどきバックアップを保存してください。</p>
       <button class="setrow" onclick="exportData()"><span>バックアップを保存する</span><span class="arr">›</span></button>
       <button class="setrow" onclick="importData()"><span>バックアップから読みこむ</span><span class="arr">›</span></button>
+      ${hasUndo()?`<button class="setrow" onclick="undoImport()"><span>読みこむ前の記録に戻す</span><span class="arr">›</span></button>`:''}
       <button class="setrow danger" onclick="resetAll()"><span>最初からやり直す</span><span class="arr">›</span></button>
     </div>
     ${swReg?'<button class="btn ghost" style="font-size:15px" onclick="checkUpdate()">最新バージョンにする</button>':''}
@@ -1829,12 +1865,56 @@ function startUpdater(){
   }).catch(()=>{});
 }
 /* 予期しないエラーが起きても 固まらないように */
+/* 1回目は読みこみ直す。読みこみ直してもすぐまた起きるときは「安全モード」を出して、記録の保存・やり直しを選べるようにする */
 let errShown=false;
-window.addEventListener('error',()=>{if(errShown)return;errShown=true;
-  try{dialog({icon:'⚠️',title:'問題が発生しました',msg:'アプリを読みこみ直します。記録は保存されています。',ok:'読みこみ直す'}).then(()=>location.reload())}catch(e){}});
+function onCrash(){
+  if(errShown)return; errShown=true;
+  let n=0; try{n=+sessionStorage.getItem('rq-crash')||0; sessionStorage.setItem('rq-crash',n+1)}catch(e){}
+  try{
+    if(n>=1){rescueView();return}
+    dialog({icon:'⚠️',title:'問題が発生しました',msg:'アプリを読みこみ直します。記録は保存されています。',ok:'読みこみ直す'}).then(()=>location.reload());
+  }catch(e){}
+}
+window.addEventListener('error',onCrash);
+window.addEventListener('unhandledrejection',onCrash);
+function rescueView(){
+  const box=document.getElementById('ovbox');
+  box.innerHTML=`<div class="star">🛟</div><h2 style="font-size:21px">うまく表示できません</h2>
+    <p class="sub" style="line-height:1.7">記録のデータをうまく読みこめませんでした。保護者の方は、次のどれかを選んでください。</p>
+    <button class="btn gold" id="rsre">もう一度読みこむ</button>
+    <button class="btn ghost" id="rsbk" style="margin-top:10px">記録をファイルに保存する</button>
+    <button class="btn danger" id="rsrs" style="margin-top:10px">この選手の記録を消して始める</button>
+    <p class="sub" style="margin-top:12px;font-size:12px">ver ${APP_VERSION}</p>`;
+  document.getElementById('ov').classList.add('show');
+  const raw=()=>{let t=null;try{t=localStorage.getItem(KEY)}catch(e){}try{return JSON.parse(t)}catch(e){return t}};
+  document.getElementById('rsre').onclick=()=>location.reload();
+  document.getElementById('rsbk').onclick=async()=>{if(await parentGate())await saveBackupFile(raw());rescueView()};
+  document.getElementById('rsrs').onclick=async()=>{
+    if(!await parentGate()){rescueView();return}
+    const t=raw(); try{localStorage.setItem(KEY+'-broken',typeof t==='string'?t:JSON.stringify(t));localStorage.removeItem(KEY)}catch(e){}
+    if(PL.Preferences)await PL.Preferences.remove({key:KEY}).catch(()=>{});
+    try{sessionStorage.removeItem('rq-crash')}catch(e){}
+    location.reload();
+  };
+}
+/* Android の「戻る」ボタン：お知らせを閉じる → ホームに戻る → ホームならアプリを裏に下げる（いきなり終わらない） */
+function onBack(){
+  if(document.getElementById('rsre'))return;   // 安全モード中は何もしない
+  if(document.getElementById('ov').classList.contains('show')){
+    const bs=[...document.querySelectorAll('#ovbox button')];
+    const no=bs.find(b=>/^(dlno|pgno|ovno|noteno)$/.test(b.id))||bs.find(b=>/^(やめる|とじる|閉じる|キャンセル|あとで)/.test(b.textContent.trim()));
+    if(no)no.click(); else if(bs.length===1)bs[0].click(); else closeOv();
+    return;
+  }
+  if(!S||tab==='edit'){const c=document.getElementById('edcancel');if(c)c.click();else if(PL.App)PL.App.minimizeApp();return}
+  if(tab!=='home'&&tab!=='timer'){go('home');return}   // タイマー中は、うっかり止まらないように画面を変えない
+  if(PL.App)PL.App.minimizeApp();
+}
+if(PL.App)PL.App.addListener('backButton',onBack);
 (async()=>{
   await restoreNative();
   load();if(S&&S.timer)tab='timer';render();
+  setTimeout(()=>{try{sessionStorage.removeItem('rq-crash')}catch(e){}},8000);   // ちゃんと動いたら、エラーの回数を数え直す
   if(S&&!S.tut){S.tut=1;save()} // 既存ユーザーには 遊び方を 自動では出さない
   remindSoon();
   if(!NATIVE&&'serviceWorker' in navigator&&window.isSecureContext)startUpdater();   // 新しい版を確かめて読みこみ直す（Web版のみ）
