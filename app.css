@@ -480,6 +480,10 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .scene{height:330px}
 .scene .scene-char{height:236px;bottom:40px}
 .scene .scene-foot span:last-child{font-size:11px;white-space:nowrap}
+/* 練習場所の場面：背景は下ぞろえにして、いつも地面が見えるように。キャラの足は 絵の下から13%（地面の手前）に置く
+   画面が横に広いと絵が拡大されるので、足の高さも幅に合わせる（頭が切れない高さまで）。幅は ほかの画面と同じ最大480px */
+.scene{container-type:inline-size;background-position:center bottom;max-width:480px;margin-left:auto;margin-right:auto}
+.scene .scene-char{bottom:min(calc(max(100cqw, 330px) * .13 - 9px), 86px)}
 
 /* ===== 演出（v0.11.0） ===== */
 .cutin{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#13284f 0,#05080f 70%);overflow:hidden;opacity:0;transition:opacity .25s;cursor:pointer}
