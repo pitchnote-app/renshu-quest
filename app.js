@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.23.1';
+const APP_VERSION='0.24.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1160,10 +1160,14 @@ function roomView(s){
   // 飾りは部屋の下の「飾り棚」1本にまとめる（部屋の絵の窓や家具を隠さない）
   const awards=X.trophies.slice(0,cap).map(x=>`<span class="rtro" title="${x.t}">${x.ic}</span>`).join('')+more(X.trophies.length)
     +X.medals.slice(0,cap).map(x=>`<span class="rmedal ${x.k}" title="${x.t}"></span>`).join('')+more(X.medals.length);
-  const gear=[...X.balls.slice(0,cap),...X.boots.slice(0,Math.max(1,cap-1)),...X.kits.slice(0,Math.max(1,cap-1))].map(it=>`<img src="${it.img}" alt="">`).join('');
+  // 装備中のユニフォーム・スパイクは キャラの横の「装備中」の台に大きく飾る（棚には重ねて置かない）
+  const w=wear(s), K=X.kits.find(it=>it.id===w.kit), B=X.boots.find(it=>it.id===w.boot);
+  const gear=[...X.balls.slice(0,cap),...X.boots.filter(it=>it!==B).slice(0,Math.max(1,cap-1)),...X.kits.filter(it=>it!==K).slice(0,Math.max(1,cap-1))].map(it=>`<img src="${it.img}" alt="">`).join('');
+  const stand=K||B?`<button class="rstand" onclick="event.stopPropagation();go('wardrobe')" aria-label="装備中のアイテム。着せ替えを開く"><small>装備中</small>${K?`<img class="rskit" src="${K.img}" alt="${esc(K.name)}">`:''}${B?`<img class="rsboot" src="${B.img}" alt="${esc(B.name)}">`:''}</button>`:'';
   return `<div class="room r${i}" style="background-image:${bg}" onclick="roomInfo()">
     <div class="rname">🏠 ${R.name}</div>
     <div class="rchar">${charView(c,L,i)}</div>
+    ${stand}
     ${nameBanner(s)}
     <div class="rcase">
       <div class="rawards">${awards||'<small>トロフィー・メダルはまだない</small>'}</div>
@@ -1700,6 +1704,13 @@ function shopView(){
     </div>
   </div>`;
 }
+/* ショップで交換：コインを払って持ち物に入れ、そのまま装備する */
+function buyItem(cat,id){
+  const C=SHOP.find(x=>x.cat===cat), it=C&&C.items.find(x=>x.id===id); wear(S);
+  if(!it||!(it.price>0)||S.inv.includes(id)||(S.coin||0)<it.price)return false;
+  S.coin-=it.price; S.inv.push(id); S.wear[cat]=id; save();
+  return true;
+}
 function bindShop(){
   const app=document.getElementById('app'), C=SHOP[shopCat];
   app.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>{shopCat=+b.dataset.sc;render()});
@@ -1716,10 +1727,11 @@ function bindShop(){
     const g=document.getElementById('ovgo');
     if(g) g.onclick=()=>{
       if(own){document.getElementById('ov').classList.remove('show');wardCat=shopCat;go('wardrobe');return}
-      S.coin-=it.price;S.inv.push(it.id);save();sfx('coin');
-      box.innerHTML=`<div class="star">🛍️</div><h2>交換完了！</h2><div class="bigicon">${itemIcon(C.cat,it)}</div><p><b>${it.name}</b> を手に入れた！</p>
-        <button class="btn" id="ovwear">さっそく着せ替える</button><button class="btn ghost" id="ovno2" style="margin-top:10px">ショップに戻る</button>`;
-      document.getElementById('ovwear').onclick=()=>{S.wear[C.cat]=it.id;save();document.getElementById('ov').classList.remove('show');wardCat=shopCat;go('wardrobe')};
+      if(!buyItem(C.cat,it.id))return;
+      sfx('coin');
+      box.innerHTML=`<div class="star">🛍️</div><h2>交換完了！</h2><div class="bigicon">${itemIcon(C.cat,it)}</div><p><b>${it.name}</b> を手に入れて、装備したよ！</p>
+        <button class="btn gold" id="ovwear">ホームで見る</button><button class="btn ghost" id="ovno2" style="margin-top:10px">ショップに戻る</button>`;
+      document.getElementById('ovwear').onclick=()=>{document.getElementById('ov').classList.remove('show');go('home')};
       document.getElementById('ovno2').onclick=()=>{document.getElementById('ov').classList.remove('show');render()};
     };
   });
