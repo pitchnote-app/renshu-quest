@@ -319,6 +319,20 @@ test('ホームの次のレベル：★5つで表し、進んだ分だけ金色�
   run(c, newPlayer); ok(run(c, 'homeView()').includes('class="xpstars"') && !run(c, 'homeView()').includes('class="xpbar"'), 'ホームは星');
 });
 
+test('ショップ：交換するとそのまま装備し、部屋の「装備中」の台に飾られる', c => {
+  run(c, newPlayer + "S.coin=1000;");
+  ok(!run(c, 'roomView(S)').includes('class="rstand"'), '最初は台なし');
+  eq(run(c, "buyItem('kit','k1')"), true); eq(run(c, 'S.wear.kit'), 'k1'); eq(run(c, 'S.coin'), 700);
+  eq(run(c, "buyItem('kit','k1')"), false, '同じものは二度買えない');
+  eq(run(c, "buyItem('boot','s5')"), false, 'コイン不足'); eq(run(c, 'S.wear.boot'), 's0');
+  eq(run(c, "buyItem('boot','s1')"), true); eq(run(c, 'S.wear.boot'), 's1');
+  const h = run(c, 'roomView(S)'), st = h.slice(h.indexOf('class="rstand"'), h.indexOf('</button>', h.indexOf('class="rstand"')));
+  const kimg = run(c, "KITS.find(x=>x.id==='k1').img"), bimg = run(c, "BOOTS.find(x=>x.id==='s1').img");
+  ok(st.includes(kimg) && st.includes(bimg), '台に装備中の2つ');
+  const shelf = h.slice(h.indexOf('class="rgear"')); ok(!shelf.includes(kimg) && !shelf.includes(bimg), '棚には重ねない');
+  eq(run(c, "buyItem('ball','b1')"), true); eq(run(c, 'S.wear.ball'), 'b1');
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();

@@ -57,7 +57,7 @@
 - 二つ名 `NICKS`（14分野×8段階。能力の分野は能力ランク、練習の分野は回数で上がる）／階級の色 `RANK_COL`
 - 個人技スキル `SKILLS`（金・技・心がまえの札。`name` は保存のキーなので変えない）／つよさ画面 `statusView()`
 - 練習場所8段階 `STAGES`（家の庭→近所の公園→大きな公園→河川敷→小学校のグラウンド→フットサルコート→天然芝のピッチ→満員のスタジアム）。練習画面の上 `stageScene()`、絵は `img/stages/stage-N.webp`
-- 部屋（マイページ）8段階 `ROOMS`・`roomView()`（足元の名札「#10 名前」は `nameBanner()`）：階級と同時に引っこし、広く豪華に。飾り（トロフィー・メダル・ボール・くつ・ポスター）が増える。絵は `img/room/room-N.webp`
+- 部屋（マイページ）8段階 `ROOMS`・`roomView()`（足元の名札「#10 名前」は `nameBanner()`、装備中のユニフォーム・スパイクはキャラの右の台 `.rstand`）：階級と同時に引っこし、広く豪華に。飾り（トロフィー・メダル・ボール・くつ・ポスター）が増える。絵は `img/room/room-N.webp`
 - 演出：全画面カットイン `cutin()`（昇格）／宝箱はタップで開く `openChest()`／練習タイマー `timerView()`・`S.timer`
 - 選手の切りかえ（兄弟）`profMeta()`・`switchProfile()`：選手ごとに保存キーが別（1人目は `renshu-quest-v1` のまま）
 - 選手カード画像 `makeCardImage()`・`saveCardImage()`（保護者確認つき・端末内で作成）
@@ -66,7 +66,7 @@
 - 前の日の記入 `openDay()`・`startDay()`：きろくのカレンダーの日付から。`draft.date` に日付を入れて `doPractice()`（今日のクエスト・HPは対象外）。`S.logs` は新しい順を守る `addLog()`
   - 記入できるのは `PAST_DAYS`（14日）前まで `canFill()`。1日に記録できる練習は合わせて `DAY_MAX_MIN`（180分）まで `dayMin()`
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
-- ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）／相棒ボルト `buddyLines()`・`BOLT`
+- ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）。交換 `buyItem()` はそのまま装備する／相棒ボルト `buddyLines()`・`BOLT`
 - イラストのキャラ `AVATARS`・`avatarView()`
 - データの守り：`fixData()`（保存データ・バックアップの形を確かめて直す。新しい項目を足したらここにも足す）／読めないデータは `キー-broken` に控え／`onCrash()`・`rescueView()`（くり返すエラーで安全モード）／バックアップを読む前の記録は `UNDO_KEY()` に1つ取っておき `undoImport()` で戻す
 - Android の戻るボタン `onBack()`（`@capacitor/app`）：お知らせを閉じる→ホームへ→アプリを裏に下げる
