@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.22.0';
+const APP_VERSION='0.23.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -410,14 +410,17 @@ function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
 }
 /* 保護者の確認（子ども向けアプリのストア審査で必要。データ操作・外部リンク・購入の前に使う） */
 function parentGate(){
-  const a=6+Math.floor(Math.random()*4), b=6+Math.floor(Math.random()*4);
+  const a=13+Math.floor(Math.random()*17), b=3+Math.floor(Math.random()*7);   // 2けた×1けた（九九では解けない）。3回まちがえたら閉じる
+  let miss=0;
   return new Promise(res=>{
     const box=document.getElementById('ovbox');
     box.innerHTML=`<div class="star">🔐</div><h2 style="font-size:20px">保護者の方へ</h2><p class="sub" style="line-height:1.7">この先は保護者の方が操作してください。<br>次の答えを入力してください。</p>
       <p style="font-size:30px;font-weight:900;margin:8px 0">${a} × ${b} ＝ ？</p><input type="number" id="pgv" inputmode="numeric" style="margin-bottom:12px">
       <button class="btn gold" id="pgok">確認</button><button class="btn ghost" id="pgno" style="margin-top:10px">やめる</button><p class="sub" id="pgmsg" style="color:#ff8a8a;min-height:1em"></p>`;
     document.getElementById('ov').classList.add('show');
-    document.getElementById('pgok').onclick=()=>{if(+document.getElementById('pgv').value===a*b){closeOv();res(true)}else document.getElementById('pgmsg').textContent='答えがちがいます'};
+    document.getElementById('pgok').onclick=()=>{if(+document.getElementById('pgv').value===a*b){closeOv();res(true);return}
+      if(++miss>=3){closeOv();res(false);return}
+      document.getElementById('pgv').value='';document.getElementById('pgmsg').textContent=`答えがちがいます（あと${3-miss}回）`};
     document.getElementById('pgno').onclick=()=>{closeOv();res(false)};
   });
 }
@@ -714,7 +717,10 @@ function load(){S=null;let t=null;try{t=localStorage.getItem(KEY);if(t)S=fixData
   if(st.lift!=null&&st.touch==null) S.stats={...freshStats(),dribble:st.dribble||0,touch:st.lift||0,kick:(st.shoot||0)+(st.pass||0),stamina:st.stamina||0};
   else S.stats={...freshStats(),...st};
 }
-function save(){const t=JSON.stringify(S);try{localStorage.setItem(KEY,t)}catch(e){}
+let saveWarned=false;
+function save(){const t=JSON.stringify(S);try{localStorage.setItem(KEY,t)}catch(e){
+    // 容量がいっぱいなどで保存できなかった（アプリ版は Preferences にも保存するので、知らせるのは Web版だけ）
+    if(!PL.Preferences&&!saveWarned){saveWarned=true;setTimeout(()=>dialog({icon:'⚠️',title:'記録を保存できませんでした',msg:'スマホの空き容量が少ないか、ブラウザの設定で保存が止められている可能性があります。保護者の方は「せってい」からバックアップを保存してください。'}),0)}}
   if(S&&S.c){const m=profMeta(),x=m.list.find(p=>p.id===m.cur);if(x&&(x.name!==S.c.name||x.lv!==lv(S.xp).L||x.av!==S.c.avatar)){x.name=S.c.name;x.lv=lv(S.xp).L;x.av=S.c.avatar||'';saveMeta(m)}}
   if(PL.Preferences)PL.Preferences.set({key:KEY,value:t}).catch(()=>{});
   remindSoon();
@@ -1269,17 +1275,24 @@ function practiceView(){
 /* ===== 前の日の記入：きろくのカレンダーで日付を押して、その日の練習やノートを入れる =====
    EXP・コイン・能力は今日の練習と同じ。今日のクエストは対象外で、HPもへらない */
 const isPast=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')&&d<today();
+/* 前の日の記入は14日前まで。1日に記録できる練習は合わせて180分まで（たくさん入れて経験値をかせぐのを防ぐ） */
+const PAST_DAYS=14, DAY_MAX_MIN=180;
+const canFill=d=>{if(!isPast(d))return false;const f=new Date();f.setDate(f.getDate()-PAST_DAYS);return d>=ds(f)};
+const dayMin=d=>S.logs.filter(l=>l.date===d&&!l.rest&&l.menu!=='note').reduce((a,l)=>a+(l.min||0),0);
 const dayLabel=d=>{const [y,m,k]=d.split('-').map(Number);return `${m}月${k}日（${'日月火水木金土'[new Date(y,m-1,k).getDay()]}）`};
 const pastBar=()=>isPast(draft.date)?`<div class="pastbar"><b>📅 ${dayLabel(draft.date)} の練習を記入中</b><button class="chip mini" onclick="go('log')">やめる</button></div>`:'';
-function startDay(d){closeOv(); if(!isPast(d)){go('practice');return} draft={menu:null,min:15,rec:'',date:d}; tab='practice'; render()}
+function startDay(d){closeOv(); if(!isPast(d)){go('practice');return}
+  if(!canFill(d)){dialog({icon:'📅',title:`記入できるのは${PAST_DAYS}日前までだよ`,msg:'練習した日に、なるべくその日のうちに記録しよう。'});return}
+  draft={menu:null,min:15,rec:'',date:d}; tab='practice'; render()}
 function noteDay(d){const l=noteAt(d); openNote(l,NOTE_MIN,d)}
 function openDay(d){
   if(d>today())return;
   const L=S.logs.filter(l=>l.date===d), n=noteAt(d);
   document.getElementById('ovbox').innerHTML=`<h2 style="font-size:22px">${dayLabel(d)}</h2>
     ${L.length?`<ul>${L.map(l=>`<li>${l.rest?'🏨 休養日':`${(menuOf(l.menu)||{name:'練習'}).name} ${l.min}分${l.rec!=null?`（記録 ${esc(l.rec)}）`:''}${noteOf(l)?' 📓':''}`}</li>`).join('')}</ul>`:'<p class="sub" style="margin:10px 0 16px">この日の記録はまだないよ</p>'}
-    <button class="btn gold" onclick="startDay('${d}')">練習を記入する</button>
-    <button class="btn ghost" style="margin-top:10px" onclick="noteDay('${d}')">${n&&noteOf(n)?'練習ノートを読む・書き足す':'練習ノートを書く'}</button>
+    ${d===today()||canFill(d)?`<button class="btn gold" onclick="startDay('${d}')">練習を記入する</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="noteDay('${d}')">${n&&noteOf(n)?'練習ノートを読む・書き足す':'練習ノートを書く'}</button>`
+    :`<p class="sub" style="margin:0 0 8px">記入できるのは${PAST_DAYS}日前までだよ</p>${n&&noteOf(n)?`<button class="btn ghost" onclick="noteDay('${d}')">練習ノートを読む</button>`:''}`}
     <button class="btn ghost" style="margin-top:10px" onclick="closeOv()">とじる</button>`;
   document.getElementById('ov').classList.add('show');
 }
@@ -1361,6 +1374,8 @@ function doPractice(){
   recoverHP();
   const m=menuOf(draft.menu), past=isPast(draft.date), day=past?draft.date:today(), thisWeek=day>=weekKey();
   if(!m)return;   // 連打などで、記録したあとの古いボタンが押されたとき
+  if(past&&!canFill(day)){dialog({icon:'📅',title:`記入できるのは${PAST_DAYS}日前までだよ`});return}
+  if(m.id!=='note'&&dayMin(day)+draft.min>DAY_MAX_MIN){dialog({icon:'🏨',title:`1日に記録できるのは${DAY_MAX_MIN}分までだよ`,msg:`${past?dayLabel(day):'今日'}はもう ${dayMin(day)}分 記録しているよ。たくさん練習したね！ 休むのも大事な練習だよ。`});return}
   let xp=calcXP(), notes=[], coin=draft.min, pb=false;
   const rec=draft.rec===''?null:Number(draft.rec);
   const first=!S.logs.some(l=>!l.rest);
@@ -1831,6 +1846,9 @@ function settingsView(){
     ${!NATIVE&&!isStandalone()?`<div class="card"><h3>アプリのように使う</h3>
       <button class="setrow" onclick="showA2hs()"><span>ホーム画面に追加する</span><span class="arr">›</span></button>
     </div>`:''}
+    <div class="card"><h3>このアプリについて</h3>
+      <button class="setrow" onclick="showLicenses()"><span>ライセンス（使っている素材）</span><span class="arr">›</span></button>
+    </div>
     <div class="card"><h3>遊び方</h3>
       <button class="setrow" onclick="showTutorial()"><span>遊び方をもう一度見る</span><span class="arr">›</span></button>
     </div>
@@ -1845,6 +1863,25 @@ function settingsView(){
     <p class="sub" style="text-align:center">れんしゅうクエスト ver ${APP_VERSION}<br><small>${COPYRIGHT}</small></p>
   </div>`;
 }
+/* ===== ライセンス表示（フォントは SIL OFL 1.1、アプリ版の部品 Capacitor は MIT ライセンス。どちらも表示が条件） ===== */
+function showLicenses(){
+  const box=document.getElementById('ovbox');
+  box.innerHTML=`<h2 style="font-size:21px">ライセンス</h2>
+    <div class="lic">
+      <p><b>フォント</b><br>Noto Sans JP（Copyright 2014-2021 Adobe）／Dela Gothic One（Copyright 2020 The Dela Gothic Project Authors）<br>SIL Open Font License 1.1 で使用しています。全文：<a href="fonts/OFL-NotoSansJP.txt">Noto Sans JP</a>・<a href="fonts/OFL-DelaGothicOne.txt">Dela Gothic One</a></p>
+      <p><b>Capacitor</b>（アプリ版の部品）<br>Copyright (c) 2017-present Drifty Co. ／ MIT License</p>
+      <pre>${esc(MIT_TEXT)}</pre>
+      <p><b>イラスト・文章・プログラム</b><br>${COPYRIGHT}</p>
+    </div>
+    <button class="btn gold" onclick="closeOv()">とじる</button>`;
+  document.getElementById('ov').classList.add('show');
+}
+const MIT_TEXT=`Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.`;
+
 /* ===== 著作権の表示 ===== */
 const COPYRIGHT='© 2026 れんしゅうクエスト　イラスト・文章・プログラムの無断転載・複製を禁じます';
 
@@ -1942,5 +1979,7 @@ if(PL.App)PL.App.addListener('backButton',onBack);
   setTimeout(()=>{try{sessionStorage.removeItem('rq-crash')}catch(e){}},8000);   // ちゃんと動いたら、エラーの回数を数え直す
   if(S&&!S.tut){S.tut=1;save()} // 既存ユーザーには 遊び方を 自動では出さない
   remindSoon();
-  if(!NATIVE&&'serviceWorker' in navigator&&window.isSecureContext)startUpdater();   // 新しい版を確かめて読みこみ直す（Web版のみ）
+  if(!NATIVE&&'serviceWorker' in navigator&&window.isSecureContext)startUpdater();
+  // Web版：ブラウザに「このサイトの記録は自動で消さないで」とお願いする（ホーム画面に追加すると認められやすい）
+  if(!NATIVE&&S&&navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(p=>p||navigator.storage.persist()).catch(()=>{});   // 新しい版を確かめて読みこみ直す（Web版のみ）
 })();

@@ -271,21 +271,34 @@ test('練習ノート：ホームで書くと記録・クエストに入り、�
 });
 
 test('前の日の記入：日付順に入り、EXPは増えるが 今日のクエスト・HPは変わらない', c => {
-  run(c, newPlayer + "S.hp=80;S.hpDay=today();S.dcheck=today();S.logs=[{date:today(),menu:'lift',min:10,rec:null,xp:20},{date:'2026-01-10',menu:'lift',min:10,rec:null,xp:20},{date:'2026-01-01',menu:'lift',min:10,rec:null,xp:20}];S.qd={[today()]:[]};");
-  run(c, "startDay('2026-01-05')"); eq(run(c, 'tab'), 'practice');
-  ok(run(c, 'practiceView()').includes('1月5日'), '記入中の日付が出る');
+  const D = n => run(c, `(()=>{const d=new Date();d.setDate(d.getDate()-${n});return ds(d)})()`);
+  const [d2, d5, d7, d9] = [D(2), D(5), D(7), D(9)];
+  run(c, newPlayer + `S.hp=80;S.hpDay=today();S.dcheck=today();S.logs=[{date:today(),menu:'lift',min:10,rec:null,xp:20},{date:'${d2}',menu:'lift',min:10,rec:null,xp:20},{date:'${d9}',menu:'lift',min:10,rec:null,xp:20}];S.qd={[today()]:[]};`);
+  run(c, `startDay('${d5}')`); eq(run(c, 'tab'), 'practice');
+  ok(run(c, 'practiceView()').includes(run(c, `dayLabel('${d5}')`)), '記入中の日付が出る');
   run(c, "draft.menu='lift';draft.min=20;"); ok(!run(c, 'practiceView()').includes('id="tstart"'), 'タイマーは出さない');
   const xp = run(c, 'S.xp');
   run(c, 'doPractice()');
-  eq(JSON.parse(run(c, 'JSON.stringify(S.logs.map(l=>l.date).slice(1))')), ['2026-01-10', '2026-01-05', '2026-01-01']);
+  eq(JSON.parse(run(c, 'JSON.stringify(S.logs.map(l=>l.date).slice(1))')), [d2, d5, d9]);
   eq(run(c, 'S.logs[2].min'), 20); eq(run(c, 'S.xp') - xp, run(c, 'S.logs[2].xp')); ok(run(c, 'S.xp') > xp, 'EXPは増える');
   eq(run(c, 'S.hp'), 80); eq(run(c, 'S.qd[today()].length'), 0); eq(run(c, 'tab'), 'log');
   ok(!run(c, 'draft.date'), '日付の指定は消える');
-  run(c, "saveNote({good:'前の日のノート'},undefined,5,'2026-01-03')");
-  eq(run(c, "noteAt('2026-01-03').note.good"), '前の日のノート'); eq(run(c, "S.logs.findIndex(l=>l.date==='2026-01-03')"), 3);
-  run(c, "startDay('2026-01-05');go('practice');"); ok(!run(c, 'draft.date'), '画面を移ると 今日の記入に戻る');
+  run(c, `saveNote({good:'前の日のノート'},undefined,5,'${d7}')`);
+  eq(run(c, `noteAt('${d7}').note.good`), '前の日のノート'); eq(run(c, `S.logs.findIndex(l=>l.date==='${d7}')`), 3);
+  run(c, `startDay('${d5}');go('practice');`); ok(!run(c, 'draft.date'), '画面を移ると 今日の記入に戻る');
   eq(run(c, "isPast(today())"), false); eq(run(c, "isPast('2999-01-01')"), false); eq(run(c, "isPast('x')"), false);
   ok(run(c, 'calendarCard()').includes("openDay('" + run(c, 'today()') + "')"), '今日までの日付は押せる');
+});
+
+test('前の日の記入は14日前まで。1日に記録できるのは合わせて180分まで', c => {
+  const D = n => run(c, `(()=>{const d=new Date();d.setDate(d.getDate()-${n});return ds(d)})()`);
+  run(c, newPlayer);
+  eq(run(c, `canFill('${D(14)}')`), true); eq(run(c, `canFill('${D(15)}')`), false); eq(run(c, 'canFill(today())'), false);
+  run(c, `startDay('${D(20)}')`); ok(run(c, 'tab') !== 'practice', '15日以上前は記入画面にならない');
+  run(c, `draft={menu:'lift',min:20,rec:'',date:'${D(20)}'};doPractice();`); eq(run(c, 'S.logs.length'), 0, '古い日は記録されない');
+  run(c, "draft={menu:'lift',min:90,rec:''};doPractice();draft={menu:'lift',min:90,rec:''};doPractice();");
+  eq(run(c, 'dayMin(today())'), 180);
+  run(c, "draft={menu:'lift',min:5,rec:''};doPractice();"); eq(run(c, 'dayMin(today())'), 180, '180分をこえる記録はできない');
 });
 
 test('ホームの名札：背番号と名前が出る（記号は安全な形・長い名前は小さめ）', c => {
