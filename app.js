@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.21.0';
+const APP_VERSION='0.22.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1209,6 +1209,7 @@ function homeView(){
     <div class="row" style="margin:0 0 16px"><button class="btn ghost" onclick="go('status')" style="flex:1">つよさ</button><button class="btn ghost" onclick="openTodayNote()" style="flex:1">ノート</button><button class="btn ghost" onclick="go('shop')" style="flex:1">ショップ</button></div>
     ${buddyCard()}
     ${parentMsgCard()}
+    ${a2hsCard()}
     ${hp<25?`<div class="card warn">⚠ HPが少なくなっています。疲れがたまるとケガをしやすくなるよ。今日は宿屋で休もう。</div>`:''}
     ${chestCard()}
     ${weekCard()}
@@ -1827,6 +1828,9 @@ function settingsView(){
       <p class="sub" style="margin:6px 0 4px;line-height:1.6">毎日この時間に、ボルトが練習の声かけをします。その日に練習した日は鳴りません。</p>
       <button class="setrow" onclick="setRemind()"><span>通知する時間</span><span class="arr">${S.remind||'オフ'}</span></button>
     </div>`:''}
+    ${!NATIVE&&!isStandalone()?`<div class="card"><h3>アプリのように使う</h3>
+      <button class="setrow" onclick="showA2hs()"><span>ホーム画面に追加する</span><span class="arr">›</span></button>
+    </div>`:''}
     <div class="card"><h3>遊び方</h3>
       <button class="setrow" onclick="showTutorial()"><span>遊び方をもう一度見る</span><span class="arr">›</span></button>
     </div>
@@ -1838,8 +1842,29 @@ function settingsView(){
       <button class="setrow danger" onclick="resetAll()"><span>最初からやり直す</span><span class="arr">›</span></button>
     </div>
     ${swReg?'<button class="btn ghost" style="font-size:15px" onclick="checkUpdate()">最新バージョンにする</button>':''}
-    <p class="sub" style="text-align:center">れんしゅうクエスト ver ${APP_VERSION}</p>
+    <p class="sub" style="text-align:center">れんしゅうクエスト ver ${APP_VERSION}<br><small>${COPYRIGHT}</small></p>
   </div>`;
+}
+/* ===== 著作権の表示 ===== */
+const COPYRIGHT='© 2026 れんしゅうクエスト　イラスト・文章・プログラムの無断転載・複製を禁じます';
+
+/* ===== ホーム画面に追加（Web版だけ）。アプリのように開けて、記録も消えにくくなる ===== */
+let a2hsEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();a2hsEvt=e});   // Android の Chrome：あとでボタンから出す
+function isStandalone(){return !!((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone)}
+function a2hsCard(){
+  if(NATIVE||isStandalone()||S.a2hsOff||!S.logs.some(l=>!l.rest))return '';   // 最初の練習を記録してから案内する
+  return `<div class="card a2hs"><h3>📲 ホーム画面に追加しよう</h3>
+    <p class="sub" style="margin:6px 0 10px;line-height:1.6">アプリのようにすぐ開けて、記録も消えにくくなるよ（保護者の方といっしょにやってね）。</p>
+    <div class="row"><button class="btn gold" style="flex:2" onclick="showA2hs()">やり方を見る</button><button class="btn ghost" style="flex:1" onclick="S.a2hsOff=1;save();render()">あとで</button></div></div>`;
+}
+async function showA2hs(){
+  if(a2hsEvt){const e=a2hsEvt;a2hsEvt=null;try{e.prompt();const r=await e.userChoice;if(r&&r.outcome==='accepted'){S.a2hsOff=1;save();render()}}catch(err){}return}
+  const ua=navigator.userAgent, ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+  const steps=ios
+    ?['Safari（サファリ）で開いているか確かめる','画面の下（または上）の <b>共有ボタン</b>（四角から矢印が出ているマーク）をおす','<b>「ホーム画面に追加」</b>を選んで、右上の「追加」をおす']
+    :['Chrome（クローム）で開いているか確かめる','右上の <b>︙</b>（点が3つのマーク）をおす','<b>「ホーム画面に追加」</b>または<b>「アプリをインストール」</b>を選ぶ'];
+  await dialog({icon:'📲',title:'ホーム画面に追加する',msg:`<ol style="text-align:left;margin:8px 0;padding-left:1.3em;line-height:1.9">${steps.map(x=>`<li>${x}</li>`).join('')}</ol>ホーム画面のアイコンから開くと、アプリのように使えます。`});
 }
 function go(t){tab=t;draft.date=null;render();applyUpdate()}   // 前の日の指定が残って、今日の練習が前の日に入らないように
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.tab));

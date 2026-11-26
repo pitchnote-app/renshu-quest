@@ -350,6 +350,16 @@ test('バックアップの形を確かめる：選手がないものは読ま�
   eq(run(c, '[d.c.name,d.c.avatar,d.xp,d.logs.length,d.coin]'), ['たろう', null, 120, 0, 0]);
 });
 
+test('ホーム画面に追加の案内：最初の練習のあとに出て、「あとで」で消える', c => {
+  c.matchMedia = () => ({ matches: false });   // ふつうのブラウザで開いている（ホーム画面から開いていない）
+  run(c, newPlayer);
+  eq(run(c, 'a2hsCard()'), '', 'まだ練習していないときは出さない');
+  run(c, "S.logs.unshift({date:today(),menu:'x',min:10,xp:5})");
+  ok(run(c, 'a2hsCard()').includes('ホーム画面に追加'), '練習のあとは出す');
+  run(c, 'S.a2hsOff=1'); eq(run(c, 'a2hsCard()'), '');
+  c.matchMedia = () => ({ matches: true }); run(c, 'S.a2hsOff=0'); eq(run(c, 'a2hsCard()'), '', 'ホーム画面から開いているときは出さない');
+});
+
 nativeTests().then(() => {
   console.log(`\n結果：${pass} 件成功 / ${fail} 件失敗`);
   process.exit(fail ? 1 : 0);
