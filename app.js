@@ -1163,7 +1163,7 @@ function roomView(s){
   // 装備中のユニフォーム・スパイクは キャラの横の「装備中」の台に大きく飾る（棚には重ねて置かない）
   const w=wear(s), K=X.kits.find(it=>it.id===w.kit), B=X.boots.find(it=>it.id===w.boot);
   const gear=[...X.balls.slice(0,cap),...X.boots.filter(it=>it!==B).slice(0,Math.max(1,cap-1)),...X.kits.filter(it=>it!==K).slice(0,Math.max(1,cap-1))].map(it=>`<img src="${it.img}" alt="">`).join('');
-  const stand=K||B?`<button class="rstand" onclick="event.stopPropagation();go('wardrobe')" aria-label="装備中のアイテム。着せ替えを開く"><small>装備中</small>${K?`<img class="rskit" src="${K.img}" alt="${esc(K.name)}">`:''}${B?`<img class="rsboot" src="${B.img}" alt="${esc(B.name)}">`:''}</button>`:'';
+  const stand=K||B?`<button class="rstand" onclick="event.stopPropagation();go('wardrobe')" aria-label="装備中のユニフォームとスパイク。着せ替えを開く">${K?`<img class="rskit" src="${K.img}" alt="${esc(K.name)}">`:''}${B?`<img class="rsboot" src="${B.img}" alt="${esc(B.name)}">`:''}</button>`:'';
   return `<div class="room r${i}" style="background-image:${bg}" onclick="roomInfo()">
     <div class="rname">🏠 ${R.name}</div>
     <div class="rchar">${charView(c,L,i)}</div>
@@ -1213,7 +1213,7 @@ function homeView(){
     ${profChip()}
     ${roomView(S)}
     ${t?`<div class="title-badge" style="margin-top:10px">${t.ic} ${t.name}</div><br>`:''}
-    <div class="lv">Lv. ${L}</div> ${rankTag(L)} <span class="jobtag">${J.name}</span>
+    <div class="lvrow ${[...rankOf(L)+J.name].length>10?'tight':''}"><div class="lv">Lv. ${L}</div>${rankTag(L)}<span class="jobtag">${J.name}</span></div>
     ${xpStars(r,n)}
     <div class="xptext">次のレベルまで あと${n-r} EXP</div>
     <div class="hprow"><b>体力</b><div class="hpbar"><i style="width:${hp}%;background:${hp<25?'#ff4d4d':hp<50?'#ffb020':'#3ee08f'}"></i></div><span>${hp}/100</span></div>
