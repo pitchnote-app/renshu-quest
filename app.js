@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.22.0';
+const APP_VERSION='0.22.1';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1201,7 +1201,7 @@ function homeView(){
     <div class="lv">Lv. ${L}</div> ${rankTag(L)} <span class="jobtag">${J.name}</span>
     <div class="xpbar"><i style="width:${r/n*100}%"></i></div>
     <div class="xptext">次のレベルまで あと${n-r} EXP</div>
-    <div class="hprow"><b>HP</b><div class="hpbar"><i style="width:${hp}%;background:${hp<25?'#ff4d4d':hp<50?'#ffb020':'#3ee08f'}"></i></div><span>${hp}/100</span></div>
+    <div class="hprow"><b>体力</b><div class="hpbar"><i style="width:${hp}%;background:${hp<25?'#ff4d4d':hp<50?'#ffb020':'#3ee08f'}"></i></div><span>${hp}/100</span></div>
   </div>
   <div class="wrap">
     ${firstCard()}
@@ -1210,7 +1210,7 @@ function homeView(){
     ${buddyCard()}
     ${parentMsgCard()}
     ${a2hsCard()}
-    ${hp<25?`<div class="card warn">⚠ HPが少なくなっています。疲れがたまるとケガをしやすくなるよ。今日は宿屋で休もう。</div>`:''}
+    ${hp<25?`<div class="card warn">⚠ 体力が少なくなっています。疲れがたまるとケガをしやすくなるよ。今日は宿屋で休もう。</div>`:''}
     ${chestCard()}
     ${weekCard()}
     ${placeRivalCard()}
@@ -1227,7 +1227,7 @@ function homeView(){
       <p class="sub" style="margin:6px 0 0">バーがたまると能力が+1</p>
     </div>
     ${ns?`<div class="card"><h3>次の昇格</h3><p style="margin:8px 0 0">Lv.${ns.lv} で 階級が <b>${RANKS[stageOf(L)+1]}</b> に！ 練習場所は <b>${ns.name}</b>、部屋は <b>${ROOMS[stageOf(L)+1].name}</b> へ</p></div>`:''}
-    <div class="card"><h3>🏨 宿屋（休養日）</h3><p class="sub" style="margin:6px 0 12px">体を休めるのも大事な練習。筋肉は休んでいる間に強くなるよ。宿屋に泊まるとHPが全回復して、10 EXPもらえる。</p>
+    <div class="card"><h3>🏨 宿屋（休養日）</h3><p class="sub" style="margin:6px 0 12px">体を休めるのも大事な練習。筋肉は休んでいる間に強くなるよ。宿屋に泊まると体力が全回復して、10 EXPもらえる。</p>
       <button class="btn ghost" id="rest" ${restedToday?'disabled':''}>${restedToday?'今日はゆっくり休もう':'宿屋に泊まる'}</button></div>
   </div>`;
 }
