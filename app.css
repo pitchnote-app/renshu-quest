@@ -31,6 +31,8 @@ h1,h2,h3{margin:0}
 .xpbar{height:20px;background:rgba(255,255,255,.3);border-radius:999px;overflow:hidden;margin-top:10px}
 .xpbar>i{display:block;height:100%;background:var(--xp);border-radius:999px;transition:width .8s}
 .xptext{font-size:13px;margin-top:4px}
+.xpstars{display:flex;justify-content:center;gap:6px;margin-top:8px;font-size:30px;line-height:1}
+.xpstars i{font-style:normal;color:transparent;-webkit-background-clip:text;background-clip:text;background-image:linear-gradient(90deg,#f3dc8f,#d4af37 var(--f),rgba(255,255,255,.16) var(--f));filter:drop-shadow(0 0 6px rgba(212,175,55,.35))}
 /* stats */
 .stat{display:grid;grid-template-columns:110px 1fr 40px;gap:8px;align-items:center;margin:8px 0;font-weight:800}
 .stat .bar{height:14px;background:#1a2647;border-radius:999px;overflow:hidden}
