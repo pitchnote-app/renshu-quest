@@ -1,6 +1,6 @@
 /* オフラインでも起動できるようにする Service Worker
    アプリを更新したら VERSION を上げると、古いキャッシュが入れかわる */
-const VERSION = 'rq-0.22.0';
+const VERSION = 'rq-0.23.0';
 const CORE = ['./', './index.html', './app.css', './app.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './fonts/fonts.css'];
 
