@@ -298,6 +298,14 @@ test('ホームの名札：背番号と名前が出る（記号は安全な形�
   ok(g.includes('#999') && g.includes('&lt;b&gt;あ') && g.includes('nbanner long'), '長い名前・記号');
 });
 
+test('ホームの次のレベル：★5つで表し、進んだ分だけ金色になる', c => {
+  const f = code => [...run(c, code).matchAll(/--f:(\d+)%/g)].map(m => +m[1]);
+  eq(f('xpStars(0,60)'), [0, 0, 0, 0, 0]);
+  eq(f('xpStars(30,60)'), [100, 100, 50, 0, 0]);
+  eq(f('xpStars(59,60)'), [100, 100, 100, 100, 92]);
+  run(c, newPlayer); ok(run(c, 'homeView()').includes('class="xpstars"') && !run(c, 'homeView()').includes('class="xpbar"'), 'ホームは星');
+});
+
 /* アプリ版（Capacitor）の機能：通知の予約と 端末への二重保存 */
 async function nativeTests() {
   const scheduled = [], prefs = new Map();

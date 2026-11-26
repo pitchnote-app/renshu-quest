@@ -1186,6 +1186,11 @@ function firstCard(){
     <p class="sub" style="margin:6px 0 10px">5分だけでもOK。最初の練習でボーナス（+100 EXP・🪙50・🎁宝箱）がもらえるよ！</p>
     <div class="firstpicks">${picks.map(m=>`<button onclick="draft={menu:'${m.id}',min:10,rec:''};go('practice')"><div class="mthumb">${diag(m.d)}</div><b>${m.name}</b></button>`).join('')}</div></div>`;
 }
+/* 次のレベルまでの進み方を ★5つで表す（体力のバーと見分けやすく）。とちゅうの星は 進んだ分だけ金色 */
+function xpStars(r,n){
+  const p=Math.max(0,Math.min(1,r/n))*5;
+  return `<div class="xpstars" role="img" aria-label="次のレベルまで ${Math.floor(r/n*100)}%">${[0,1,2,3,4].map(k=>`<i style="--f:${Math.round(Math.max(0,Math.min(1,p-k))*100)}%">★</i>`).join('')}</div>`;
+}
 function homeView(){
   recoverHP();dailyCheck();
   const {L,r,n}=lv(S.xp);
@@ -1199,7 +1204,7 @@ function homeView(){
     ${roomView(S)}
     ${t?`<div class="title-badge" style="margin-top:10px">${t.ic} ${t.name}</div><br>`:''}
     <div class="lv">Lv. ${L}</div> ${rankTag(L)} <span class="jobtag">${J.name}</span>
-    <div class="xpbar"><i style="width:${r/n*100}%"></i></div>
+    ${xpStars(r,n)}
     <div class="xptext">次のレベルまで あと${n-r} EXP</div>
     <div class="hprow"><b>体力</b><div class="hpbar"><i style="width:${hp}%;background:${hp<25?'#ff4d4d':hp<50?'#ffb020':'#3ee08f'}"></i></div><span>${hp}/100</span></div>
   </div>
