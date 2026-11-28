@@ -428,7 +428,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.27.0';
+const APP_VERSION='0.28.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -736,6 +736,7 @@ function fixData(d){
   d.logs.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);   // 新しい順（同じ日の中の順番はそのまま）
   ['titles','skills','frozen','inv'].forEach(k=>{d[k]=d[k].filter(x=>typeof x==='string')});
   ['stats','best','qd'].forEach(k=>{if(!obj(d[k]))d[k]={}});
+  if(d.lvGoal!=null&&!obj(d.lvGoal))delete d.lvGoal;
   d.xp=num(d.xp); d.coin=num(d.coin);
   if(d.hp!=null)d.hp=Math.min(100,num(d.hp,100));
   ['timer','boss','place','season','pmsg','wear'].forEach(k=>{if(d[k]!=null&&!obj(d[k]))delete d[k]});
@@ -1289,41 +1290,68 @@ function homeView(){
 
 let pgrp='touch';
 const stars=lv=>`<span class="stars">${'★'.repeat(lv)}<i>${'★'.repeat(3-lv)}</i></span>`;
+/* ===== レベルに合わせた練習：おすすめ・レベル目標・クイズのむずかしさ =====
+   段階 i＝今の練習場所（家の庭0〜スタジアム7）。★の目安：家の庭・近所の公園は★1、大きな公園〜小学校は★2、フットサルコートからは★3
+   ・おすすめ👍：目安の★の練習（まだゴールドになっていないもの）＋同じ分類でシルバーになった練習の「次の★」
+   ・レベル目標🎯：記録できる練習に、今の段階の目標。はじめて達成すると +30 EXP（段階が上がると目標も上がる） */
+const lvIdx=()=>stageOf(lv(S.xp).L);
+const recStar=(i=lvIdx())=>i<2?1:i<5?2:3;
+function isRec(m){
+  if(m.hide)return false;
+  const n=mastery(S,m.id).n;
+  if(m.lv===recStar()&&n<15)return true;
+  return n<7&&m.lv>1&&MENUS.some(x=>x.grp===m.grp&&!x.hide&&x.lv===m.lv-1&&mastery(S,x.id).n>=7);
+}
+const LV_GOAL={
+  lift:[5,10,20,30,50,70,100,150], lift_alt:[3,6,10,20,30,50,70,100], lift_bounce:[5,10,15,20,30,40,50,60], lift_walk:[2,5,10,15,20,30,40,50],
+  wall_1t:[5,10,15,20,25,30,40,50], side:[20,24,28,32,36,40,44,48], jump:[1,3,5,10,15,20,30,50], hop:[5,8,10,12,15,18,20,20],
+  core:[10,15,20,30,40,50,60,60], side_plank:[5,10,15,20,25,30,40,45], one_leg:[10,15,20,30,40,50,60,60], broad_jump:[110,120,130,140,150,160,170,180],
+  dash:[2.9,2.8,2.7,2.6,2.5,2.4,2.3,2.2], speed_drib:[3.8,3.6,3.4,3.2,3.0,2.9,2.8,2.7],
+};
+function lvGoal(m,i=lvIdx()){
+  const t=LV_GOAL[m.id]||(m.max===10?[3,4,5,6,7,8,8,9]:m.max===5?[2,3,3,4,4,5,5,5]:/^30秒で何回/.test(m.rec||'')?[15,20,25,30,35,40,45,50]:null);
+  return t?t[Math.min(i,t.length-1)]:null;
+}
+const goalDone=(m,i=lvIdx())=>((S.lvGoal||{})[m.id]??-1)>=i;
+const goalHit=(m,rec,g)=>g!=null&&rec!=null&&(m.lower?rec<=g:rec>=g);
+const quizTier=()=>{const i=lvIdx();return i<2?1:i<5?2:3};
+const TIER_NAME=['','やさしい','ふつう','むずかしい'];
+const LOOK_SECS={1:[4,3.5,3,3,2.5],2:[3,2.5,2,2,1.5],3:[2,1.5,1.2,1,1]};
 /* ===== クイズ（頭のトレーニング）=====
    ・ルールクイズ：答えがはっきりしているルールだけを出す（答えのあとに説明）
    ・見る力クイズ：図を少しの時間だけ見せて、消えたら「相手・味方・空いている場所」を答える。
      判断（パス？ドリブル？）には1つの正解がないので出さない。見るくせ（認知）だけを練習する
    練習として記録できるのは1日1回（5分）。2回目からは練習用で、何回でも挑戦できる */
 const RULEQ=[
-  {q:'ボールがゴールラインを半分こえた。ゴール？',a:['ゴール','ゴールじゃない'],c:1,why:'ボールが<b>全部</b>ラインをこえたときだけゴール。半分ではまだゴールじゃないよ。'},
-  {q:'ボールがタッチライン（横の線）の上にのっている。外に出た？',a:['外に出た','まだコートの中'],c:1,why:'ラインの上はコートの中。ボールが<b>全部</b>ラインの外に出たら「外」だよ。'},
-  {q:'相手が最後にさわって、タッチラインから外に出た。どっちのスローイン？',a:['自分のチーム','相手のチーム'],c:0,why:'最後にさわったチームの<b>反対のチーム</b>がスローインするよ。'},
-  {q:'スローインのとき、片足が地面からはなれた。OK？',a:['OK','ダメ'],c:1,why:'両足とも、地面（ラインの上かラインの外）につけたまま投げるよ。'},
-  {q:'スローインの投げ方はどれ？',a:['片手で横から投げる','両手で、頭のうしろから頭の上を通して投げる','両手で、下から投げる'],c:1,why:'両手で持って、頭のうしろから頭の上を通して投げるよ。'},
-  {q:'スローインのボールが、だれにもさわらずに相手ゴールに入った。点になる？',a:['点になる','点にならない'],c:1,why:'スローインから<b>直接</b>ゴールに入っても点にならない（相手のゴールキックになる）。'},
-  {q:'守っている相手が最後にさわって、相手ゴールの横の線（ゴールライン）から出た。何で再開？',a:['コーナーキック','ゴールキック','スローイン'],c:0,why:'守っている側が最後にさわってゴールラインから出たら、せめている側の<b>コーナーキック</b>。'},
-  {q:'せめている自分が最後にさわって、相手ゴールの横の線（ゴールライン）から出た。何で再開？',a:['コーナーキック','ゴールキック','スローイン'],c:1,why:'せめている側が最後にさわってゴールラインから出たら、守っている側の<b>ゴールキック</b>。'},
-  {q:'コーナーキックが、だれにもさわらずにゴールに入った。点になる？',a:['点になる','点にならない'],c:0,why:'コーナーキックは、直接ゴールに入っても<b>点になる</b>よ。'},
-  {q:'キーパーが手でボールを持てるのはどこ？',a:['グラウンドのどこでも','自分のペナルティーエリアの中','ゴールの中だけ'],c:1,why:'キーパーが手を使えるのは、<b>自分のペナルティーエリアの中</b>だけ。'},
-  {q:'味方が足でわざとキーパーにパスした。キーパーは手でとっていい？',a:['手でとっていい','手でとってはダメ'],c:1,why:'味方が足でわざとけったボールは、キーパーは手でさわれない。足で処理しよう。'},
-  {q:'相手を手でおしたり、ユニフォームを引っぱったりしたら？',a:['反則','反則じゃない'],c:0,why:'おす・引っぱる・足をかけるのは<b>反則</b>。相手のフリーキックになるよ。'},
-  {q:'守っている選手が、自分のペナルティーエリアの中で、相手の足をけってたおした。何になる？',a:['ペナルティーキック（PK）','コーナーキック','スローイン'],c:0,why:'自分のペナルティーエリアの中でこの反則をすると、相手の<b>ペナルティーキック</b>になる。'},
-  {q:'「間接フリーキック」を、だれにもさわらずにゴールに入れた。点になる？',a:['点になる','点にならない'],c:1,why:'間接フリーキックは、けった人<b>以外のだれか</b>がさわってからゴールに入らないと点にならない。'},
-  {q:'自分の陣地（コートの半分の、自分たちの側）にいるとき、オフサイドになる？',a:['なる','ならない'],c:1,why:'自分の陣地にいるときは、オフサイドに<b>ならない</b>よ。'},
-  {q:'スローインのボールを、相手のうしろから2人目の選手より前で受けた。オフサイド？',a:['オフサイド','オフサイドじゃない'],c:1,why:'スローイン・ゴールキック・コーナーキックから<b>直接</b>受けたときは、オフサイドにならないよ。'},
-  {q:'シュートがゴールポストに当たって、コートの中にもどってきた。どうなる？',a:['そのまま試合が続く','ゴールキック','やり直し'],c:0,why:'ポストやバーに当たってコートの中にもどったら、<b>そのまま試合が続く</b>よ。'},
-  {q:'1つの試合でイエローカードを2枚もらうと？',a:['注意だけ','退場（レッドカード）','相手に1点入る'],c:1,why:'イエローカード2枚で<b>退場</b>（レッドカード）になる。'},
-  {q:'ボールが手に当たったとき、ハンド（反則）になりやすいのはどっち？',a:['腕を体から大きく広げていた','腕を体につけていた'],c:0,why:'わざと手でさわったり、腕を広げて体を大きくしてボールに当たると<b>ハンド</b>になりやすい。'},
-  {q:'【マナー】相手の選手がたおれて動けない。自分がボールを持っていたら？',a:['そのままシュートする','ボールを外に出して試合を止める'],c:1,why:'ルールではなくマナー（フェアプレー）。ケガをした人がいたら、<b>ボールを外に出して</b>手当てできるようにしよう。'},
+  {lv:1,q:'ボールがゴールラインを半分こえた。ゴール？',a:['ゴール','ゴールじゃない'],c:1,why:'ボールが<b>全部</b>ラインをこえたときだけゴール。半分ではまだゴールじゃないよ。'},
+  {lv:1,q:'ボールがタッチライン（横の線）の上にのっている。外に出た？',a:['外に出た','まだコートの中'],c:1,why:'ラインの上はコートの中。ボールが<b>全部</b>ラインの外に出たら「外」だよ。'},
+  {lv:1,q:'相手が最後にさわって、タッチラインから外に出た。どっちのスローイン？',a:['自分のチーム','相手のチーム'],c:0,why:'最後にさわったチームの<b>反対のチーム</b>がスローインするよ。'},
+  {lv:1,q:'スローインのとき、片足が地面からはなれた。OK？',a:['OK','ダメ'],c:1,why:'両足とも、地面（ラインの上かラインの外）につけたまま投げるよ。'},
+  {lv:1,q:'スローインの投げ方はどれ？',a:['片手で横から投げる','両手で、頭のうしろから頭の上を通して投げる','両手で、下から投げる'],c:1,why:'両手で持って、頭のうしろから頭の上を通して投げるよ。'},
+  {lv:2,q:'スローインのボールが、だれにもさわらずに相手ゴールに入った。点になる？',a:['点になる','点にならない'],c:1,why:'スローインから<b>直接</b>ゴールに入っても点にならない（相手のゴールキックになる）。'},
+  {lv:2,q:'守っている相手が最後にさわって、相手ゴールの横の線（ゴールライン）から出た。何で再開？',a:['コーナーキック','ゴールキック','スローイン'],c:0,why:'守っている側が最後にさわってゴールラインから出たら、せめている側の<b>コーナーキック</b>。'},
+  {lv:2,q:'せめている自分が最後にさわって、相手ゴールの横の線（ゴールライン）から出た。何で再開？',a:['コーナーキック','ゴールキック','スローイン'],c:1,why:'せめている側が最後にさわってゴールラインから出たら、守っている側の<b>ゴールキック</b>。'},
+  {lv:1,q:'コーナーキックが、だれにもさわらずにゴールに入った。点になる？',a:['点になる','点にならない'],c:0,why:'コーナーキックは、直接ゴールに入っても<b>点になる</b>よ。'},
+  {lv:2,q:'キーパーが手でボールを持てるのはどこ？',a:['グラウンドのどこでも','自分のペナルティーエリアの中','ゴールの中だけ'],c:1,why:'キーパーが手を使えるのは、<b>自分のペナルティーエリアの中</b>だけ。'},
+  {lv:3,q:'味方が足でわざとキーパーにパスした。キーパーは手でとっていい？',a:['手でとっていい','手でとってはダメ'],c:1,why:'味方が足でわざとけったボールは、キーパーは手でさわれない。足で処理しよう。'},
+  {lv:1,q:'相手を手でおしたり、ユニフォームを引っぱったりしたら？',a:['反則','反則じゃない'],c:0,why:'おす・引っぱる・足をかけるのは<b>反則</b>。相手のフリーキックになるよ。'},
+  {lv:2,q:'守っている選手が、自分のペナルティーエリアの中で、相手の足をけってたおした。何になる？',a:['ペナルティーキック（PK）','コーナーキック','スローイン'],c:0,why:'自分のペナルティーエリアの中でこの反則をすると、相手の<b>ペナルティーキック</b>になる。'},
+  {lv:3,q:'「間接フリーキック」を、だれにもさわらずにゴールに入れた。点になる？',a:['点になる','点にならない'],c:1,why:'間接フリーキックは、けった人<b>以外のだれか</b>がさわってからゴールに入らないと点にならない。'},
+  {lv:3,q:'自分の陣地（コートの半分の、自分たちの側）にいるとき、オフサイドになる？',a:['なる','ならない'],c:1,why:'自分の陣地にいるときは、オフサイドに<b>ならない</b>よ。'},
+  {lv:3,q:'スローインのボールを、相手のうしろから2人目の選手より前で受けた。オフサイド？',a:['オフサイド','オフサイドじゃない'],c:1,why:'スローイン・ゴールキック・コーナーキックから<b>直接</b>受けたときは、オフサイドにならないよ。'},
+  {lv:1,q:'シュートがゴールポストに当たって、コートの中にもどってきた。どうなる？',a:['そのまま試合が続く','ゴールキック','やり直し'],c:0,why:'ポストやバーに当たってコートの中にもどったら、<b>そのまま試合が続く</b>よ。'},
+  {lv:2,q:'1つの試合でイエローカードを2枚もらうと？',a:['注意だけ','退場（レッドカード）','相手に1点入る'],c:1,why:'イエローカード2枚で<b>退場</b>（レッドカード）になる。'},
+  {lv:2,q:'ボールが手に当たったとき、ハンド（反則）になりやすいのはどっち？',a:['腕を体から大きく広げていた','腕を体につけていた'],c:0,why:'わざと手でさわったり、腕を広げて体を大きくしてボールに当たると<b>ハンド</b>になりやすい。'},
+  {lv:1,q:'【マナー】相手の選手がたおれて動けない。自分がボールを持っていたら？',a:['そのままシュートする','ボールを外に出して試合を止める'],c:1,why:'ルールではなくマナー（フェアプレー）。ケガをした人がいたら、<b>ボールを外に出して</b>手当てできるようにしよう。'},
 ];
-const QUIZ_N=5, LOOK_SEC=[3,2.5,2,2,1.5];
+const QUIZ_N=5;
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const quizDoneToday=id=>S.logs.some(l=>l.date===today()&&l.menu===id);
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
 /* 見る力クイズの問題を1つ作る（答えが1つに決まる配置になるまで作り直す）
    向き：右がせめる方向（前）。opp＝相手、mate＝味方 */
-function lookQ(t,sec){
+function lookQ(t,sec,tier=2){
   for(let tries=0;tries<400;tries++){
     const me={x:rnd(30,58),y:rnd(32,68)}, P=[me], opp=[], mate=[];
     const inb=p=>p.x>=10&&p.x<=148&&p.y>=10&&p.y<=90;
@@ -1332,7 +1360,7 @@ function lookQ(t,sec){
     const nums=n=>n<=1?[1,2,3]:[n-1,n,n+1];
     let q,opts,why;
     if(t==='opp'||t==='mate'){
-      const no=t==='opp'?2+Math.floor(Math.random()*4):1+Math.floor(Math.random()*3);
+      const no=t==='opp'?(tier===1?2+Math.floor(Math.random()*2):tier===2?2+Math.floor(Math.random()*3):3+Math.floor(Math.random()*4)):1+Math.floor(Math.random()*3);
       const nm=t==='mate'?1+Math.floor(Math.random()*4):1+Math.floor(Math.random()*3);
       if(!fill(opp,no)||!fill(mate,nm))continue;
       const n=t==='opp'?no:nm;
@@ -1374,7 +1402,7 @@ function lookQ(t,sec){
     }
     return {t,sec,me,opp,mate,q,opts,why};
   }
-  return t==='opp'?null:lookQ('opp',sec);
+  return t==='opp'?null:lookQ('opp',sec,tier);
 }
 /* 見る力クイズの図（show=false なら選手をかくす） */
 function lookSvg(q,show){
@@ -1390,6 +1418,7 @@ let QZ=null;
 function quizCard(m){
   const done=quizDoneToday(m.id), past=isPast(draft.date);
   return `<div class="card"><h3>${m.quiz==='rule'?'📘':'👀'} クイズに挑戦（${QUIZ_N}問）</h3>
+    <p class="lvtag">今のレベルのむずかしさ：<b>${TIER_NAME[quizTier()]}</b>${m.quiz==='look'?`（図が出るのは ${LOOK_SECS[quizTier()][0]}秒→${LOOK_SECS[quizTier()][4]}秒）`:''}<br><span>練習場所がレベルアップすると、問題もむずかしくなるよ</span></p>
     <p class="sub" style="margin:6px 0 10px;line-height:1.7">${m.quiz==='look'?'図が少しの時間だけ出るよ。消えたら答えよう。<br>🟡自分　🔵味方　🔴相手　（右がせめる方向）':'答えたあとに説明が出るよ。まちがえても大丈夫！'}<br>
     練習として記録できるのは<b>1日1回</b>（5分・+10 EXP）。${past?'<br>前の日の分は記録できないよ（練習はできる）。':done?'<br><b>今日はもう記録したよ。</b>何回でも練習できる！':''}</p>
     <p class="sub" style="margin:0 0 10px">今の自己ベスト：<b>${S.best[m.id]!=null?S.best[m.id]+m.unit:'まだなし'}</b></p>
@@ -1398,8 +1427,8 @@ function quizCard(m){
 function startQuiz(){
   const m=menuOf(draft.menu); if(!m||!m.quiz)return;
   const qs=m.quiz==='rule'
-    ?shuffle(RULEQ).slice(0,QUIZ_N).map(q=>({...q,opts:shuffle(q.a.map((t,k)=>({t,c:k===q.c})))}))
-    :shuffle(['opp','mate','near','space','free']).map((t,i)=>lookQ(t,LOOK_SEC[i]));
+    ?shuffle(RULEQ.filter(q=>q.lv<=quizTier())).slice(0,QUIZ_N).map(q=>({...q,opts:shuffle(q.a.map((t,k)=>({t,c:k===q.c})))}))
+    :(quizTier()===1?shuffle(['opp','mate','near','space','opp']):shuffle(['opp','mate','near','space','free'])).map((t,i)=>lookQ(t,LOOK_SECS[quizTier()][i],quizTier()));
   QZ={m,i:0,ok:0,qs,ans:-1}; quizStep();
 }
 function quitQuiz(){if(QZ)clearTimeout(QZ.t);QZ=null;closeOv()}
@@ -1448,10 +1477,10 @@ function practiceView(){
   const m=menuOf(draft.menu), boost=boostStats();
   if(!m) return `${isPast(draft.date)?'':stageScene(S)}<div class="wrap">
     ${pastBar()}    <h2 style="margin:8px 0 4px">何を練習した？</h2>
-    <p class="sub" style="margin:0 0 12px">🌱＝今の年齢で伸びやすい練習（経験×1.5）　★＝むずかしさ</p>
+    <p class="sub" style="margin:0 0 12px">👍＝今のキミにおすすめ（今の練習場所は★${recStar()}が目安）　🌱＝今の年齢で伸びやすい練習（経験×1.5）　★＝むずかしさ</p>
     <div class="gtabs">${GRPS.map(g=>`<button class="gtab ${g.id===pgrp?'on':''}" data-g="${g.id}"><span>${g.ic}</span><b>${g.name.replace(/・/g,"・<wbr>")}</b></button>`).join('')}</div>
     <div class="mlist">${SPORT.menus.filter(x=>x.grp===pgrp&&!x.hide).map(x=>`<button class="mitem" data-m="${x.id}"><div class="mthumb">${diag(x.d)}</div>
-      <div class="minfo"><b>${x.name}</b>${stars(x.lv)}${medalTag(mastery(S,x.id),1)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span>${x.pair?'<span class="pairtag">👪 親と2人</span>':''}</div>
+      <div class="minfo"><b>${x.name}</b>${stars(x.lv)}${medalTag(mastery(S,x.id),1)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span>${x.pair?'<span class="pairtag">👪 親と2人</span>':''}${isRec(x)?'<span class="rectag">👍 おすすめ</span>':''}</div>
       ${boost.includes(Object.keys(x.gain)[0])?'<em class="nobi">🌱</em>':''}</button>`).join('')}</div>
   </div>`;
   return `<div class="wrap">
@@ -1473,6 +1502,7 @@ function practiceView(){
     ${m.rec?`<div class="card"><h3>記録（わかれば）</h3><p class="sub" style="margin:4px 0 8px">${m.rec}（${m.unit}）</p>
       <input type="number" id="rec" inputmode="decimal" step="${m.dec?'0.1':'1'}" min="0" ${m.max?`max="${m.max}"`:''} value="${esc(draft.rec)}" placeholder="—">
       <p class="sub" style="margin:8px 0 0">今の自己ベスト：<b>${S.best[m.id]!=null?S.best[m.id]+m.unit:'まだなし'}</b></p>
+      ${(()=>{const g=lvGoal(m);return g==null?'':`<div class="lvgoal ${goalDone(m)?'done':''}">🎯 今のレベルの目標：<b>${g}${m.unit}</b>${m.lower?'以内':'以上'}${goalDone(m)?'　✅ 達成ずみ':'　（はじめて達成すると +30 EXP）'}<br><small>練習場所「${STAGES[lvIdx()].name}」の目標。場所がレベルアップすると目標も上がるよ</small></div>`})()}
       <div class="hint">自己ベストを更新するとボーナス +30 EXP</div></div>`:''}
     ${draft.timed?`<div class="card timedone">⏱ タイマーで <b>${draft.min}分</b> 練習したよ！ 記録があれば入れて「記録する」を押そう</div>`:''}
     ${isPast(draft.date)?'':`<button class="btn ghost timerbtn" id="tstart">⏱ タイマーで練習する（${draft.min}分）</button>`}
@@ -1590,6 +1620,8 @@ function doPractice(){
   if(rec!=null){
     const b=S.best[m.id], better=b==null||(m.lower?rec<b:rec>b);
     if(better){if(b!=null){xp+=30;coin+=20;pb=true;notes.push('🌟 自己ベスト更新！ ボーナス +30 EXP')}S.best[m.id]=rec}
+    const g=lvGoal(m), gi=lvIdx();
+    if(goalHit(m,rec,g)&&!goalDone(m,gi)){S.lvGoal=S.lvGoal||{};S.lvGoal[m.id]=gi;xp+=30;coin+=20;notes.push(`🎯 レベル目標クリア！（${g}${m.unit}）ボーナス +30 EXP`)}
   }
   const before=ratings(S), base=Math.ceil(draft.min/5), boost=boostStats(), J=jobOf(S);
   for(const [id,w] of Object.entries(m.gain)) S.stats[id]+=base*w*(boost.includes(id)?1.5:1)*jobMult(J,id);
