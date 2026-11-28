@@ -572,3 +572,8 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .ov{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
 .ov.show{align-items:flex-start}
 .ov .box{margin:auto;flex:none}
+/* 練習の分類ボタン：横スクロールせず、全部が見えるように並べる */
+.gtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;overflow:visible;margin:0 0 12px;padding:0}
+.gtab{display:flex;align-items:center;justify-content:center;gap:3px;white-space:normal;line-height:1.25;text-align:center;padding:8px 4px;min-height:44px;border-radius:12px;font-size:12px}
+.gtab span{margin-right:0;flex:none}
+.gtab b{font-weight:inherit;word-break:keep-all}

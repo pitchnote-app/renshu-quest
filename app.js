@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.24.2';
+const APP_VERSION='0.24.3';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1254,7 +1254,7 @@ function practiceView(){
   if(!m) return `${isPast(draft.date)?'':stageScene(S)}<div class="wrap">
     ${pastBar()}    <h2 style="margin:8px 0 4px">何を練習した？</h2>
     <p class="sub" style="margin:0 0 12px">🌱＝今の年齢で伸びやすい練習（経験×1.5）　★＝むずかしさ</p>
-    <div class="gtabs">${GRPS.map(g=>`<button class="gtab ${g.id===pgrp?'on':''}" data-g="${g.id}"><span>${g.ic}</span>${g.name}</button>`).join('')}</div>
+    <div class="gtabs">${GRPS.map(g=>`<button class="gtab ${g.id===pgrp?'on':''}" data-g="${g.id}"><span>${g.ic}</span><b>${g.name.replace(/・/g,"・<wbr>")}</b></button>`).join('')}</div>
     <div class="mlist">${SPORT.menus.filter(x=>x.grp===pgrp).map(x=>`<button class="mitem" data-m="${x.id}"><div class="mthumb">${diag(x.d)}</div>
       <div class="minfo"><b>${x.name}</b>${stars(x.lv)}${medalTag(mastery(S,x.id),1)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span></div>
       ${boost.includes(Object.keys(x.gain)[0])?'<em class="nobi">🌱</em>':''}</button>`).join('')}</div>
