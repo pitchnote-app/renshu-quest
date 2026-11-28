@@ -52,7 +52,7 @@
 - 他社作品（ドラクエ・ブルーロック・ワンピースカードなど）は雰囲気の参考のみ。名前・キャラ・ロゴは使わない。
 
 ## 主な仕組み（app.js）
-- 能力9種 `SPORT.stats`／練習メニュー66種 `MENUS`（図解 `diag()`。`hide:true` は一覧に出さない＝ヘディングリフティング。`pair:true` は家族と2人でやる練習）。v0.25 で記録のしかたが変わった練習は `REC_RESET`（`fixData()` で1回だけ自己ベストをリセット、`menuV`）／職業 `JOBS`／称号 `TITLES`／スキル `SKILLS`
+- 能力9種 `SPORT.stats`／練習メニュー70種 `MENUS`（図解 `diag()`。`hide:true` は一覧に出さない＝ヘディングリフティング。`pair:true` は家族と2人でやる練習）。v0.25 で記録のしかたが変わった練習は `REC_RESET`（`fixData()` で1回だけ自己ベストをリセット、`menuV`）／職業 `JOBS`／称号 `TITLES`／スキル `SKILLS`
 - 階級 `RANKS`（ステージと同じレベルで昇格）／能力ランクS〜G `grade()`／メダル `MEDALS`（ビギナー→ダイヤ）／練習の熟練度 `mastery()`
 - 二つ名 `NICKS`（14分野×8段階。能力の分野は能力ランク、練習の分野は回数で上がる）／階級の色 `RANK_COL`
 - 個人技スキル `SKILLS`（金・技・心がまえの札。`name` は保存のキーなので変えない）／つよさ画面 `statusView()`
@@ -65,6 +65,7 @@
 - 練習ノート `openNote()`・`notesCard()`：ホームで書き、記録（`S.logs` の `menu:'note'`）に `note:{good,bad,next}` で保存。きろくで読み返す
 - 前の日の記入 `openDay()`・`startDay()`：きろくのカレンダーの日付から。`draft.date` に日付を入れて `doPractice()`（今日のクエスト・HPは対象外）。`S.logs` は新しい順を守る `addLog()`
   - 記入できるのは `PAST_DAYS`（14日）前まで `canFill()`。1日に記録できる練習は合わせて `DAY_MAX_MIN`（180分）まで `dayMin()`
+- クイズ（頭のトレーニング）：メニューに `quiz:'rule'|'look'`。ルールクイズの問題 `RULEQ`（答えがはっきりしたルールだけ）、見る力クイズは `lookQ()` が図を作り `lookSvg()` で描く（図を少しだけ見せて、相手・味方・空いている場所を答える。判断（パス？ドリブル？）は正解が1つでないので出さない）。記録は1日1回 `quizDoneToday()`
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
 - ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）。交換 `buyItem()` はそのまま装備する／相棒ボルト `buddyLines()`・`BOLT`
 - イラストのキャラ `AVATARS`・`avatarView()`

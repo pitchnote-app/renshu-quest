@@ -585,3 +585,18 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .pairtag{display:inline-block;align-self:flex-start;margin-top:3px;font-size:11px;font-weight:800;color:#ffd0a8;background:rgba(255,138,26,.14);border:1px solid rgba(255,138,26,.45);border-radius:999px;padding:1px 8px}
 .pairtag.big{font-size:13px;padding:4px 12px;margin:0 0 8px}
 .safe{margin:10px 0 0;font-size:12px;line-height:1.6;color:var(--sub,#a3aec5);background:rgba(255,255,255,.04);border-left:3px solid #ff8a1a;border-radius:8px;padding:6px 10px}
+/* クイズ（ルールクイズ・見る力クイズ） */
+.qzhead{display:flex;justify-content:space-between;gap:8px;margin:0 0 10px;font-size:12px;color:var(--sub,#a3aec5)}
+.qzhead b{color:var(--gold2,#f3dc8f);font-size:14px}
+.qzq{font-size:17px;line-height:1.6;margin:6px 0 14px;text-align:left}
+.qzopts{display:grid;gap:10px}
+.qzopts .btn{min-height:52px;font-size:16px;white-space:normal;line-height:1.4}
+.qzfig .lookfig{display:block;width:100%;border-radius:10px}
+.qzbar{height:8px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:10px}
+.qzbar i{display:block;height:100%;background:var(--gold,#d4af37);transform-origin:left;animation:qzbar linear forwards}
+@keyframes qzbar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.qzres{font-size:22px;font-weight:900;margin:12px 0 4px}
+.qzres.ok{color:#5fd38b}.qzres.ng{color:#ff8a8a}
+.qzwhy{text-align:left;line-height:1.7;font-size:14px;margin:6px 0 14px}
+.lookcap{display:flex;justify-content:space-between;margin:0 2px 6px;font-size:12px;color:var(--sub,#a3aec5)}
+.lookcap b{color:#ffd84a}

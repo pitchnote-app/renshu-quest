@@ -84,6 +84,10 @@ const MENUS=[
   M('note','iq','練習ノート',1,{iq:1},'i_note',['練習を思い出す','できたことを書く','次の目標を決める']),
   M('watch','iq','試合を見て学ぶ',1,{iq:1},'i_tv',['試合を見る','ボールを持たない選手を見る','まねしたい動きを見つける'],{rec:'まねしたい動きをいくつ見つけた？',unit:'個'}),
   M('image','iq','イメージトレーニング',1,{iq:1},'i_image',['プレーを決める','動きを想像する','成功する方法を考える']),
+  M('quiz_rule','iq','ルールクイズ',1,{iq:1},'i_quiz',['ルールのクイズに5問答える','答えのあとに出る説明を読む','試合で「今のなんで？」が減る'],{rec:'5問中何問正解？',unit:'問',max:5,quiz:'rule'}),
+  M('tag','iq','親子で鬼ごっこ',1,{iq:1,agility:.3},'i_tag',['家族と鬼ごっこをする（何人でもOK）','にげるときは、鬼がどっちから来るかをよく見る','鬼になったら、だれなら追いつけそうか考える'],{pair:true}),
+  M('quiz_look','iq','見る力クイズ',2,{iq:1},'i_look',['グラウンドの図を、少しの時間だけ見る','図が消えたら、相手や味方の場所を答える','ボールだけでなく、まわりを見るくせをつけよう'],{rec:'5問中何問正解？',unit:'問',max:5,quiz:'look'}),
+  M('read_1v1','iq','見て決める1対1',2,{iq:1,dribble:.3},'i_read',['家族に守備役をしてもらい、ドリブルで向かう','相手が取りに来たら、かわす。来なければ、そのまま前へ運ぶ','うまくいかなくてもOK。「なぜそうしたか」を言えたら合格'],{pair:true}),
   // 試合・チーム
   M('game','game','試合・ミニゲーム',1,{iq:1,stamina:0.3},'g_game',['目標を決める','試合で挑戦する','できたことを思い出す']),
   M('team','game','チーム練習',1,{iq:1,touch:0.3},'g_team',['コーチの話を聞く','仲間と練習する','覚えたことをふり返る']),
@@ -208,6 +212,10 @@ function diag(k,u,anim){
     case 'b_line': g=field+'<path d="M16 52 H144" stroke="#fff" stroke-width="4"/>'+[30,48,66,84,102,120].map(x=>`<ellipse cx="${x}" cy="52" rx="7" ry="3.4" fill="#ffd84a" stroke="${OL}" stroke-width=".8"/>`).join('')+ar('M20 70 L140 70','w')+lbl(80,32,'線の上を まっすぐ歩く',Y)+lbl(80,90,'顔を上げて'); break;
     case 'b_touch': g=room+FIG(fig.one)+ball(104,80,6)+ar('M88 70 L98 76','y')+lbl(130,30,'片足で立って',Y)+lbl(130,42,'足裏でタッチ',Y); break;
     case 'd_cut': g=field+pl(20,26,'#e63946')+ar('M30 28 L140 78','y')+ball(30,28,4)+ar('M104 24 L90 50','w')+pl(108,16)+num(60,30,1)+num(78,58,2)+lbl(112,92,'道を読んで 前に入る',Y)+lbl(26,46,'家族'); break;
+    case 'i_quiz': g=`<rect width="160" height="100" rx="10" fill="url(#${u}d)"/><rect x="26" y="12" width="108" height="52" rx="8" fill="#fffdf6" stroke="#b9a77a" stroke-width="1.5"/><text x="80" y="34" text-anchor="middle" font-size="11" font-weight="900" fill="#1c2f5e" font-family="sans-serif">Q. ボールが半分</text><text x="80" y="50" text-anchor="middle" font-size="11" font-weight="900" fill="#1c2f5e" font-family="sans-serif">こえたらゴール？</text><g font-size="14" font-weight="900" font-family="sans-serif" text-anchor="middle"><rect x="34" y="72" width="40" height="20" rx="6" fill="#2b59c3"/><text x="54" y="87" fill="#fff">⭕</text><rect x="86" y="72" width="40" height="20" rx="6" fill="#e63946"/><text x="106" y="87" fill="#fff">❌</text></g>`; break;
+    case 'i_look': g=field+pl(46,56)+ball(54,60,3.5)+pl(92,30,'#e63946')+pl(110,70,'#e63946')+pl(86,78)+pl(126,40)+`<g transform="translate(30 22)"><ellipse rx="14" ry="8" fill="#fff" stroke="${OL}" stroke-width="1.4"/><circle r="5" fill="#2b59c3"/><circle r="2" fill="#0a0f1e"/></g>`+lbl(92,96,'少しだけ見て 答える',Y); break;
+    case 'i_tag': g=field+pl(98,46,'#e63946')+pl(56,54)+ar('M90 48 L66 52','w')+ar('M50 50 L22 28','w')+lbl(104,30,'鬼',W)+lbl(80,94,'鬼をよく見て にげる方向を決める',Y); break;
+    case 'i_read': g=field+pl(26,52)+ball(36,52,4)+pl(96,52,'#e63946')+ar('M44 50 C62 50 70 22 132 22','y')+ar('M44 56 L86 56','y',1)+lbl(98,72,'守備役')+lbl(104,12,'来たら かわす',Y)+lbl(60,92,'来なければ 前へ',Y); break;
     case 'g_game': g=field+'<rect x="4" y="36" width="8" height="28" fill="#fff"/><rect x="148" y="36" width="8" height="28" fill="#fff"/><path d="M80 4V96" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/><circle cx="80" cy="50" r="13" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/>'+[[40,28],[48,66],[68,46]].map(([x,y])=>pl(x,y)).join('')+[[110,32],[100,66],[126,50]].map(([x,y])=>pl(x,y,'#e63946')).join('')+ball(84,52,4); break;
     case 'g_team': g=field+[[36,28],[36,72],[80,50],[124,28],[124,72]].map(([x,y])=>pl(x,y)).join('')+ar('M44 32 L72 46','y')+ar('M88 46 L116 32','y')+cone(146,50)+lbl(80,96,'声をかけ合って パス',Y); break;
   }
@@ -418,7 +426,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.25.0';
+const APP_VERSION='0.26.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -1279,6 +1287,161 @@ function homeView(){
 
 let pgrp='touch';
 const stars=lv=>`<span class="stars">${'★'.repeat(lv)}<i>${'★'.repeat(3-lv)}</i></span>`;
+/* ===== クイズ（頭のトレーニング）=====
+   ・ルールクイズ：答えがはっきりしているルールだけを出す（答えのあとに説明）
+   ・見る力クイズ：図を少しの時間だけ見せて、消えたら「相手・味方・空いている場所」を答える。
+     判断（パス？ドリブル？）には1つの正解がないので出さない。見るくせ（認知）だけを練習する
+   練習として記録できるのは1日1回（5分）。2回目からは練習用で、何回でも挑戦できる */
+const RULEQ=[
+  {q:'ボールがゴールラインを半分こえた。ゴール？',a:['ゴール','ゴールじゃない'],c:1,why:'ボールが<b>全部</b>ラインをこえたときだけゴール。半分ではまだゴールじゃないよ。'},
+  {q:'ボールがタッチライン（横の線）の上にのっている。外に出た？',a:['外に出た','まだコートの中'],c:1,why:'ラインの上はコートの中。ボールが<b>全部</b>ラインの外に出たら「外」だよ。'},
+  {q:'相手が最後にさわって、タッチラインから外に出た。どっちのスローイン？',a:['自分のチーム','相手のチーム'],c:0,why:'最後にさわったチームの<b>反対のチーム</b>がスローインするよ。'},
+  {q:'スローインのとき、片足が地面からはなれた。OK？',a:['OK','ダメ'],c:1,why:'両足とも、地面（ラインの上かラインの外）につけたまま投げるよ。'},
+  {q:'スローインの投げ方はどれ？',a:['片手で横から投げる','両手で、頭のうしろから頭の上を通して投げる','両手で、下から投げる'],c:1,why:'両手で持って、頭のうしろから頭の上を通して投げるよ。'},
+  {q:'スローインのボールが、だれにもさわらずに相手ゴールに入った。点になる？',a:['点になる','点にならない'],c:1,why:'スローインから<b>直接</b>ゴールに入っても点にならない（相手のゴールキックになる）。'},
+  {q:'守っている相手が最後にさわって、相手ゴールの横の線（ゴールライン）から出た。何で再開？',a:['コーナーキック','ゴールキック','スローイン'],c:0,why:'守っている側が最後にさわってゴールラインから出たら、せめている側の<b>コーナーキック</b>。'},
+  {q:'せめている自分が最後にさわって、相手ゴールの横の線（ゴールライン）から出た。何で再開？',a:['コーナーキック','ゴールキック','スローイン'],c:1,why:'せめている側が最後にさわってゴールラインから出たら、守っている側の<b>ゴールキック</b>。'},
+  {q:'コーナーキックが、だれにもさわらずにゴールに入った。点になる？',a:['点になる','点にならない'],c:0,why:'コーナーキックは、直接ゴールに入っても<b>点になる</b>よ。'},
+  {q:'キーパーが手でボールを持てるのはどこ？',a:['グラウンドのどこでも','自分のペナルティーエリアの中','ゴールの中だけ'],c:1,why:'キーパーが手を使えるのは、<b>自分のペナルティーエリアの中</b>だけ。'},
+  {q:'味方が足でわざとキーパーにパスした。キーパーは手でとっていい？',a:['手でとっていい','手でとってはダメ'],c:1,why:'味方が足でわざとけったボールは、キーパーは手でさわれない。足で処理しよう。'},
+  {q:'相手を手でおしたり、ユニフォームを引っぱったりしたら？',a:['反則','反則じゃない'],c:0,why:'おす・引っぱる・足をかけるのは<b>反則</b>。相手のフリーキックになるよ。'},
+  {q:'守っている選手が、自分のペナルティーエリアの中で、相手の足をけってたおした。何になる？',a:['ペナルティーキック（PK）','コーナーキック','スローイン'],c:0,why:'自分のペナルティーエリアの中でこの反則をすると、相手の<b>ペナルティーキック</b>になる。'},
+  {q:'「間接フリーキック」を、だれにもさわらずにゴールに入れた。点になる？',a:['点になる','点にならない'],c:1,why:'間接フリーキックは、けった人<b>以外のだれか</b>がさわってからゴールに入らないと点にならない。'},
+  {q:'自分の陣地（コートの半分の、自分たちの側）にいるとき、オフサイドになる？',a:['なる','ならない'],c:1,why:'自分の陣地にいるときは、オフサイドに<b>ならない</b>よ。'},
+  {q:'スローインのボールを、相手のうしろから2人目の選手より前で受けた。オフサイド？',a:['オフサイド','オフサイドじゃない'],c:1,why:'スローイン・ゴールキック・コーナーキックから<b>直接</b>受けたときは、オフサイドにならないよ。'},
+  {q:'シュートがゴールポストに当たって、コートの中にもどってきた。どうなる？',a:['そのまま試合が続く','ゴールキック','やり直し'],c:0,why:'ポストやバーに当たってコートの中にもどったら、<b>そのまま試合が続く</b>よ。'},
+  {q:'1つの試合でイエローカードを2枚もらうと？',a:['注意だけ','退場（レッドカード）','相手に1点入る'],c:1,why:'イエローカード2枚で<b>退場</b>（レッドカード）になる。'},
+  {q:'ボールが手に当たったとき、ハンド（反則）になりやすいのはどっち？',a:['腕を体から大きく広げていた','腕を体につけていた'],c:0,why:'わざと手でさわったり、腕を広げて体を大きくしてボールに当たると<b>ハンド</b>になりやすい。'},
+  {q:'【マナー】相手の選手がたおれて動けない。自分がボールを持っていたら？',a:['そのままシュートする','ボールを外に出して試合を止める'],c:1,why:'ルールではなくマナー（フェアプレー）。ケガをした人がいたら、<b>ボールを外に出して</b>手当てできるようにしよう。'},
+];
+const QUIZ_N=5, LOOK_SEC=[3,2.5,2,2,1.5];
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const quizDoneToday=id=>S.logs.some(l=>l.date===today()&&l.menu===id);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
+/* 見る力クイズの問題を1つ作る（答えが1つに決まる配置になるまで作り直す）
+   向き：右がせめる方向（前）。opp＝相手、mate＝味方 */
+function lookQ(t,sec){
+  for(let tries=0;tries<400;tries++){
+    const me={x:rnd(30,58),y:rnd(32,68)}, P=[me], opp=[], mate=[];
+    const inb=p=>p.x>=10&&p.x<=148&&p.y>=10&&p.y<=90;
+    const put=(arr,p,min=14)=>{if(!inb(p)||P.some(o=>dist(o,p)<min))return false;arr.push(p);P.push(p);return true};
+    const fill=(arr,n,ok=()=>true)=>{let k=0;while(arr.length<n&&k++<200){const p={x:rnd(10,148),y:rnd(10,90)};if(ok(p))put(arr,p)}return arr.length===n};
+    const nums=n=>n<=1?[1,2,3]:[n-1,n,n+1];
+    let q,opts,why;
+    if(t==='opp'||t==='mate'){
+      const no=t==='opp'?2+Math.floor(Math.random()*4):1+Math.floor(Math.random()*3);
+      const nm=t==='mate'?1+Math.floor(Math.random()*4):1+Math.floor(Math.random()*3);
+      if(!fill(opp,no)||!fill(mate,nm))continue;
+      const n=t==='opp'?no:nm;
+      q=t==='opp'?'相手（赤）は何人いた？':'味方（青）は何人いた？ （自分はのぞく）';
+      opts=nums(n).map(v=>({t:v+'人',c:v===n}));
+      why=t==='opp'?`相手は <b>${n}人</b> いたよ。`:`味方は <b>${n}人</b> いたよ。`;
+    }else if(t==='near'){
+      const D=[['up','⬆ 上',0,-1],['down','⬇ 下',0,1],['back','⬅ うしろ',-1,0],['fwd','➡ 前',1,0]], d=D[Math.floor(Math.random()*4)], r=rnd(18,24);
+      if(!put(opp,{x:me.x+d[2]*r+rnd(-4,4),y:me.y+d[3]*r+rnd(-4,4)}))continue;
+      if(!fill(opp,2+Math.floor(Math.random()*2),p=>dist(p,me)>=48)||!fill(mate,1+Math.floor(Math.random()*2)))continue;
+      const s=[...opp].sort((a,b)=>dist(a,me)-dist(b,me)); if(s[0]!==opp[0]||dist(s[1],me)-dist(s[0],me)<20)continue;
+      q='いちばん近くにいた相手は、自分のどっち？';
+      opts=D.map(x=>({t:x[1],c:x===d}));
+      why=`いちばん近い相手は <b>${d[1].slice(2)}</b> にいたよ。ボールを受ける前に、近い相手を見ておこう。`;
+    }else if(t==='space'){
+      me.y=rnd(42,58);
+      const up=Math.random()<.5, n=2+Math.floor(Math.random()*2);   // up＝上の方に相手が多い
+      if(!fill(opp,n,p=>p.x>me.x+15&&(up?p.y<44:p.y>56)))continue;
+      if(!fill(opp,n+(Math.random()<.5?1:0),p=>p.x<me.x-12))continue;
+      if(!fill(mate,1+Math.floor(Math.random()*2)))continue;
+      const ahead=opp.filter(p=>p.x>me.x); if(ahead.some(p=>up?p.y>=50:p.y<=50))continue;
+      q='自分より前（ゴールの方）で、空いていたのはどっち？';
+      opts=[{t:'⬆ 上の方',c:!up},{t:'⬇ 下の方',c:up}];
+      why=`相手は <b>${up?'上':'下'}の方</b> に集まっていたから、空いていたのは <b>${up?'下':'上'}の方</b>。相手の場所が分かると、空いている場所が見えるよ。`;
+    }else{ // free：フリーの味方
+      const L=['A','B','C'], fi=Math.floor(Math.random()*3);
+      for(let k=0;k<3;k++){let ok=false;for(let j=0;j<100&&!ok;j++)ok=put(mate,{x:rnd(20,148),y:rnd(12,88)},26);if(!ok)break}
+      if(mate.length<3)continue;
+      let bad=false;
+      for(let k=0;k<3;k++){if(k===fi)continue;const a=Math.random()*Math.PI*2,r=rnd(10,12.5);if(!put(opp,{x:mate[k].x+Math.cos(a)*r,y:mate[k].y+Math.sin(a)*r},9)){bad=true;break}}
+      if(bad)continue;
+      if(!fill(opp,opp.length+Math.floor(Math.random()*2),p=>dist(p,mate[fi])>=40))continue;
+      const near=m=>Math.min(...opp.map(o=>dist(o,m)));
+      if(near(mate[fi])<34||mate.some((m,k)=>k!==fi&&near(m)>13.5))continue;
+      mate.forEach((m,k)=>m.lab=L[k]);
+      q='相手がそばにいない「フリーの味方」はだれ？';
+      opts=L.map((x,k)=>({t:'味方 '+x,c:k===fi}));
+      why=`<b>味方 ${L[fi]}</b> のまわりには相手がいなかったよ。ほかの味方には、近くに相手がいた。`;
+    }
+    return {t,sec,me,opp,mate,q,opts,why};
+  }
+  return t==='opp'?null:lookQ('opp',sec);
+}
+/* 見る力クイズの図（show=false なら選手をかくす） */
+function lookSvg(q,show){
+  const pc=(p,c,lab)=>`<g transform="translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})"><circle r="6.2" fill="${c}" stroke="#0a0f1e" stroke-width="1.4"/>${lab?`<text y="3.2" text-anchor="middle" font-size="8" font-weight="900" fill="#fff" font-family="sans-serif">${lab}</text>`:''}</g>`;
+  const f=`<rect width="160" height="100" rx="8" fill="#2f8a47"/>${[0,32,64,96,128].map(x=>`<rect x="${x+16}" width="16" height="100" fill="#2a7c40"/>`).join('')}
+    <rect x="3" y="3" width="154" height="94" rx="6" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.2"/><rect x="132" y="28" width="25" height="44" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.2"/><rect x="154" y="40" width="5" height="20" fill="#fff"/>`;
+  const cap='<p class="lookcap"><span>🟡自分　🔵味方　🔴相手</span><b>せめる方向 ➡</b></p>';
+  if(!show)return cap+`<svg viewBox="0 0 160 100" class="lookfig">${f}<text x="80" y="62" text-anchor="middle" font-size="34" font-weight="900" fill="rgba(255,255,255,.75)" font-family="sans-serif">？</text></svg>`;
+  return cap+`<svg viewBox="0 0 160 100" class="lookfig">${f}${q.mate.map(p=>pc(p,'#2b59c3',p.lab)).join('')}${q.opp.map(p=>pc(p,'#e63946')).join('')}
+    ${pc(q.me,'#f5b301')}<circle cx="${(q.me.x+6.5).toFixed(1)}" cy="${(q.me.y+4).toFixed(1)}" r="2.6" fill="#fff" stroke="#111" stroke-width=".8"/><text x="${q.me.x.toFixed(1)}" y="${(q.me.y-9).toFixed(1)}" text-anchor="middle" font-size="7" font-weight="900" fill="#fff" stroke="rgba(0,0,0,.6)" stroke-width="2" paint-order="stroke" font-family="sans-serif">自分</text></svg>`;
+}
+let QZ=null;
+function quizCard(m){
+  const done=quizDoneToday(m.id), past=isPast(draft.date);
+  return `<div class="card"><h3>${m.quiz==='rule'?'📘':'👀'} クイズに挑戦（${QUIZ_N}問）</h3>
+    <p class="sub" style="margin:6px 0 10px;line-height:1.7">${m.quiz==='look'?'図が少しの時間だけ出るよ。消えたら答えよう。<br>🟡自分　🔵味方　🔴相手　（右がせめる方向）':'答えたあとに説明が出るよ。まちがえても大丈夫！'}<br>
+    練習として記録できるのは<b>1日1回</b>（5分・+10 EXP）。${past?'<br>前の日の分は記録できないよ（練習はできる）。':done?'<br><b>今日はもう記録したよ。</b>何回でも練習できる！':''}</p>
+    <p class="sub" style="margin:0 0 10px">今の自己ベスト：<b>${S.best[m.id]!=null?S.best[m.id]+m.unit:'まだなし'}</b></p>
+    <button class="btn gold" id="qstart">クイズを始める</button></div>`;
+}
+function startQuiz(){
+  const m=menuOf(draft.menu); if(!m||!m.quiz)return;
+  const qs=m.quiz==='rule'
+    ?shuffle(RULEQ).slice(0,QUIZ_N).map(q=>({...q,opts:shuffle(q.a.map((t,k)=>({t,c:k===q.c})))}))
+    :shuffle(['opp','mate','near','space','free']).map((t,i)=>lookQ(t,LOOK_SEC[i]));
+  QZ={m,i:0,ok:0,qs,ans:-1}; quizStep();
+}
+function quitQuiz(){if(QZ)clearTimeout(QZ.t);QZ=null;closeOv()}
+function quizBox(h){document.getElementById('ovbox').innerHTML=h;document.getElementById('ov').classList.add('show');bindQuiz()}
+const quizHead=()=>`<p class="qzhead"><span>${QZ.m.name}</span><b>${QZ.i+1} / ${QUIZ_N}</b><span>正解 ${QZ.ok}</span></p>`;
+const quizOpts=q=>`<div class="qzopts">${q.opts.map((o,k)=>`<button class="btn ghost" data-qa="${k}">${o.t}</button>`).join('')}</div>`;
+function quizStep(){
+  if(QZ.i>=QUIZ_N)return quizEnd();
+  const q=QZ.qs[QZ.i];
+  if(QZ.m.quiz==='rule')quizBox(`${quizHead()}<h3 class="qzq">${q.q}</h3>${quizOpts(q)}<button class="tquit" onclick="quitQuiz()">やめる</button>`);
+  else quizBox(`${quizHead()}<div class="qzfig">${lookSvg(q,false)}</div><p class="sub" style="margin:8px 0 12px">図は <b>${q.sec}秒</b> で消えるよ。相手・味方・空いている場所をよく見よう</p><button class="btn gold" id="qzlook">👀 図を見る</button><button class="tquit" onclick="quitQuiz()">やめる</button>`);
+}
+function bindQuiz(){
+  document.querySelectorAll('[data-qa]').forEach(b=>b.onclick=()=>quizAnswer(+b.dataset.qa));
+  const lk=document.getElementById('qzlook');
+  if(lk)lk.onclick=()=>{
+    const q=QZ.qs[QZ.i], i=QZ.i;
+    quizBox(`${quizHead()}<div class="qzfig">${lookSvg(q,true)}</div><div class="qzbar"><i style="animation-duration:${q.sec}s"></i></div>`);
+    clearTimeout(QZ.t);
+    QZ.t=setTimeout(()=>{if(!QZ||QZ.i!==i||!document.getElementById('ov').classList.contains('show'))return;
+      quizBox(`${quizHead()}<div class="qzfig">${lookSvg(q,false)}</div><h3 class="qzq">${q.q}</h3>${quizOpts(q)}`)},q.sec*1000);
+  };
+  const nx=document.getElementById('qznext'); if(nx)nx.onclick=()=>{QZ.i++;quizStep()};
+  const sv=document.getElementById('qzsave'); if(sv)sv.onclick=()=>{const sc=QZ.ok;QZ=null;closeOv();draft={...draft,min:5,rec:String(sc)};doPractice()};
+  const ag=document.getElementById('qzagain'); if(ag)ag.onclick=startQuiz;
+}
+function quizAnswer(k){
+  const q=QZ.qs[QZ.i], o=q.opts[k]; if(!o||QZ.ans===QZ.i)return;
+  QZ.ans=QZ.i; if(o.c){QZ.ok++;sfx('ok')}
+  const right=q.opts.find(x=>x.c).t;
+  quizBox(`${quizHead()}${QZ.m.quiz==='look'?`<div class="qzfig">${lookSvg(q,true)}</div>`:`<h3 class="qzq">${q.q}</h3>`}
+    <div class="qzres ${o.c?'ok':'ng'}">${o.c?'⭕ 正解！':'❌ ざんねん'}</div>
+    <p class="qzwhy">答え：<b>${right}</b><br>${q.why}</p>
+    <button class="btn gold" id="qznext">${QZ.i+1<QUIZ_N?'つぎへ':'結果を見る'}</button>`);
+}
+function quizEnd(){
+  const {m,ok}=QZ, done=quizDoneToday(m.id)||isPast(draft.date);
+  quizBox(`<div class="star">${boltImg(ok>=4?'joy':ok>=2?'cheer':'wow','big')}</div>
+    <h2>${ok} / ${QUIZ_N} 問 正解</h2>
+    <p class="sub">${ok===QUIZ_N?'パーフェクト！ すごい！':ok>=3?'いいね！ その調子！':'説明を思い出して、また挑戦しよう！'}</p>
+    ${done?`<p class="sub">${isPast(draft.date)?'前の日の分は記録できないよ。':'今日はもう記録したよ。'}ここからは練習用（何回でも挑戦できる）</p>`:`<button class="btn gold" id="qzsave">記録する（+${5*2} EXP）</button>`}
+    <button class="btn ghost" id="qzagain" style="margin-top:10px">もう一度</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="quitQuiz()">とじる</button>`);
+}
 function practiceView(){
   const m=menuOf(draft.menu), boost=boostStats();
   if(!m) return `${isPast(draft.date)?'':stageScene(S)}<div class="wrap">
@@ -1300,6 +1463,7 @@ function practiceView(){
     </div>
     ${(()=>{const Q=mastery(S,m.id);return `<div class="card mastcard"><h3>熟練度 ${medalTag(Q)||'<span class="sub">まだ練習していない</span>'}</h3><p class="sub" style="margin:6px 0 0">この練習をした回数：<b style="color:var(--ink)">${Q.n}回</b>${Q.next?`　次のメダルまで あと${Q.next-Q.n}回`:'　最高ランク！'}</p>${SKILLS.filter(k=>k.need&&k.need[0]===m.id&&!(S.skills||[]).includes(k.name)).map(k=>`<p class="sub" style="margin:4px 0 0">${SKILL_TIER[k.tier].ic} あと${Math.max(0,k.need[1]-Q.n)}回で「${k.name}」を習得できるかも</p>`).join('')}</div>`})()}
     <div class="card"><h3>上がる能力</h3><p style="margin:6px 0 0">${Object.entries(m.gain).map(([id,w])=>`${statName(id)}<b class="gmark">${w>=1?'◎':w>=.4?'○':'△'}</b>`).join('　')}${boost.includes(Object.keys(m.gain)[0])?'　<span class="nobitag">🌱 のびどき</span>':''}</p></div>
+    ${m.quiz?quizCard(m):`
     <div class="card"><h3>練習時間</h3>
       <div class="big"><span id="minv">${draft.min}</span> 分</div>
       <div class="minbtns">${MIN_CHOICES.map(v=>`<button class="minbtn ${v===draft.min?'on':''}" data-min="${v}">${v}分</button>`).join('')}</div>
@@ -1310,7 +1474,7 @@ function practiceView(){
       <div class="hint">自己ベストを更新するとボーナス +30 EXP</div></div>`:''}
     ${draft.timed?`<div class="card timedone">⏱ タイマーで <b>${draft.min}分</b> 練習したよ！ 記録があれば入れて「記録する」を押そう</div>`:''}
     ${isPast(draft.date)?'':`<button class="btn ghost timerbtn" id="tstart">⏱ タイマーで練習する（${draft.min}分）</button>`}
-    ${m.id==='note'?`<button class="btn gold" id="savenote">📓 ノートを書いて記録　<span id="xpv">+${calcXP()}</span> EXP</button>`:`<button class="btn gold" id="save">記録する　<span id="xpv">+${calcXP()}</span> EXP</button>`}
+    ${m.id==='note'?`<button class="btn gold" id="savenote">📓 ノートを書いて記録　<span id="xpv">+${calcXP()}</span> EXP</button>`:`<button class="btn gold" id="save">記録する　<span id="xpv">+${calcXP()}</span> EXP</button>`}`}
   </div>`;
 }
 /* ===== 前の日の記入：きろくのカレンダーで日付を押して、その日の練習やノートを入れる =====
@@ -1396,6 +1560,7 @@ function bindPractice(){
   if(sn)sn.onclick=()=>openNote(null,draft.min,isPast(draft.date)?draft.date:today());
   const ts=document.getElementById('tstart');
   if(ts)ts.onclick=()=>{S.timer={menu:draft.menu,goal:draft.min,start:Date.now(),acc:0,run:true};save();go('timer')};
+  const qz=document.getElementById('qstart'); if(qz)qz.onclick=startQuiz;
 }
 function checkQuests(){
   S.qd=S.qd||{}; const d=today(), done=S.qd[d]=S.qd[d]||[];
