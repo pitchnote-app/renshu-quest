@@ -162,7 +162,7 @@ function diag(k,u,anim){
     case 'f_inout': g=field+feet+ar('M88 36 L114 36','y',0,1)+ball(100,36,7)+lbl(80,14,'片足の イン ⇄ アウト',Y)+lbl(88,54,'イン')+lbl(118,54,'アウト'); break;
     case 'f_l': g=field+feet+ar('M100 30 L100 52 L66 52','y')+ball(100,30,7)+num(112,40,1)+num(82,64,2)+lbl(80,14,'①足裏で引く → ②横へ',Y); break;
     case 'f_v': g=field+feet+ar('M100 26 L100 50 L126 24','y')+ball(100,26,7)+num(90,40,1)+num(124,42,2)+lbl(70,14,'①引いて ②ななめ前へ',Y); break;
-    case 'f_sc': g=field+feet+ar('M102 60 C116 30 76 18 66 34','w',1)+ar('M80 40 L40 26','y')+ball(80,40,8)+num(118,40,1)+num(48,40,2)+lbl(80,94,'①足でまたぐ ②反対へ運ぶ',Y); break;
+    case 'f_sc': g=field+feet+ar('M98 62 C90 54 64 46 64 30 C64 12 106 10 118 36','w',1)+ar('M80 40 L40 26','y')+ball(80,40,8)+num(132,30,1)+num(48,40,2)+lbl(80,94,'①内から外へ足を回す ②反対へ運ぶ',Y); break;
     case 'f_cr': g=field+feet+ar('M100 40 C96 66 60 66 38 48','y')+ball(100,40,7)+num(116,30,1)+num(70,72,2)+lbl(124,22,'けるふり',Y)+lbl(70,94,'軸足のうしろを通す',Y); break;
     case 'f_dt': g=field+feet+ar('M98 34 L66 34 L66 10','y')+ball(98,34,7)+num(84,24,1)+num(56,18,2)+lbl(108,94,'右イン→左イン',Y); break;
     case 'f_el': g=field+feet+ar('M104 34 L128 28 C118 16 92 12 70 22','y')+ball(100,34,7)+num(128,40,1)+num(82,12,2)+lbl(80,94,'①外へ ②すぐ内へ',Y); break;
@@ -426,7 +426,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.26.0';
+const APP_VERSION='0.26.1';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
