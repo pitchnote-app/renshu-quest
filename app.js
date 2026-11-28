@@ -16,73 +16,83 @@ const GRPS=[
 const M=(id,grp,name,lv,gain,d,how,rec)=>Object.assign({id,grp,cat:GRPS.find(g=>g.id===grp).cat,name,lv,gain,d,how,rec:null},rec||{});
 const MENUS=[
   // ボールタッチ
-  M('sole_roll','touch','足裏コロコロ',1,{touch:1,balance:.3},'f_roll',['足の裏でボールを前後に転がす','右足・左足を交互に','慣れたら目線を上げて、ボールを見ないで'],{rec:'30秒で何回？',unit:'回'}),
-  M('toetap','touch','トントン（足裏タッチ）',1,{touch:1,agility:.3},'f_tap',['ボールの上に左右の足裏を交互に軽くのせる','ボールは動かさないように','リズムよくテンポを上げていく'],{rec:'30秒で何回？',unit:'回'}),
-  M('inside_tap','touch','インサイドタッチ',1,{touch:1,agility:.3},'f_lr',['両足のインサイドでボールを左右に行ったり来たり','ボールは足の幅の中で小さく','ひざを軽く曲げて、つま先立ちで'],{rec:'30秒で何回？',unit:'回'}),
-  M('inout','touch','インアウト',2,{touch:1,dribble:.3},'f_inout',['片足のインサイドとアウトサイドで交互にさわる','右足が終わったら左足も','速く・小さく・正確に'],{rec:'30秒で何回？',unit:'回'}),
-  M('l_drag','touch','L字（引いて横へ）',2,{touch:1,dribble:.3},'f_l',['足裏でボールを手前に引く','反対の足のインサイドで横に押し出す','左右両方やってみよう']),
-  M('v_turn','touch','Vターン',2,{touch:.8,dribble:.5},'f_v',['足裏でボールを手前に引く','同じ足のインサイドで斜め前に押し出す','「引く→出す」でVの字を描く']),
-  M('scissors','touch','またぎ（シザース）',2,{dribble:1,touch:.3,balance:.2},'f_sc',['ボールの前で足を外側にまたぐ','またいだ足と反対の足のアウトで逆に運ぶ','上半身も大きく動かして相手をだます']),
-  M('cruyff','touch','クライフターン',2,{dribble:1,agility:.3},'f_cr',['キックするふりをする','インサイドで軸足のうしろを通して切り返す','すぐに反対方向へ加速']),
-  M('double_touch','touch','ダブルタッチ',3,{dribble:1,touch:.5},'f_dt',['右足インサイドで左へ小さく運ぶ','すぐ左足インサイドで前に運ぶ','2回のタッチをすばやく連続で']),
-  M('elastico','touch','エラシコ',3,{touch:1,dribble:.5},'f_el',['アウトサイドで外に押し出す','足首を返してインサイドで内側へ','1回のタッチで「外→内」とボールをはじく']),
+  M('sole_roll','touch','足裏コロコロ',1,{touch:1,balance:0.3},'f_roll',['足裏で前後に転がす','左右の足を交代する','慣れたら顔を上げる'],{rec:'30秒で何回？',unit:'回'}),
+  M('toetap','touch','トントン（足裏タッチ）',1,{touch:1,agility:0.3},'f_tap',['右足でタッチする','左足に交代する','リズムよく続ける'],{rec:'30秒で何回？',unit:'回'}),
+  M('inside_tap','touch','インサイドタッチ',1,{touch:1,balance:0.3},'f_lr',['両足の間にボールを置く','足の内側で左右に動かす','慣れたら顔を上げる'],{rec:'30秒で何回？',unit:'回'}),
+  M('sole_side','touch','足裏サイドロール',1,{touch:1,balance:.3},'f_side',['足の裏をボールの上にのせる','横へコロッと転がして、反対の足で止める','左右を行ったり来たり。慣れたら顔を上げて'],{rec:'30秒で何回？',unit:'回'}),
+  M('inout','touch','インアウト',2,{touch:1,dribble:0.3},'f_inout',['足の内側でさわる','同じ足の外側でさわる','左右の足で行う'],{rec:'30秒で何セット？',unit:'セット'}),
+  M('l_drag','touch','L字（引いて横へ）',2,{touch:1,agility:0.3},'f_l',['足裏で手前に引く','足の内側で横に出す','反対の足でも行う'],{rec:'30秒で何回？',unit:'回'}),
+  M('v_turn','touch','Vターン',2,{touch:1,agility:0.3},'f_v',['足裏で斜め前から引く','反対側へ押し出す','左右を交代する'],{rec:'30秒で何回？',unit:'回'}),
+  M('scissors','touch','またぎ（シザース）',2,{touch:1,dribble:0.3},'f_sc',['足をボールの内側から外へ回す','反対の足の外側で進む','左右で練習する'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('cruyff','touch','クライフターン',2,{touch:1,agility:0.3},'f_cr',['けるふりをする','軸足の後ろへボールを通す','体の向きを変える'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('double_touch','touch','ダブルタッチ',3,{touch:1,dribble:0.3},'f_dt',['片足の内側で横へ動かす','反対の足で前へ出す','なめらかにつなげる'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('elastico','touch','エラシコ',3,{touch:1,dribble:0.3},'f_el',['足の外側で動かす','すぐ内側で切り返す','ゆっくりから始める'],{rec:'10回中何回できた？',unit:'回',max:10}),
   // ドリブル
-  M('dribble','dribble','ジグザグドリブル',1,{dribble:1,agility:.4,touch:.3},'c_zig',['コーンを1mおきに6本ならべる','コーンの間をジグザグに抜けて、最後で折り返す','タイムを計って記録しよう'],{rec:'ジグザグドリブルのタイム',unit:'秒',lower:true,dec:true}),
-  M('out_zig','dribble','アウトサイドだけでジグザグ',2,{dribble:1,agility:.3},'c_zig',['アウトサイドだけでコーンの間を抜ける','右足だけ・左足だけでも','細かいタッチでスピードを落とさない']),
-  M('figure8','dribble','8の字ドリブル',1,{dribble:1,touch:.3},'c_8',['コーンを2本、2mはなして置く','8の字を描くようにドリブル','インサイド・アウトサイド・足裏を全部使う'],{rec:'1分で何周？',unit:'周'}),
-  M('speed_drib','dribble','スピードドリブル',1,{dribble:.8,speed:.6},'c_line',['20mの直線をドリブルで全力ダッシュ','ボールを大きく蹴り出しすぎない','タイムを計って記録'],{rec:'20mのタイム',unit:'秒',lower:true,dec:true}),
-  M('stop_go','dribble','ストップ＆ゴー',2,{dribble:1,agility:.4},'c_stop',['ドリブル中に足裏でピタッと止める','すぐに急発進','止まる→走るの切り替えを速く']),
-  M('turn_drill','dribble','ターン練習',2,{dribble:1,agility:.4,balance:.2},'c_turn',['コーンまでドリブルしてターン','インサイド・アウトサイド・足裏の3種類で','ターンしたらすぐ加速']),
-  M('cone_1v1','dribble','コーン相手の1対1',3,{dribble:1,iq:.3},'c_1v1',['大きなコーンを相手だと思って置く','フェイントを入れて横を抜く','またぎ・ダブルタッチなど覚えた技で']),
+  M('dribble','dribble','ジグザグドリブル',1,{dribble:1,touch:0.3},'c_zig',['コーンを5個並べる','ジグザグに進む','左右の足を使う'],{rec:'1往復のタイム',unit:'秒',lower:true,dec:true}),
+  M('figure8','dribble','8の字ドリブル',1,{dribble:1,balance:0.3},'c_8',['コーンを2個置く','8の字に回る','逆向きでも回る'],{rec:'30秒で何周？',unit:'周'}),
+  M('speed_drib','dribble','スピードドリブル',1,{dribble:1,speed:0.3},'c_line',['10m先に目印を置く','ボールを運びながら走る','安全に止まる'],{rec:'10mのタイム',unit:'秒',lower:true,dec:true}),
+  M('weak_drib','dribble','苦手な足ドリブル',1,{dribble:1,touch:.3},'c_weak',['苦手な足だけでドリブルする','まっすぐ進んで、目印で折り返す','インサイドとアウトサイドの両方を使う'],{rec:'苦手な足で何m進めた？',unit:'m'}),
+  M('out_zig','dribble','アウトサイドドリブル',2,{dribble:1,touch:0.3},'c_zig',['コーンを並べる','足の外側だけで進む','反対の足でも行う'],{rec:'1往復のタイム',unit:'秒',lower:true,dec:true}),
+  M('stop_go','dribble','ストップ＆ゴー',2,{dribble:1,agility:0.3},'c_stop',['ドリブルで進む','足裏で止める','すばやく進む'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('turn_drill','dribble','方向転換ドリブル',2,{dribble:1,agility:0.3},'c_turn',['コーンまで進む','向きを変える','別のコーンへ進む'],{rec:'30秒で何回ターンできた？',unit:'回'}),
+  M('head_up','dribble','顔上げドリブル',2,{dribble:1,iq:.4},'c_look',['まわりに目印を3つ置く','ドリブルしながら顔を上げて、目印を順番に見る','ボールは足元に近く。見えたら声に出してもOK']),
+  M('cone_1v1','dribble','フェイント突破',3,{dribble:1,agility:0.3},'c_1v1',['コーンへ進む','フェイントをかける','横をすばやく通る'],{rec:'10回中何回できた？',unit:'回',max:10}),
   // リフティング
-  M('lift_hand','lift','手から落としてワンタッチ',1,{touch:1},'l_foot',['ボールを手に持ち、前に落とす','足の甲で1回けり上げてキャッチ','ボールの真ん中をけるのがコツ'],{rec:'10回中何回キャッチ？',unit:'回',max:10}),
-  M('lift_bounce','lift','ワンバウンドリフティング',1,{touch:1,balance:.2},'l_bounce',['1回地面にバウンドさせてからける','けったらまたバウンド','慣れたらバウンドなしに挑戦'],{rec:'連続で何回？',unit:'回'}),
-  M('lift','lift','リフティング（インステップ）',2,{touch:1,balance:.3},'l_foot',['足の甲（インステップ）でける','ひざから下を振るイメージ','高さは胸くらいまで'],{rec:'連続で何回できた？',unit:'回'}),
-  M('lift_alt','lift','両足交互リフティング',2,{touch:1,balance:.4},'l_foot',['右・左・右・左と交互にける','苦手な足もたくさん使おう','ボールの高さをそろえる'],{rec:'連続で何回？',unit:'回'}),
-  M('lift_thigh','lift','ももリフティング',1,{touch:.8,balance:.4},'l_thigh',['ももを地面と平行に上げてボールに当てる','強く当てすぎない','左右交互にも挑戦'],{rec:'連続で何回？',unit:'回'}),
-  M('lift_head','lift','ヘディングリフティング',3,{touch:.8,balance:.3,power:.2},'l_head',['おでこでボールをまっすぐ上に','ひざを使ってリズムよく','目はボールから離さない'],{rec:'連続で何回？',unit:'回'}),
-  M('lift_walk','lift','歩きながらリフティング',3,{touch:1,balance:.5},'l_walk',['リフティングしながら前へ進む','ボールを少し前に上げるのがコツ','何m進めたか記録'],{rec:'何m進めた？',unit:'m'}),
+  M('lift_hand','lift','手から落としてワンタッチ',1,{touch:1,balance:0.3},'l_foot',['手から落とす','足の甲で軽くける','手でキャッチする'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('lift_bounce','lift','ワンバウンドリフティング',1,{touch:1,balance:0.3},'l_bounce',['地面にはずませる','足の甲でける','もう一度はずませる'],{rec:'連続で何回？',unit:'回'}),
+  M('lift_thigh','lift','ももリフティング',1,{touch:1,balance:0.3},'l_thigh',['手から落とす','ももではずませる','キャッチして足を交代する'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('lift','lift','リフティング（インステップ）',2,{touch:1,balance:0.3},'l_foot',['足の甲でける','腰より低くはずませる','落とさず続ける'],{rec:'連続で何回？',unit:'回'}),
+  M('lift_alt','lift','両足交互リフティング',2,{touch:1,balance:0.3},'l_foot',['右足でける','左足でける','交互に続ける'],{rec:'連続で何回？',unit:'回'}),
+  M('lift_walk','lift','歩きながらリフティング',3,{touch:1,balance:0.3},'l_walk',['その場で始める','少しずつ前へ進む','安全な場所で続ける'],{rec:'何m進めた？',unit:'m'}),
+  M('lift_head','lift','ヘディングリフティング',3,{touch:.8,balance:.3,power:.2},'l_head',['おでこでボールをまっすぐ上に','ひざを使ってリズムよく','目はボールから離さない'],{rec:'連続で何回？',unit:'回',hide:true}),   // 頭へのくり返しの衝撃をさけるため一覧から外した（前の記録は残す）
   // キック・シュート
-  M('pass','kick','壁パス（インサイド）',1,{kick:1,iq:.3},'k_wall',['壁から3〜5mはなれる','インサイドで壁にけって、返ってきたボールを止める','左右両方の足で'],{rec:'壁パスが連続で何回？',unit:'回'}),
-  M('wall_1t','kick','壁パス ワンタッチ',2,{kick:1,iq:.3,agility:.2},'k_wall',['返ってきたボールを止めずにそのままける','体の向きを早めに準備','強さをそろえる'],{rec:'連続で何回？',unit:'回'}),
-  M('trap','kick','トラップ（止めて蹴る）',1,{touch:.6,kick:.6,iq:.2},'k_trap',['転がってきたボールをインサイドで止める','次にけりやすい場所に置く','止めたらすぐキック']),
-  M('air_trap','kick','浮き球トラップ',2,{touch:1,balance:.3},'k_air',['高く投げ上げたボールを足・もも・胸で止める','体の力をぬいてクッションのように','足元にピタッと落とす']),
-  M('shoot','kick','シュート',1,{kick:1,power:.4},'k_goal',['ゴールに向かってシュートを10本','インステップでしっかりける','入った本数を記録'],{rec:'10本中、何本決まった？',unit:'本',max:10}),
-  M('target','kick','四すみねらい（的当て）',2,{kick:1,iq:.2},'k_target',['ゴールの四すみに目印を置く','ねらった場所にけり分ける','強さより正確さを大事に'],{rec:'10本中何本当てた？',unit:'本',max:10}),
-  M('long_kick','kick','ロングキック',2,{kick:.8,power:.6},'k_long',['助走をつけて遠くへける','ボールの少し下をけって高く','どこまで飛んだか記録'],{rec:'何m飛んだ？',unit:'m'}),
+  M('pass','kick','壁パス（インサイド）',1,{kick:1,touch:0.3},'k_wall',['壁から離れる','足の内側でパスする','戻ったボールを止める'],{rec:'30秒で何回できた？',unit:'回'}),
+  M('trap','kick','トラップ（止めて蹴る）',1,{touch:1,kick:0.3},'k_trap',['壁へパスする','足元に止める','もう一度パスする'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('shoot','kick','インステップシュート',1,{kick:1,power:0.3},'k_goal',['ボールの横に軸足を置く','足の甲でける','正確さを意識する'],{rec:'10本中、何本決まった？',unit:'本',max:10}),
+  M('weak_pass','kick','苦手な足パス',1,{kick:1,balance:.3},'k_gate',['コーン（ペットボトル）を2本、1mはなして置く','3〜5mはなれて、苦手な足で間を通す','強さより、ねらった所に通すことを大事に'],{rec:'10本中何本通った？',unit:'本',max:10}),
+  M('wall_1t','kick','壁パス ワンタッチ',2,{kick:1,iq:0.3},'k_wall',['壁へパスする','止めずにけり返す','続けて行う'],{rec:'連続で何回？',unit:'回'}),
+  M('air_trap','kick','浮き球トラップ',2,{touch:1,balance:0.3},'k_air',['ボールを低く投げる','足やももで受ける','足元に止める'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('target','kick','コースねらいシュート',2,{kick:1,iq:0.3},'k_target',['左右に目印を置く','ねらう場所を決める','正確にける'],{rec:'10本中何本当てた？',unit:'本',max:10}),
+  M('move_trap','kick','動きながらトラップ',2,{touch:1,iq:.4},'k_move',['壁にパスする','返ってくる間に、横へ1〜2歩動く','次に進みたい方向へボールを止める'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('long_kick','kick','ロングキック',3,{kick:1,power:0.3},'k_long',['広い安全な場所で目標を決める','足の甲で無理なくける','少しずつ距離を伸ばす'],{rec:'何m飛んだ？',unit:'m'}),
   // スピード・アジリティ
-  M('dash','agi','ダッシュ',1,{speed:1,power:.3},'a_dash',['スタートの合図で全力で走る','腕を大きく振る','50m走のタイムを計ろう'],{rec:'50m走のタイム',unit:'秒',lower:true,dec:true}),
-  M('side','agi','反復横跳び',1,{agility:1,speed:.3},'a_side',['1mおきに3本の線を引く','真ん中から左右の線をまたいで行き来','20秒で何回できるか数える'],{rec:'20秒で何回？',unit:'回'}),
-  M('ladder','agi','ラダー',1,{agility:1,balance:.4},'a_ladder',['ラダー（地面にかいたはしごでもOK）を置く','1マスに1歩→2歩→横向き…と変えていく','速さより正確さ。慣れたらスピードアップ']),
-  M('react','agi','反応ダッシュ',2,{speed:.6,agility:.6,iq:.2},'a_react',['家族に「右」「左」などの合図をしてもらう','合図の方向へすばやくダッシュ','音や手の合図など変えてみよう']),
-  M('cone_shuttle','agi','コーンタッチ往復走',2,{agility:1,stamina:.3},'a_shuttle',['コーンを5mおきに3本置く','1本目→戻る→2本目→戻る…とタッチして往復','向きを変えるとき低い姿勢で'],{rec:'タイム',unit:'秒',lower:true,dec:true}),
+  M('dash','agi','ダッシュ',1,{speed:1,power:0.3},'a_dash',['10m先に目印を置く','すばやく走る','ゆっくり止まって休む'],{rec:'10mのタイム',unit:'秒',lower:true,dec:true}),
+  M('side','agi','反復横跳び',1,{agility:1,balance:0.3},'a_side',['横に3つの目印を置く','左右へ移動する','体の向きを保つ'],{rec:'20秒で何回？',unit:'回'}),
+  M('ladder','agi','ステップワーク',1,{agility:1,balance:0.3},'a_ladder',['地面にマスを作る','1マスずつ足を入れる','横向きでも進む'],{rec:'何往復できた？',unit:'回'}),
+  M('stop_pita','agi','ピタッとストップ',1,{agility:1,balance:.4},'a_stop',['目印に向かって走る','近づいたら歩幅を小さくする','ひざを曲げて、ピタッと止まる（ケガの予防にもなる）'],{rec:'10回中何回ピタッと止まれた？',unit:'回',max:10}),
+  M('cone_shuttle','agi','コーンタッチ往復走',2,{agility:1,speed:0.3},'a_shuttle',['コーンを5m離して置く','走ってタッチする','向きを変えて戻り休む'],{rec:'1往復のタイム',unit:'秒',lower:true,dec:true}),
+  M('react','agi','反応ダッシュ',2,{agility:1,iq:0.3},'a_react',['左右に目印を置く','親に方向を言ってもらう','その方向へ走る'],{rec:'10回中何回できた？',unit:'回',max:10,pair:true}),
   // パワー
-  M('jump','power','なわとび（二重跳び）',1,{power:1,stamina:.4},'p_rope',['手首でなわを回す','高く跳んで二重跳び','つま先で着地'],{rec:'二重跳び 連続何回？',unit:'回'}),
-  M('squat','power','スクワット',1,{power:1,balance:.3},'p_squat',['足を肩幅に開く','いすに座るようにお尻を下げる','ひざがつま先より前に出ないように'],{rec:'何回できた？',unit:'回'}),
-  M('broad_jump','power','立ち幅跳び',1,{power:1},'p_jump',['両足で踏み切って前へ跳ぶ','腕を大きく振って勢いをつける','何cm跳べたか記録'],{rec:'何cm跳べた？',unit:'cm'}),
-  M('hop','power','ケンケン',2,{power:.8,balance:.5},'p_hop',['片足でケンケンして前に進む','左右の足を両方','着地でふらつかないように']),
+  M('jump_land','power','ジャンプ＆ピタッ',1,{power:.6,balance:1},'p_land',['両足で小さくジャンプ','ひざを軽く曲げて、やわらかく着地','そのまま2秒止まる（ひざが内側に入らないように）'],{rec:'10回中何回ピタッと止まれた？',unit:'回',max:10}),
+  M('squat','power','スクワット',1,{power:1,balance:0.3},'p_squat',['足を肩の広さに開く','おしりを下げる','ゆっくり立つ'],{rec:'ていねいに何回できた？',unit:'回'}),
+  M('broad_jump','power','立ち幅跳び',1,{power:1,balance:0.3},'p_jump',['両足で立つ','うでを振って前へ跳ぶ','ひざを曲げて着地する'],{rec:'何cm跳べた？',unit:'cm'}),
+  M('hop','power','ケンケン',2,{power:1,balance:0.3},'p_hop',['片足で小さく跳ぶ','バランスを取って進む','3〜5回で足を交代する'],{rec:'ふらつかずに何回跳べた？',unit:'回'}),
+  M('jump','power','なわとび（二重跳び）',3,{power:1,agility:0.3},'p_rope',['前跳びをする','なわを2回回す','休みながら挑戦する'],{rec:'何回できた？',unit:'回'}),
   // スタミナ
-  M('run','stamina','ランニング',1,{stamina:1,speed:.2},'s_run',['話ができるくらいのペースで走る','15分以上続ける','シャトルランの回数を記録してもOK'],{rec:'シャトルラン 何回？',unit:'回'}),
-  M('interval','stamina','インターバル走',2,{stamina:1,speed:.5},'s_interval',['ダッシュ30秒→ゆっくりジョグ30秒','これを5〜10回くり返す','試合で走り続ける力がつく']),
-  M('rope_long','stamina','なわとび（長く跳ぶ）',1,{stamina:1,power:.3},'p_rope',['前跳びをリズムよく','止まらずに続ける','何分続いたか記録'],{rec:'何分続いた？',unit:'分'}),
+  M('run','stamina','ランニング',1,{stamina:1},'s_run',['ゆっくり走る','話せるくらいの速さを保つ','疲れたら歩く'],{rec:'何分続けた？',unit:'分'}),
+  M('rope_long','stamina','なわとび（長く跳ぶ）',1,{stamina:1,agility:0.3},'p_rope',['前跳びをする','20〜30秒続ける','休んでくり返す'],{rec:'合計で何秒跳べた？',unit:'秒'}),
+  M('drib_jog','stamina','のんびりドリブルラン',1,{stamina:1,dribble:.3},'s_drib',['ぐるっと回れるコースを決める','ゆっくりドリブルしながら走り続ける','つかれたら歩いてもOK'],{rec:'何分続いた？',unit:'分'}),
+  M('interval','stamina','インターバル走',2,{stamina:1,speed:0.3},'s_interval',['少し速めに20秒走る','40秒歩く','無理なくくり返す'],{rec:'何セットできた？',unit:'セット'}),
   // 体幹・バランス
-  M('core','core','プランク',1,{balance:1,power:.3},'b_plank',['ひじとつま先で体を支える','頭からかかとまでまっすぐ','お腹に力を入れて'],{rec:'何秒キープ？',unit:'秒'}),
-  M('side_plank','core','サイドプランク',2,{balance:1,power:.3},'b_side',['横向きになり、片ひじで体を支える','体を一直線に','左右両方'],{rec:'何秒キープ？',unit:'秒'}),
-  M('one_leg','core','片足立ち',1,{balance:1},'b_one',['片足で立って両手を広げる','慣れたら目を閉じて','左右両方'],{rec:'目を閉じて何秒？',unit:'秒'}),
-  M('stretch','core','ストレッチ',1,{balance:.6,stamina:.2},'b_stretch',['練習の前後に体を伸ばす','反動をつけずにゆっくり20秒','ケガの予防になる大事な練習']),
+  M('one_leg','core','片足立ち',1,{balance:1},'b_one',['片足を上げる','前を見て10秒止まる','反対の足でも行う'],{rec:'何秒立てた？',unit:'秒'}),
+  M('line_walk','core','ラインバランス歩き',1,{balance:1},'b_line',['地面に線をかく（ロープやテープでもOK）','線の上を、かかととつま先をつけて歩く','顔を上げて、まっすぐ前を見る'],{rec:'線から落ちずに何m歩けた？',unit:'m'}),
+  M('core','core','プランク',1,{balance:1,power:0.3},'b_plank',['ひじとつま先をつく','体をまっすぐにして10秒保つ','休んでくり返す'],{rec:'何秒キープ？',unit:'秒'}),
+  M('stretch','core','ストレッチ',1,{balance:1},'b_stretch',['軽く体を動かす','気持ちよく伸ばす','息を止めずに行う'],{rec:'何分続けた？',unit:'分'}),
+  M('leg_touch','core','片足ボールタッチ',2,{balance:1,touch:.4},'b_touch',['片足で立つ','反対の足の裏で、ボールに軽くタッチ','前・横とタッチして、足を交代'],{rec:'30秒で何回タッチ？',unit:'回'}),
+  M('side_plank','core','サイドプランク',2,{balance:1,power:0.3},'b_side',['横向きでひじをつく','ひざを曲げて腰を上げる','5〜10秒保ち反対側も行う'],{rec:'何秒キープ？',unit:'秒'}),
   // 頭のトレーニング
-  M('note','iq','練習ノート',1,{iq:1},'i_note',['今日できたこと・できなかったことを書く','次にやることを決める','コーチに言われたことも書いておく']),
-  M('watch','iq','試合を見て学ぶ',1,{iq:1,kick:.2},'i_tv',['プロや上手な選手の試合を見る','1人の選手だけを目で追ってみる','まねしたいプレーを見つける']),
-  M('image','iq','イメージトレーニング',1,{iq:1},'i_image',['目を閉じて、上手なプレーを想像する','自分がゴールを決める場面を思いうかべる','試合の前にやると効果的']),
+  M('note','iq','練習ノート',1,{iq:1},'i_note',['練習を思い出す','できたことを書く','次の目標を決める']),
+  M('watch','iq','試合を見て学ぶ',1,{iq:1},'i_tv',['試合を見る','ボールを持たない選手を見る','まねしたい動きを見つける'],{rec:'まねしたい動きをいくつ見つけた？',unit:'個'}),
+  M('image','iq','イメージトレーニング',1,{iq:1},'i_image',['プレーを決める','動きを想像する','成功する方法を考える']),
   // 試合・チーム
-  M('game','game','試合・ミニゲーム',1,{iq:.6,stamina:.5,dribble:.3,kick:.3},'g_game',['試合やミニゲームに参加','練習したことを試してみる','うまくいったことをノートに書こう']),
-  M('team','game','チーム練習',1,{iq:.4,stamina:.4,dribble:.3,kick:.3,touch:.3},'g_team',['チームの練習に参加','コーチの話をよく聞く','仲間と声をかけ合う']),
+  M('game','game','試合・ミニゲーム',1,{iq:1,stamina:0.3},'g_game',['目標を決める','試合で挑戦する','できたことを思い出す']),
+  M('team','game','チーム練習',1,{iq:1,touch:0.3},'g_team',['コーチの話を聞く','仲間と練習する','覚えたことをふり返る']),
   // ディフェンス
-  M('df_step','df','守備のサイドステップ',1,{agility:1,balance:.4},'a_side',['ひざを軽く曲げ、低い姿勢で構える','足をクロスさせずに横へステップ','相手を見たまま左右に動く'],{rec:'20秒で何往復？',unit:'回'}),
-  M('df_close','df','寄せてストップ',1,{speed:.6,agility:.6,iq:.3},'a_react',['合図でボール（相手）にダッシュで寄せる','近くなったら小さな歩幅でブレーキ','半身になって止まり、飛びこまない']),
-  M('df_1v1','df','1対1の守備',2,{balance:.8,power:.5,iq:.4},'c_1v1',['家族や友だちにドリブルしてもらう','体を斜めにして、外へ追いこむ','ボールだけでなく相手の腰を見る']),
-  M('df_tackle','df','ボールをうばうタイミング',2,{power:.7,balance:.6,iq:.3},'c_1v1',['相手のタッチが大きくなった瞬間をねらう','足だけでなく体ごと入る','うばったらすぐ前を向く']),
-  M('df_cover','df','守備の位置どりを考える',1,{iq:1},'i_image',['ボール・相手・ゴールを結ぶ線を想像する','その線の上（内側）に立つのが基本','試合の場面を思い出して考えてみよう']),
+  M('df_step','df','守備のサイドステップ',1,{agility:1,balance:0.3},'a_side',['ひざを曲げる','足を交差させず横へ動く','反対方向へ動く'],{rec:'30秒で何往復？',unit:'回'}),
+  M('df_close','df','寄せてストップ',1,{agility:1,iq:0.3},'a_react',['コーンを置く','コーンへ走る','手前で減速して守備の姿勢になる'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('df_cover','df','守備の位置どりを考える',1,{iq:1},'i_image',['ゴールと相手の目印を置く','その間に立つ','相手の位置を変えて考える'],{rec:'何回できた？',unit:'回'}),
+  M('df_tackle','df','ボールカット',2,{iq:1,touch:0.3},'d_cut',['親にボールを転がしてもらう','進む道を見る','途中に入って止める'],{rec:'10回中何回できた？',unit:'回',max:10,pair:true}),
+  M('df_1v1','df','1対1でゴールを守る',2,{iq:1,agility:0.3},'c_1v1',['親と小さなゴールを作る','ゆっくり相手についていく','体をぶつけずに守る'],{rec:'10回中何回できた？',unit:'回',max:10,pair:true}),
 ];
 
 /* ===== 図解イラスト（自分のキャラの色で描く・詳しい画面ではボールが動く） ===== */
@@ -154,7 +164,7 @@ function diag(k,u,anim){
     case 'f_el': g=field+feet+ar('M104 34 L128 28 C118 16 92 12 70 22','y')+ball(100,34,7)+num(128,40,1)+num(82,12,2)+lbl(80,94,'①外へ ②すぐ内へ',Y); break;
     case 'c_zig': g=field+[36,56,76,96,116,136].map(x=>cone(x,52)).join('')+ar('M24 50 C30 30 40 30 46 50 C52 70 60 70 66 50 C72 30 80 30 86 50 C92 70 100 70 106 50 C112 30 120 30 126 50 C132 70 142 70 148 56','y')+pl(14,50)+ball(24,50,4)+num(46,26,1)+num(146,74,2)+lbl(80,94,'コーンの間を ジグザグに',Y); break;
     case 'c_8': g=field+cone(56,52)+cone(104,52)+ar('M56 32 C34 32 34 70 56 70 C78 70 82 32 104 32 C126 32 126 70 104 70 C82 70 78 32 58 32','y')+pl(30,24)+ball(56,32,4)+lbl(80,94,'8の字を えがく',Y); break;
-    case 'c_line': g=field+cone(22,38)+cone(22,64)+cone(140,38)+cone(140,64)+ar('M34 52 L130 52','y')+pl(12,52)+ball(28,52,4)+'<path d="M22 46 V58 M140 46 V58" stroke="#fff" stroke-width="2"/>'+lbl(80,40,'20m',W)+lbl(22,86,'スタート')+lbl(140,86,'ゴール'); break;
+    case 'c_line': g=field+cone(22,38)+cone(22,64)+cone(140,38)+cone(140,64)+ar('M34 52 L130 52','y')+pl(12,52)+ball(28,52,4)+'<path d="M22 46 V58 M140 46 V58" stroke="#fff" stroke-width="2"/>'+lbl(80,40,'10m',W)+lbl(22,86,'スタート')+lbl(140,86,'ゴール'); break;
     case 'c_stop': g=field+[52,92,132].map(x=>cone(x,30)).join('')+ar('M26 62 L48 62','y')+ar('M60 62 L88 62','y')+ar('M100 62 L136 62','y')+pl(14,62)+ball(24,62,4)+lbl(54,80,'ピタッ',Y)+lbl(94,80,'ピタッ',Y)+lbl(80,94,'止まる → すぐダッシュ'); break;
     case 'c_turn': g=field+cone(130,52)+ar('M28 44 L116 44 C134 44 134 60 116 60 L30 60','y')+pl(16,44)+ball(26,44,4)+num(70,34,1)+num(140,52,2)+num(70,72,3)+lbl(80,94,'行って ターンして 戻る',Y); break;
     case 'c_1v1': g=field+`<g transform="translate(88 50)"><ellipse cy="14" rx="15" ry="4" fill="#000" opacity=".3"/><path d="M-13 12 L-3 -14 Q0 -18 3 -14 L13 12 Q0 16 -13 12Z" fill="#ff8a1a" stroke="#7a3300"/><path d="M-8 -1 Q0 2 8 -1 L10 4 Q0 7 -10 4Z" fill="#fff"/></g>`+ar('M32 52 L66 52 C74 52 72 24 92 24 L140 26','y')+pl(22,52)+ball(30,52,4)+lbl(88,80,'あいて役')+num(66,62,1)+num(120,16,2); break;
@@ -171,7 +181,7 @@ function diag(k,u,anim){
     case 'k_long': g=field+ar('M30 72 C62 -4 112 -4 146 68','y')+pl(16,72)+ball(26,72,4)+lbl(84,92,'遠くへ高く！',Y); break;
     case 'a_dash': g=field+'<path d="M24 8 V92 M140 8 V92" stroke="#fff" stroke-width="3"/>'+ar('M30 52 L134 52','w')+pl(16,52)+lbl(24,98,'スタート')+lbl(140,98,'ゴール')+lbl(82,44,'全力ダッシュ',Y); break;
     case 'a_side': g=field+'<path d="M40 12 V88 M80 12 V88 M120 12 V88" stroke="#fff" stroke-width="3"/>'+ar('M46 66 L114 66','w',0,1)+pl(80,46)+lbl(60,28,'1m')+lbl(100,28,'1m')+num(30,66,1)+num(130,66,2)+lbl(80,94,'線を またいで 左右に',Y); break;
-    case 'a_ladder': g=field+'<rect x="16" y="38" width="128" height="26" fill="none" stroke="#ffd84a" stroke-width="2.6"/>'+[37,58,80,101,122].map(x=>`<path d="M${x} 38V64" stroke="#ffd84a" stroke-width="2.6"/>`).join('')+[26,47,69,90,111,133].map((x,i)=>`<ellipse cx="${x+(i%2?3:-3)}" cy="${i%2?57:45}" rx="3.2" ry="5" fill="#fff" stroke="${OL}" stroke-width=".8"/>`).join('')+ar('M16 78 L144 78','w')+lbl(80,94,'1マスに1歩ずつ すばやく',Y)+lbl(80,26,'ラダー'); break;
+    case 'a_ladder': g=field+'<rect x="16" y="38" width="128" height="26" fill="none" stroke="#ffd84a" stroke-width="2.6"/>'+[37,58,80,101,122].map(x=>`<path d="M${x} 38V64" stroke="#ffd84a" stroke-width="2.6"/>`).join('')+[26,47,69,90,111,133].map((x,i)=>`<ellipse cx="${x+(i%2?3:-3)}" cy="${i%2?57:45}" rx="3.2" ry="5" fill="#fff" stroke="${OL}" stroke-width=".8"/>`).join('')+ar('M16 78 L144 78','w')+lbl(80,94,'1マスに1歩ずつ すばやく',Y)+lbl(80,26,'地面にかいたマス'); break;
     case 'a_react': g=field+ar('M92 50 L132 50','w')+ar('M68 50 L28 50','w')+ar('M80 38 L80 12','w')+ar('M80 62 L80 88','w')+pl(80,50)+`<g transform="translate(118 22)"><circle r="10" fill="#ffd84a" stroke="#7a5a10"/><text y="5" text-anchor="middle" font-size="14" font-weight="900" fill="#1c1405">!</text></g>`+lbl(32,24,'合図で',Y)+lbl(32,36,'ダッシュ',Y); break;
     case 'a_shuttle': g=field+[22,62,102,142].map(x=>cone(x,26)).join('')+ar('M28 54 L58 54','w')+ar('M58 62 L28 62','w')+ar('M28 72 L98 72','w')+pl(16,62)+num(44,44,1)+num(44,84,2)+num(84,84,3)+lbl(80,98,'タッチして 往復'); break;
     case 'p_rope': g=room+FIG(fig.rope)+`<ellipse cx="80" cy="50" rx="17" ry="40" fill="none" stroke="${Y}" stroke-width="2.2" stroke-dasharray="5 3"/>`+lbl(124,30,'リズムよく',Y); break;
@@ -179,7 +189,7 @@ function diag(k,u,anim){
     case 'p_jump': g=dark+FIG(fig.jump)+ar('M74 80 C92 40 112 40 128 80','w')+'<path d="M44 90 H70 M118 90 H144" stroke="#ffd84a" stroke-width="3"/>'+lbl(56,98,'ふみきり')+lbl(130,98,'着地'); break;
     case 'p_hop': g=dark+FIG(fig.one)+ar('M102 80 C112 60 124 60 136 80','w')+ar('M136 80 C142 66 150 66 156 80','w')+lbl(40,30,'片足で',Y)+lbl(40,42,'ケンケン',Y); break;
     case 's_run': g=`<rect width="160" height="100" rx="10" fill="url(#${u}g)"/><rect x="16" y="16" width="128" height="68" rx="34" fill="none" stroke="#c9634a" stroke-width="12"/><rect x="16" y="16" width="128" height="68" rx="34" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="3 3"/>`+ar('M92 16 L124 18','w')+pl(80,16)+lbl(80,54,'話せるくらいの',Y)+lbl(80,66,'ペースで15分',Y); break;
-    case 's_interval': g=`<rect width="160" height="100" rx="10" fill="url(#${u}g)"/><path d="M50 16 H110 A34 34 0 0 1 110 84 H50 A34 34 0 0 1 50 16Z" fill="none" stroke="#c9634a" stroke-width="12"/><path d="M50 16 H110" stroke="#ffd84a" stroke-width="5"/><path d="M110 84 H50" stroke="#ffd84a" stroke-width="5"/>`+lbl(80,40,'ダッシュ30秒',Y)+lbl(80,64,'ジョグ30秒')+lbl(80,52,'⇅ くり返す'); break;
+    case 's_interval': g=`<rect width="160" height="100" rx="10" fill="url(#${u}g)"/><path d="M50 16 H110 A34 34 0 0 1 110 84 H50 A34 34 0 0 1 50 16Z" fill="none" stroke="#c9634a" stroke-width="12"/><path d="M50 16 H110" stroke="#ffd84a" stroke-width="5"/><path d="M110 84 H50" stroke="#ffd84a" stroke-width="5"/>`+lbl(80,40,'少し速く20秒',Y)+lbl(80,64,'歩いて40秒')+lbl(80,52,'⇅ くり返す'); break;
     case 'b_plank': g=room+FIG(fig.plank)+'<path d="M40 50 L126 72" stroke="#ffd84a" stroke-width="1.6" stroke-dasharray="4 3"/>'+lbl(84,40,'頭からかかとまで まっすぐ',Y); break;
     case 'b_side': g=room+FIG(fig.side)+lbl(104,40,'横向きで',Y)+lbl(104,52,'体を一直線に',Y); break;
     case 'b_one': g=room+FIG(fig.one)+lbl(124,64,'片足で',Y)+lbl(124,76,'ぐらぐらしない',Y); break;
@@ -187,6 +197,17 @@ function diag(k,u,anim){
     case 'i_note': g=`<rect width="160" height="100" rx="10" fill="#f2e8d0"/><rect x="40" y="12" width="70" height="80" rx="4" fill="#fffdf6" stroke="#b9a77a" stroke-width="1.5"/><path d="M48 28H102M48 40H102M48 52H98M48 64H92M48 76H96" stroke="#c9d4e8" stroke-width="2"/>`+lbl(70,26,'できたこと','#2b59c3')+`<path d="M108 82 L134 40 L142 45 L116 87Z" fill="#ffd84a" stroke="#7a5a00" stroke-width="1.2"/><path d="M116 87 L112 92 L108 82Z" fill="#3a2a10"/>`; break;
     case 'i_tv': g=`<rect width="160" height="100" rx="10" fill="#2a2140"/><rect x="28" y="12" width="104" height="66" rx="8" fill="#0a1124" stroke="#9aa7bd" stroke-width="3"/><rect x="34" y="18" width="92" height="54" fill="url(#${u}g)"/><path d="M80 18V72" stroke="rgba(255,255,255,.5)"/><circle cx="80" cy="45" r="9" fill="none" stroke="rgba(255,255,255,.5)"/>`+pl(58,36)+pl(100,56,'#e63946')+ball(78,48,3)+'<path d="M66 78 L58 92 M94 78 L102 92" stroke="#9aa7bd" stroke-width="3"/>'+lbl(80,98,'1人の選手を 目で追う',Y); break;
     case 'i_image': g=dark+`<g transform="translate(52 62)"><circle r="18" fill="${sk}" stroke="${OL}" stroke-width="1.6"/><path d="M-18 -2 C-18 -24 18 -24 18 -2 C12 -9 -12 -9 -18 -2Z" fill="${hair}" stroke="${OL}" stroke-width="1.2"/><path d="M-8 4 q3 -3 6 0 M2 4 q3 -3 6 0" stroke="${OL}" stroke-width="1.6" fill="none"/></g><circle cx="80" cy="40" r="3.5" fill="#fff" opacity=".7"/><circle cx="90" cy="30" r="5" fill="#fff" opacity=".85"/><ellipse cx="122" cy="26" rx="30" ry="20" fill="#fff"/><g transform="translate(108 20)">${'<path d="M0 10 L20 10" stroke="#2f8a47" stroke-width="6"/>'}</g>`+ball(116,24,6)+`<path d="M126 20 L138 14" stroke="#ffd84a" stroke-width="2"/>`+lbl(110,94,'ゴールを決める自分を想像',Y); break;
+    case 'f_side': g=field+feet+ar('M56 40 L104 40','y',0,1)+ball(80,40,8)+num(46,26,1)+num(114,26,2)+lbl(80,14,'足の裏で 横へコロッ',Y); break;
+    case 'c_weak': g=field+cone(140,52)+ar('M28 46 L128 46 C142 46 142 60 128 60 L30 60','y')+pl(16,46)+ball(26,46,4)+lbl(70,34,'苦手な足だけ',Y)+lbl(80,92,'イン・アウトで 行って戻る',Y); break;
+    case 'c_look': g=field+cone(36,22)+cone(124,22)+cone(80,90)+ar('M40 64 L120 64','y')+pl(30,64)+ball(40,64,4)+'<path d="M30 58 L36 30 M30 58 L118 28" stroke="#fff" stroke-width="1.2" stroke-dasharray="2 3"/>'+num(22,14,1)+num(138,14,2)+num(98,88,3)+lbl(80,48,'顔を上げて 目印を見る',Y); break;
+    case 'k_gate': g=field+cone(118,36)+cone(118,68)+ar('M54 52 L140 52','y')+pl(36,52)+ball(48,52,4)+lbl(118,92,'間を通す',Y)+lbl(40,30,'苦手な足で',Y); break;
+    case 'k_move': g=field+`<rect x="142" y="8" width="12" height="84" rx="2" fill="#b9c3d6" stroke="#5b6680"/>`+ar('M44 34 L138 34','y')+ar('M138 44 L62 66','y')+ar('M32 44 L32 62','w')+pl(30,34)+ball(40,34,4)+num(90,24,1)+num(18,54,2)+num(100,66,3)+lbl(84,93,'動いて 次の方向へ止める',Y); break;
+    case 'a_stop': g=field+'<path d="M132 10 V90" stroke="#fff" stroke-width="3"/>'+[[24,4.4,7],[50,4,6.4],[72,3.6,5.8],[90,3.2,5.2],[104,3,4.8],[115,2.8,4.4],[124,2.6,4]].map(([x,rx,ry],i)=>`<ellipse cx="${x}" cy="${i%2?58:46}" rx="${ry}" ry="${rx}" fill="#fff" stroke="${OL}" stroke-width=".8"/>`).join('')+lbl(64,26,'だんだん 小さい歩幅',Y)+lbl(132,98,'ピタッ',Y); break;
+    case 'p_land': g=dark+FIG(fig.squat)+ar('M118 12 L118 52','w')+'<path d="M58 90 H112" stroke="#ffd84a" stroke-width="3"/>'+lbl(134,66,'やわらかく',Y)+lbl(134,78,'着地',Y)+lbl(34,26,'2秒',Y)+lbl(34,38,'ピタッ',Y); break;
+    case 's_drib': g=`<rect width="160" height="100" rx="10" fill="url(#${u}g)"/><rect x="16" y="16" width="128" height="68" rx="34" fill="none" stroke="#c9634a" stroke-width="12"/><rect x="16" y="16" width="128" height="68" rx="34" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="3 3"/>`+ar('M94 16 L124 18','y')+pl(76,16)+ball(88,16,4)+lbl(80,54,'ゆっくり ドリブルで',Y)+lbl(80,66,'走り続ける',Y); break;
+    case 'b_line': g=field+'<path d="M16 52 H144" stroke="#fff" stroke-width="4"/>'+[30,48,66,84,102,120].map(x=>`<ellipse cx="${x}" cy="52" rx="7" ry="3.4" fill="#ffd84a" stroke="${OL}" stroke-width=".8"/>`).join('')+ar('M20 70 L140 70','w')+lbl(80,32,'線の上を まっすぐ歩く',Y)+lbl(80,90,'顔を上げて'); break;
+    case 'b_touch': g=room+FIG(fig.one)+ball(104,80,6)+ar('M88 70 L98 76','y')+lbl(130,30,'片足で立って',Y)+lbl(130,42,'足裏でタッチ',Y); break;
+    case 'd_cut': g=field+pl(20,26,'#e63946')+ar('M30 28 L140 78','y')+ball(30,28,4)+ar('M104 24 L90 50','w')+pl(108,16)+num(60,30,1)+num(78,58,2)+lbl(112,92,'道を読んで 前に入る',Y)+lbl(26,46,'家族'); break;
     case 'g_game': g=field+'<rect x="4" y="36" width="8" height="28" fill="#fff"/><rect x="148" y="36" width="8" height="28" fill="#fff"/><path d="M80 4V96" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/><circle cx="80" cy="50" r="13" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/>'+[[40,28],[48,66],[68,46]].map(([x,y])=>pl(x,y)).join('')+[[110,32],[100,66],[126,50]].map(([x,y])=>pl(x,y,'#e63946')).join('')+ball(84,52,4); break;
     case 'g_team': g=field+[[36,28],[36,72],[80,50],[124,28],[124,72]].map(([x,y])=>pl(x,y)).join('')+ar('M44 32 L72 46','y')+ar('M88 46 L116 32','y')+cone(146,50)+lbl(80,96,'声をかけ合って パス',Y); break;
   }
@@ -268,14 +289,14 @@ const SKILL_TIER={gold:{name:'金スキル',ic:'🌟'},blue:{name:'技スキル'
 const SK=(tier,name,how,ok,need)=>({tier,name,how,ok,need});
 const mcount=(s,id)=>s.logs.filter(l=>l.menu===id).length;
 const mneed=(id,n)=>s=>mcount(s,id)>=n;
-const SKILLS = [
+const SKILLS_ALL = [
   // 金スキル（とくに難しい技）
   SK('gold','ルーレット','ドリブル75・ボールタッチ65・バランス60',s=>rt(s,'dribble')>=75&&rt(s,'touch')>=65&&rt(s,'balance')>=60),
   SK('gold','ヒールリフト','リフティング連続50回',s=>(s.best.lift||0)>=50),
   SK('gold','エラシコ','「エラシコ」を15回練習',mneed('elastico',15),['elastico',15]),
   SK('gold','無回転シュート','「シュート」を30回練習・キック75',s=>mcount(s,'shoot')>=30&&rt(s,'kick')>=75,['shoot',30]),
   SK('gold','ノールックパス','「壁パス ワンタッチ」を15回・判断力70',s=>mcount(s,'wall_1t')>=15&&rt(s,'iq')>=70,['wall_1t',15]),
-  SK('gold','ドリブルの魔術師','「コーン相手の1対1」を15回・ドリブル85',s=>mcount(s,'cone_1v1')>=15&&rt(s,'dribble')>=85,['cone_1v1',15]),
+  SK('gold','ドリブルの魔術師','「フェイント突破」を15回・ドリブル85',s=>mcount(s,'cone_1v1')>=15&&rt(s,'dribble')>=85,['cone_1v1',15]),
   SK('gold','超高速ドリブル','「スピードドリブル」を15回・スピード75',s=>mcount(s,'speed_drib')>=15&&rt(s,'speed')>=75,['speed_drib',15]),
   SK('gold','リフティングマスター','リフティング連続200回',s=>(s.best.lift||0)>=200),
   // 技スキル
@@ -293,16 +314,16 @@ const SKILLS = [
   SK('blue','L字ターン','「L字（引いて横へ）」を5回練習',mneed('l_drag',5),['l_drag',5]),
   SK('blue','Vターン','「Vターン」を5回練習',mneed('v_turn',5),['v_turn',5]),
   SK('blue','ストップ＆ゴー','「ストップ＆ゴー」を5回練習',mneed('stop_go',5),['stop_go',5]),
-  SK('blue','ターンの名手','「ターン練習」を7回練習',mneed('turn_drill',7),['turn_drill',7]),
-  SK('blue','1対1の突破','「コーン相手の1対1」を7回練習',mneed('cone_1v1',7),['cone_1v1',7]),
+  SK('blue','ターンの名手','「方向転換ドリブル」を7回練習',mneed('turn_drill',7),['turn_drill',7]),
+  SK('blue','1対1の突破','「フェイント突破」を7回練習',mneed('cone_1v1',7),['cone_1v1',7]),
   SK('blue','ピタッとトラップ','「トラップ（止めて蹴る）」を7回練習',mneed('trap',7),['trap',7]),
   SK('blue','浮き球トラップ','「浮き球トラップ」を5回練習',mneed('air_trap',5),['air_trap',5]),
   SK('blue','ロングフィード','「ロングキック」を5回練習・キック60',s=>mcount(s,'long_kick')>=5&&rt(s,'kick')>=60,['long_kick',5]),
-  SK('blue','四すみシュート','「四すみねらい」を7回練習',mneed('target',7),['target',7]),
-  SK('blue','ヘディング','「ヘディングリフティング」を5回練習',mneed('lift_head',5),['lift_head',5]),
+  SK('blue','四すみシュート','「コースねらいシュート」を7回練習',mneed('target',7),['target',7]),
+  Object.assign(SK('blue','ヘディング','「ヘディングリフティング」を5回練習',mneed('lift_head',5),['lift_head',5]),{hide:true}),   // 練習を一覧から外したので、新しくは取れない
   SK('blue','爆発ダッシュ','「ダッシュ」を7回練習・スピード60',s=>mcount(s,'dash')>=7&&rt(s,'speed')>=60,['dash',7]),
   SK('blue','反応スピード','「反応ダッシュ」を7回練習',mneed('react',7),['react',7]),
-  SK('blue','ステップワーク','「ラダー」を7回練習',mneed('ladder',7),['ladder',7]),
+  SK('blue','ステップワーク','「ステップワーク」を7回練習',mneed('ladder',7),['ladder',7]),
   SK('blue','空中戦','「なわとび（二重跳び）」を7回・パワー60',s=>mcount(s,'jump')>=7&&rt(s,'power')>=60,['jump',7]),
   SK('blue','両足使い','「両足交互リフティング」を10回練習',mneed('lift_alt',10),['lift_alt',10]),
   // 心がまえ
@@ -316,6 +337,7 @@ const SKILLS = [
   SK('green','負けずぎらい','ライバルに3回勝つ',s=>(s.bossWins||0)>=3),
   SK('green','自己ベスト更新王','自己ベストを10回更新',s=>s.logs.filter(l=>l.pb).length>=10),
 ];
+const SKILLS=SKILLS_ALL.filter(k=>!k.hide);   // 一覧に出すスキル（hide は新しくは取れないもの）
 /* スキルの進み具合（0〜1）。練習回数で覚えるものだけ */
 const skillProg=(s,k)=>k.need?Math.min(1,mcount(s,k.need[0])/k.need[1]):null;
 
@@ -341,7 +363,7 @@ const BOSSES=[
   {name:'ドリブルゴーレム',ic:'🗿',menu:'dribble',def:20},
   {name:'シュート竜',      ic:'🐲',menu:'shoot',  def:5},
   {name:'ヨコトビ忍者',    ic:'🥷',menu:'side',   def:30},
-  {name:'スピード狼',      ic:'🐺',menu:'dash',   def:10},
+  {name:'スピード狼',      ic:'🐺',menu:'dash',   def:2.8},
   {name:'タイカン巨人',    ic:'🗻',menu:'core',   def:45},
 ];
 const COLORS = ['#e63946','#2b59c3','#21a366','#f28c28','#8e44ad','#222831'];
@@ -396,7 +418,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.24.5';
+const APP_VERSION='0.25.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -691,6 +713,7 @@ let S=null, tab='home', draft={menu:null,min:5,rec:''};
 const MIN_CHOICES=[5,10,15,20,30,45,60,90];   // 練習時間のボタン（つまみは子どもに難しいのでボタンで選ぶ）
 /* 記録のかたまりの形を確かめて、こわれている所を直す（アップデートの移行もれ・途中で止まった保存・古いバックアップ対策）。
    選手（c）がなければ null。それ以外は、使える所を残して足りない所を初期値で補う */
+const REC_RESET=['inout','dribble','figure8','speed_drib','lift_thigh','pass','dash','cone_shuttle','squat','jump','run','rope_long','one_leg','df_step'];   // v0.25 で記録のしかたが変わった練習
 function fixData(d){
   const obj=x=>x&&typeof x==='object'&&!Array.isArray(x), num=(x,def=0)=>typeof x==='number'&&isFinite(x)&&x>=0?x:def;
   if(!obj(d)||!obj(d.c))return null;
@@ -706,6 +729,12 @@ function fixData(d){
   d.xp=num(d.xp); d.coin=num(d.coin);
   if(d.hp!=null)d.hp=Math.min(100,num(d.hp,100));
   ['timer','boss','place','season','pmsg','wear'].forEach(k=>{if(d[k]!=null&&!obj(d[k]))delete d[k]});
+  if((d.menuV||1)<2){   // v0.25：練習メニューの見直しで「記録のしかた」が変わった練習は、自己ベストと記録の数字をリセット
+    REC_RESET.forEach(id=>{delete d.best[id]});
+    d.logs.forEach(l=>{if(REC_RESET.includes(l.menu))delete l.rec});
+    if(d.boss&&BOSSES[d.boss.idx]&&REC_RESET.includes(BOSSES[d.boss.idx].menu))delete d.boss;   // 今週のライバルも決め直す
+    d.menuV=2;
+  }
   return d;
 }
 function load(){S=null;let t=null;try{t=localStorage.getItem(KEY);if(t)S=fixData(JSON.parse(t))}catch(e){}
@@ -992,7 +1021,7 @@ function bindEdit(){
     const num=parseNum(ed.num);
     if(num==null){re();dialog({icon:'👕',title:'背番号を入力してね',msg:`${NUM_MIN}〜${NUM_MAX}の番号を入れてから始めよう。`});return}
     ed.name=name;ed.num=num;
-    if(!S) S={c:ed,xp:0,stats:freshStats(),best:{},logs:[],titles:[],eq:null};
+    if(!S) S={c:ed,xp:0,stats:freshStats(),best:{},logs:[],titles:[],eq:null,menuV:2};
     else S.c=ed;
     const isNew=!S.tut;ed=null;save();go('home');if(isNew)showTutorial();
   };
@@ -1256,15 +1285,17 @@ function practiceView(){
     ${pastBar()}    <h2 style="margin:8px 0 4px">何を練習した？</h2>
     <p class="sub" style="margin:0 0 12px">🌱＝今の年齢で伸びやすい練習（経験×1.5）　★＝むずかしさ</p>
     <div class="gtabs">${GRPS.map(g=>`<button class="gtab ${g.id===pgrp?'on':''}" data-g="${g.id}"><span>${g.ic}</span><b>${g.name.replace(/・/g,"・<wbr>")}</b></button>`).join('')}</div>
-    <div class="mlist">${SPORT.menus.filter(x=>x.grp===pgrp).map(x=>`<button class="mitem" data-m="${x.id}"><div class="mthumb">${diag(x.d)}</div>
-      <div class="minfo"><b>${x.name}</b>${stars(x.lv)}${medalTag(mastery(S,x.id),1)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span></div>
+    <div class="mlist">${SPORT.menus.filter(x=>x.grp===pgrp&&!x.hide).map(x=>`<button class="mitem" data-m="${x.id}"><div class="mthumb">${diag(x.d)}</div>
+      <div class="minfo"><b>${x.name}</b>${stars(x.lv)}${medalTag(mastery(S,x.id),1)}<span class="sub">${Object.keys(x.gain).slice(0,2).map(statName).join('・')}</span>${x.pair?'<span class="pairtag">👪 親と2人</span>':''}</div>
       ${boost.includes(Object.keys(x.gain)[0])?'<em class="nobi">🌱</em>':''}</button>`).join('')}</div>
   </div>`;
   return `<div class="wrap">
     ${pastBar()}<button class="chip mini" id="mback" style="margin:4px 0 12px">‹ メニュー一覧</button>
     <div class="mdetail"><div class="mbig">${diag(m.d,null,true)}</div>
       <h2 style="margin:14px 0 6px">${m.name} ${stars(m.lv)}</h2>
+      ${m.pair?'<p class="pairtag big">👪 家族と2人でやる練習</p>':''}
       <ol class="how">${m.how.map(h=>`<li>${h}</li>`).join('')}</ol>
+      <p class="safe">⚠ 平らで安全な場所で。痛いところがあるときは、すぐにやめて休もう</p>
       <div class="legend"><span><i style="background:#ffd84a"></i>ボールの動き</span><span><i style="background:#eaf2ff"></i>人の動き</span><span><i style="background:#ff8a00"></i>コーン</span></div>
     </div>
     ${(()=>{const Q=mastery(S,m.id);return `<div class="card mastcard"><h3>熟練度 ${medalTag(Q)||'<span class="sub">まだ練習していない</span>'}</h3><p class="sub" style="margin:6px 0 0">この練習をした回数：<b style="color:var(--ink)">${Q.n}回</b>${Q.next?`　次のメダルまで あと${Q.next-Q.n}回`:'　最高ランク！'}</p>${SKILLS.filter(k=>k.need&&k.need[0]===m.id&&!(S.skills||[]).includes(k.name)).map(k=>`<p class="sub" style="margin:4px 0 0">${SKILL_TIER[k.tier].ic} あと${Math.max(0,k.need[1]-Q.n)}回で「${k.name}」を習得できるかも</p>`).join('')}</div>`})()}
@@ -1502,14 +1533,14 @@ const TP={lift1:s=>(s.best.lift||0)/10,lift2:s=>(s.best.lift||0)/50,lift3:s=>(s.
   boss1:s=>(s.bossWins||0),boss5:s=>(s.bossWins||0)/5,ace:s=>lv(s.xp).L/10,legend:s=>lv(s.xp).L/20};
 function collection(){
   const items=SHOP.flatMap(c=>c.items);const L=lv(S.xp).L;
-  const have=S.titles.length+(S.skills||[]).length+STAGES.filter(x=>L>=x.lv).length+items.filter(x=>(S.inv||[]).includes(x.id)).length;
+  const have=S.titles.length+SKILLS.filter(k=>(S.skills||[]).includes(k.name)).length+STAGES.filter(x=>L>=x.lv).length+items.filter(x=>(S.inv||[]).includes(x.id)).length;
   const all=TITLES.length+SKILLS.length+STAGES.length+items.length;
   return {have,all,p:Math.round(have/all*100)};
 }
 function skillBoard(){
   const got=S.skills||[];
   return Object.entries(SKILL_TIER).map(([t,T])=>{
-    const L=SKILLS.filter(k=>k.tier===t);
+    const L=SKILLS_ALL.filter(k=>k.tier===t&&(!k.hide||got.includes(k.name)));
     return `<h3 class="skhead ${t}">${T.ic} ${T.name}　<small>${L.filter(k=>got.includes(k.name)).length}/${L.length}</small></h3>
     <div class="skgrid">${L.map(k=>{const ok=got.includes(k.name), pr=skillProg(S,k);
       return ok?`<div class="skchip ${t}">${k.name}</div>`
@@ -1568,7 +1599,7 @@ async function saveCardImage(){
 function statusView(){
   const {L,r,n}=lv(S.xp), J=jobOf(S), w=wear(S), c=norm(S.c);
   const item=(cat,id)=>(SHOP.find(x=>x.cat===cat).items.find(i=>i.id===id)||{}).name||'—';
-  const got=SKILLS.filter(k=>(S.skills||[]).includes(k.name)).sort((a,b)=>'gold,blue,green'.indexOf(a.tier)-'gold,blue,green'.indexOf(b.tier));
+  const got=SKILLS_ALL.filter(k=>(S.skills||[]).includes(k.name)).sort((a,b)=>'gold,blue,green'.indexOf(a.tier)-'gold,blue,green'.indexOf(b.tier));
   return `<div class="wrap stv">
     <div class="row" style="margin:4px 0 10px;justify-content:space-between"><button class="chip mini" onclick="go('home')">‹ ホーム</button><button class="chip mini gold" onclick="saveCardImage()">📸 選手カードを保存</button></div>
     <div class="dqwin stv-top">
@@ -1674,7 +1705,7 @@ function logView(){
     </div>
     ${notesCard()}
     <div class="card"><h3>自己ベスト</h3>
-      ${SPORT.menus.filter(m=>m.rec).map(m=>`<div class="log"><span>${m.name}：${m.rec}</span><b>${S.best[m.id]!=null?S.best[m.id]+m.unit:'—'}</b></div>`).join('')}
+      ${SPORT.menus.filter(m=>m.rec&&(!m.hide||S.best[m.id]!=null)).map(m=>`<div class="log"><span>${m.name}：${m.rec}</span><b>${S.best[m.id]!=null?S.best[m.id]+m.unit:'—'}</b></div>`).join('')}
     </div>
     <div class="card"><h3>最近の練習</h3>
       ${S.logs.length?S.logs.slice(0,30).map(l=>{const m=SPORT.menus.find(x=>x.id===l.menu);
