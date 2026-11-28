@@ -24,6 +24,7 @@ const MENUS=[
   M('l_drag','touch','L字（引いて横へ）',2,{touch:1,agility:0.3},'f_l',['足裏で手前に引く','足の内側で横に出す','反対の足でも行う'],{rec:'30秒で何回？',unit:'回'}),
   M('v_turn','touch','Vターン',2,{touch:1,agility:0.3},'f_v',['足裏で斜め前から引く','反対側へ押し出す','左右を交代する'],{rec:'30秒で何回？',unit:'回'}),
   M('scissors','touch','またぎ（シザース）',2,{touch:1,dribble:0.3},'f_sc',['足をボールの内側から外へ回す','反対の足の外側で進む','左右で練習する'],{rec:'10回中何回できた？',unit:'回',max:10}),
+  M('stepover','touch','ステップオーバー（外から内へ）',2,{touch:1,dribble:.3},'f_so',['ボールの前で、足を外側から内側へ回してまたぐ','体を内側へ大きくかたむけて、相手をだます','かたむけた方と逆へ、すばやくボールを運ぶ（はじめはゆっくりでOK）'],{rec:'10回中何回できた？',unit:'回',max:10}),
   M('cruyff','touch','クライフターン',2,{touch:1,agility:0.3},'f_cr',['けるふりをする','軸足の後ろへボールを通す','体の向きを変える'],{rec:'10回中何回できた？',unit:'回',max:10}),
   M('double_touch','touch','ダブルタッチ',3,{touch:1,dribble:0.3},'f_dt',['片足の内側で横へ動かす','反対の足で前へ出す','なめらかにつなげる'],{rec:'10回中何回できた？',unit:'回',max:10}),
   M('elastico','touch','エラシコ',3,{touch:1,dribble:0.3},'f_el',['足の外側で動かす','すぐ内側で切り返す','ゆっくりから始める'],{rec:'10回中何回できた？',unit:'回',max:10}),
@@ -162,7 +163,8 @@ function diag(k,u,anim){
     case 'f_inout': g=field+feet+ar('M88 36 L114 36','y',0,1)+ball(100,36,7)+lbl(80,14,'片足の イン ⇄ アウト',Y)+lbl(88,54,'イン')+lbl(118,54,'アウト'); break;
     case 'f_l': g=field+feet+ar('M100 30 L100 52 L66 52','y')+ball(100,30,7)+num(112,40,1)+num(82,64,2)+lbl(80,14,'①足裏で引く → ②横へ',Y); break;
     case 'f_v': g=field+feet+ar('M100 26 L100 50 L126 24','y')+ball(100,26,7)+num(90,40,1)+num(124,42,2)+lbl(70,14,'①引いて ②ななめ前へ',Y); break;
-    case 'f_sc': g=field+feet+ar('M102 60 C116 30 76 18 66 34','w',1)+ar('M80 40 L40 26','y')+ball(80,40,8)+num(118,40,1)+num(48,40,2)+lbl(80,94,'①足でまたぐ ②反対へ運ぶ',Y); break;
+    case 'f_sc': g=field+feet+ar('M98 62 C90 54 64 46 64 30 C64 12 106 10 118 36','w',1)+ar('M80 40 L40 26','y')+ball(80,40,8)+num(132,30,1)+num(48,40,2)+lbl(80,94,'①内から外へ足を回す ②反対へ運ぶ',Y); break;
+    case 'f_so': g=field+feet+ar('M102 60 C116 30 76 18 66 34','w',1)+ar('M86 44 L130 54','y')+ball(80,40,8)+num(114,24,1)+num(142,62,2)+lbl(80,94,'①外から内へまたぐ ②逆へ運ぶ',Y); break;
     case 'f_cr': g=field+feet+ar('M100 40 C96 66 60 66 38 48','y')+ball(100,40,7)+num(116,30,1)+num(70,72,2)+lbl(124,22,'けるふり',Y)+lbl(70,94,'軸足のうしろを通す',Y); break;
     case 'f_dt': g=field+feet+ar('M98 34 L66 34 L66 10','y')+ball(98,34,7)+num(84,24,1)+num(56,18,2)+lbl(108,94,'右イン→左イン',Y); break;
     case 'f_el': g=field+feet+ar('M104 34 L128 28 C118 16 92 12 70 22','y')+ball(100,34,7)+num(128,40,1)+num(82,12,2)+lbl(80,94,'①外へ ②すぐ内へ',Y); break;
@@ -426,7 +428,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.26.0';
+const APP_VERSION='0.27.0';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{

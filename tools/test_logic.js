@@ -57,8 +57,8 @@ test('練習メニューは 50種類以上、すべて ジャンル・能力・�
   eq(run(c, 'MENUS.filter(m=>diag(m.d).length<300).length'), 0, '図解が描けないメニュー');
   eq(run(c, 'new Set(MENUS.map(m=>m.id)).size'), run(c, 'MENUS.length'), 'IDの重複');
 });
-test('メニュー見直し：表に出るのは70種、ヘディングは隠すが記録は読める、名前変更でもIDは同じ', c => {
-  eq(run(c, 'MENUS.filter(m=>!m.hide).length'), 70);
+test('メニュー見直し：表に出るのは71種、ヘディングは隠すが記録は読める、名前変更でもIDは同じ', c => {
+  eq(run(c, 'MENUS.filter(m=>!m.hide).length'), 71);
   eq(run(c, "menuOf('lift_head').hide"), true);
   eq(run(c, "SKILLS.some(k=>k.name==='ヘディング')"), false);
   eq(run(c, "SKILLS_ALL.some(k=>k.name==='ヘディング')"), true);
