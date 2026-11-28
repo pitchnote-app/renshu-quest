@@ -40,8 +40,10 @@ console.log('れんしゅうクエスト ロジックテスト');
 test('レベル計算：0 EXP は Lv1、60 EXP で Lv2', c => {
   eq(run(c, 'lv(0).L'), 1); eq(run(c, 'lv(59).L'), 1); eq(run(c, 'lv(60).L'), 2);
 });
-test('練習時間（タイマーの目標）の最初の値は5分', c => {
+test('練習時間：最初は5分、ボタンは 5・10・15・20分…（5〜90分）', c => {
   eq(run(c, 'draft.min'), 5);
+  eq(run(c, 'MIN_CHOICES.slice(0,4).join()'), '5,10,15,20');
+  eq(run(c, 'MIN_CHOICES.every(v=>v>=5&&v<=90)'), true);
 });
 test('能力値：40 から始まり 3ポイントで +1、99 が上限', c => {
   run(c, newPlayer);

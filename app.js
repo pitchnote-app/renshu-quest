@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.24.4';
+const APP_VERSION='0.24.5';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -688,6 +688,7 @@ async function restoreNative(){
   }catch(e){}
 }
 let S=null, tab='home', draft={menu:null,min:5,rec:''};
+const MIN_CHOICES=[5,10,15,20,30,45,60,90];   // 練習時間のボタン（つまみは子どもに難しいのでボタンで選ぶ）
 /* 記録のかたまりの形を確かめて、こわれている所を直す（アップデートの移行もれ・途中で止まった保存・古いバックアップ対策）。
    選手（c）がなければ null。それ以外は、使える所を残して足りない所を初期値で補う */
 function fixData(d){
@@ -1270,7 +1271,7 @@ function practiceView(){
     <div class="card"><h3>上がる能力</h3><p style="margin:6px 0 0">${Object.entries(m.gain).map(([id,w])=>`${statName(id)}<b class="gmark">${w>=1?'◎':w>=.4?'○':'△'}</b>`).join('　')}${boost.includes(Object.keys(m.gain)[0])?'　<span class="nobitag">🌱 のびどき</span>':''}</p></div>
     <div class="card"><h3>練習時間</h3>
       <div class="big"><span id="minv">${draft.min}</span> 分</div>
-      <input type="range" id="min" min="5" max="90" step="5" value="${draft.min}">
+      <div class="minbtns">${MIN_CHOICES.map(v=>`<button class="minbtn ${v===draft.min?'on':''}" data-min="${v}">${v}分</button>`).join('')}</div>
     </div>
     ${m.rec?`<div class="card"><h3>記録（わかれば）</h3><p class="sub" style="margin:4px 0 8px">${m.rec}（${m.unit}）</p>
       <input type="number" id="rec" inputmode="decimal" step="${m.dec?'0.1':'1'}" min="0" ${m.max?`max="${m.max}"`:''} value="${esc(draft.rec)}" placeholder="—">
@@ -1355,8 +1356,7 @@ function bindPractice(){
   document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{pgrp=b.dataset.g;const y=window.scrollY;render();window.scrollTo(0,y)});
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{draft.menu=b.dataset.m;draft.rec='';render()});
   const bk=document.getElementById('mback'); if(bk) bk.onclick=()=>{draft.menu=null;render()};
-  const mi=document.getElementById('min');
-  if(mi)mi.oninput=e=>{draft.min=+e.target.value;document.getElementById('minv').textContent=draft.min;document.getElementById('xpv').textContent='+'+calcXP()};
+  document.querySelectorAll('[data-min]').forEach(b=>b.onclick=()=>{draft.min=+b.dataset.min;document.getElementById('minv').textContent=draft.min;document.getElementById('xpv').textContent='+'+calcXP();document.querySelectorAll('[data-min]').forEach(x=>x.classList.toggle('on',x===b))});
   const rc=document.getElementById('rec');
   if(rc)rc.oninput=e=>{draft.rec=e.target.value};
   const sv=document.getElementById('save');
