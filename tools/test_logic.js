@@ -57,8 +57,8 @@ test('練習メニューは 50種類以上、すべて ジャンル・能力・�
   eq(run(c, 'MENUS.filter(m=>diag(m.d).length<300).length'), 0, '図解が描けないメニュー');
   eq(run(c, 'new Set(MENUS.map(m=>m.id)).size'), run(c, 'MENUS.length'), 'IDの重複');
 });
-test('メニュー見直し：表に出るのは66種、ヘディングは隠すが記録は読める、名前変更でもIDは同じ', c => {
-  eq(run(c, 'MENUS.filter(m=>!m.hide).length'), 66);
+test('メニュー見直し：表に出るのは70種、ヘディングは隠すが記録は読める、名前変更でもIDは同じ', c => {
+  eq(run(c, 'MENUS.filter(m=>!m.hide).length'), 70);
   eq(run(c, "menuOf('lift_head').hide"), true);
   eq(run(c, "SKILLS.some(k=>k.name==='ヘディング')"), false);
   eq(run(c, "SKILLS_ALL.some(k=>k.name==='ヘディング')"), true);
@@ -79,6 +79,28 @@ test('メニュー見直し：記録のしかたが変わった練習は自己�
   eq(d2.best.dash, 2.5);
   eq(run(c, "menuOf('dash').rec"), '10mのタイム');
   eq(run(c, "MENUS.filter(m=>!m.hide).every(m=>m.how.length>=3)"), true);
+});
+test('ルールクイズ：どの問題も答えが1つ・説明つき', c => {
+  ok(run(c, 'RULEQ.length') >= 15);
+  eq(run(c, "RULEQ.filter(q=>!(q.c>=0&&q.c<q.a.length&&q.why&&q.a.length>=2)).length"), 0);
+});
+test('見る力クイズ：どの種類も、答えが1つに決まる図ができる（500回ためす）', c => {
+  const r = run(c, `(()=>{const bad=[];for(let n=0;n<100;n++)for(const t of ['opp','mate','near','space','free']){
+    const q=lookQ(t,2); if(!q){bad.push(t+':null');continue}
+    if(q.opts.filter(o=>o.c).length!==1)bad.push(t+':ans');
+    const all=[q.me,...q.opp,...q.mate]; if(all.some(p=>p.x<8||p.x>150||p.y<8||p.y>92))bad.push(t+':out');
+    if(q.t==='opp'&&!q.opts.find(o=>o.c).t.startsWith(q.opp.length+'人'))bad.push('opp:count');
+    if(q.t==='free'){const fi=q.opts.findIndex(o=>o.c),d=m=>Math.min(...q.opp.map(o=>Math.hypot(o.x-m.x,o.y-m.y)));if(d(q.mate[fi])<34)bad.push('free:near')}
+  }return bad.slice(0,5).join()})()`);
+  eq(r, '');
+});
+test('クイズの記録：1日1回まで（2回目は練習用）、記録は正解数', c => {
+  run(c, newPlayer);
+  eq(run(c, "quizDoneToday('quiz_rule')"), false);
+  run(c, "draft={menu:'quiz_rule',min:5,rec:'4'};doPractice()");
+  eq(run(c, "S.logs[0].menu"), 'quiz_rule'); eq(run(c, "S.logs[0].rec"), 4); eq(run(c, "S.best.quiz_rule"), 4);
+  eq(run(c, "quizDoneToday('quiz_rule')"), true);
+  ok(run(c, "quizCard(menuOf('quiz_rule'))").includes('今日はもう記録したよ'));
 });
 test('練習を記録すると EXP・コイン・能力・ログが増える', c => {
   run(c, newPlayer + "draft={menu:'lift',min:30,rec:''};doPractice();");
