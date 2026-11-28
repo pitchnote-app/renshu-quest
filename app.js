@@ -396,7 +396,7 @@ function dressed(s,over){
 }
 
 /* ===== アプリ内ダイアログ（ブラウザ標準の alert/confirm は使わない） ===== */
-const APP_VERSION='0.24.3';
+const APP_VERSION='0.24.5';
 function closeOv(){document.getElementById('ov').classList.remove('show')}
 function dialog({icon='',title,msg='',ok='OK',cancel=null,danger=false}){
   return new Promise(res=>{
@@ -687,7 +687,8 @@ async function restoreNative(){
     KEY=profKey(m.cur);
   }catch(e){}
 }
-let S=null, tab='home', draft={menu:null,min:15,rec:''};
+let S=null, tab='home', draft={menu:null,min:5,rec:''};
+const MIN_CHOICES=[5,10,15,20,30,45,60,90];   // 練習時間のボタン（つまみは子どもに難しいのでボタンで選ぶ）
 /* 記録のかたまりの形を確かめて、こわれている所を直す（アップデートの移行もれ・途中で止まった保存・古いバックアップ対策）。
    選手（c）がなければ null。それ以外は、使える所を残して足りない所を初期値で補う */
 function fixData(d){
@@ -1070,7 +1071,7 @@ function saveNote(v,log,min=NOTE_MIN,date=today()){
   const n=cleanNote(v); if(!Object.keys(n).length)return false;
   noteTmp=null; closeOv();
   if(log){log.note=n;save();const y=window.scrollY;render();window.scrollTo(0,y);return true}
-  const keep=draft.menu==='note'?{menu:null,min:15,rec:''}:draft;   // ほかの練習の書きかけは残す
+  const keep=draft.menu==='note'?{menu:null,min:5,rec:''}:draft;   // ほかの練習の書きかけは残す
   draft={menu:'note',min,rec:'',note:n,date}; doPractice(); draft=keep;
   return true;
 }
@@ -1194,7 +1195,7 @@ function firstCard(){
   const picks=['sole_roll','lift','dash'].map(menuOf).filter(Boolean);
   return `<div class="card firstcard"><h3>🎯 はじめての練習をしよう！</h3>
     <p class="sub" style="margin:6px 0 10px">5分だけでもOK。最初の練習でボーナス（+100 EXP・🪙50・🎁宝箱）がもらえるよ！</p>
-    <div class="firstpicks">${picks.map(m=>`<button onclick="draft={menu:'${m.id}',min:10,rec:''};go('practice')"><div class="mthumb">${diag(m.d)}</div><b>${m.name}</b></button>`).join('')}</div></div>`;
+    <div class="firstpicks">${picks.map(m=>`<button onclick="draft={menu:'${m.id}',min:5,rec:''};go('practice')"><div class="mthumb">${diag(m.d)}</div><b>${m.name}</b></button>`).join('')}</div></div>`;
 }
 /* 次のレベルまでの進み方を ★5つで表す（体力のバーと見分けやすく）。とちゅうの星は 進んだ分だけ金色 */
 function xpStars(r,n){
@@ -1270,7 +1271,7 @@ function practiceView(){
     <div class="card"><h3>上がる能力</h3><p style="margin:6px 0 0">${Object.entries(m.gain).map(([id,w])=>`${statName(id)}<b class="gmark">${w>=1?'◎':w>=.4?'○':'△'}</b>`).join('　')}${boost.includes(Object.keys(m.gain)[0])?'　<span class="nobitag">🌱 のびどき</span>':''}</p></div>
     <div class="card"><h3>練習時間</h3>
       <div class="big"><span id="minv">${draft.min}</span> 分</div>
-      <input type="range" id="min" min="5" max="90" step="5" value="${draft.min}">
+      <div class="minbtns">${MIN_CHOICES.map(v=>`<button class="minbtn ${v===draft.min?'on':''}" data-min="${v}">${v}分</button>`).join('')}</div>
     </div>
     ${m.rec?`<div class="card"><h3>記録（わかれば）</h3><p class="sub" style="margin:4px 0 8px">${m.rec}（${m.unit}）</p>
       <input type="number" id="rec" inputmode="decimal" step="${m.dec?'0.1':'1'}" min="0" ${m.max?`max="${m.max}"`:''} value="${esc(draft.rec)}" placeholder="—">
@@ -1292,7 +1293,7 @@ const dayLabel=d=>{const [y,m,k]=d.split('-').map(Number);return `${m}月${k}日
 const pastBar=()=>isPast(draft.date)?`<div class="pastbar"><b>📅 ${dayLabel(draft.date)} の練習を記入中</b><button class="chip mini" onclick="go('log')">やめる</button></div>`:'';
 function startDay(d){closeOv(); if(!isPast(d)){go('practice');return}
   if(!canFill(d)){dialog({icon:'📅',title:`記入できるのは${PAST_DAYS}日前までだよ`,msg:'練習した日に、なるべくその日のうちに記録しよう。'});return}
-  draft={menu:null,min:15,rec:'',date:d}; tab='practice'; render()}
+  draft={menu:null,min:5,rec:'',date:d}; tab='practice'; render()}
 function noteDay(d){const l=noteAt(d); openNote(l,NOTE_MIN,d)}
 function openDay(d){
   if(d>today())return;
@@ -1355,8 +1356,7 @@ function bindPractice(){
   document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{pgrp=b.dataset.g;const y=window.scrollY;render();window.scrollTo(0,y)});
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{draft.menu=b.dataset.m;draft.rec='';render()});
   const bk=document.getElementById('mback'); if(bk) bk.onclick=()=>{draft.menu=null;render()};
-  const mi=document.getElementById('min');
-  if(mi)mi.oninput=e=>{draft.min=+e.target.value;document.getElementById('minv').textContent=draft.min;document.getElementById('xpv').textContent='+'+calcXP()};
+  document.querySelectorAll('[data-min]').forEach(b=>b.onclick=()=>{draft.min=+b.dataset.min;document.getElementById('minv').textContent=draft.min;document.getElementById('xpv').textContent='+'+calcXP();document.querySelectorAll('[data-min]').forEach(x=>x.classList.toggle('on',x===b))});
   const rc=document.getElementById('rec');
   if(rc)rc.oninput=e=>{draft.rec=e.target.value};
   const sv=document.getElementById('save');
@@ -1414,7 +1414,7 @@ function doPractice(){
   else if(S.hp<25) notes.push('⚠ HPが少ないよ。疲れがたまっています。明日は宿屋で休もう');
   else if(tmin>120) notes.push('⚠ 今日はたくさん練習したね。やりすぎはケガのもと。ここまでにしよう');
   gain(xp,notes,coin,log);
-  draft={menu:null,min:15,rec:''};
+  draft={menu:null,min:5,rec:''};
   if(past){tab='log';render()}
 }
 function doRest(){
@@ -1812,7 +1812,7 @@ function parentMsgCard(){
 function switchProfile(id){
   const m=profMeta(); if(m.cur===id){go('home');return}
   if(S)save(); m.cur=id; saveMeta(m); KEY=profKey(id);
-  S=null; ed=null; noteTmp=null; noteAll=false; draft={menu:null,min:15,rec:''}; load(); tab='home'; render(); remindSoon();
+  S=null; ed=null; noteTmp=null; noteAll=false; draft={menu:null,min:5,rec:''}; load(); tab='home'; render(); remindSoon();
   if(S)dialog({icon:'👋',title:`${esc(S.c.name)}に切りかえたよ`,msg:'練習の記録は選手ごとに別々に保存されます。'});
 }
 function addProfile(){

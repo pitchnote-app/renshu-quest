@@ -577,3 +577,7 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .gtab{display:flex;align-items:center;justify-content:center;gap:3px;white-space:normal;line-height:1.25;text-align:center;padding:8px 4px;min-height:44px;border-radius:12px;font-size:12px}
 .gtab span{margin-right:0;flex:none}
 .gtab b{font-weight:inherit;word-break:keep-all}
+/* 練習時間のボタン（4列） */
+.minbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.minbtn{font:inherit;font-size:16px;font-weight:800;min-height:48px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);cursor:pointer}
+.minbtn.on{color:#f3dc8f;border-color:rgba(212,175,55,.8);background:rgba(212,175,55,.16);box-shadow:0 0 10px rgba(212,175,55,.25)}
