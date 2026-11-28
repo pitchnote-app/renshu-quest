@@ -581,3 +581,7 @@ li .skchip{display:inline-flex;min-height:0;padding:1px 8px;font-size:13px}
 .minbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
 .minbtn{font:inherit;font-size:16px;font-weight:800;min-height:48px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);cursor:pointer}
 .minbtn.on{color:#f3dc8f;border-color:rgba(212,175,55,.8);background:rgba(212,175,55,.16);box-shadow:0 0 10px rgba(212,175,55,.25)}
+/* 練習メニュー：家族と2人でやる印・安全のひとこと */
+.pairtag{display:inline-block;align-self:flex-start;margin-top:3px;font-size:11px;font-weight:800;color:#ffd0a8;background:rgba(255,138,26,.14);border:1px solid rgba(255,138,26,.45);border-radius:999px;padding:1px 8px}
+.pairtag.big{font-size:13px;padding:4px 12px;margin:0 0 8px}
+.safe{margin:10px 0 0;font-size:12px;line-height:1.6;color:var(--sub,#a3aec5);background:rgba(255,255,255,.04);border-left:3px solid #ff8a1a;border-radius:8px;padding:6px 10px}

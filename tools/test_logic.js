@@ -57,6 +57,20 @@ test('練習メニューは 50種類以上、すべて ジャンル・能力・�
   eq(run(c, 'MENUS.filter(m=>diag(m.d).length<300).length'), 0, '図解が描けないメニュー');
   eq(run(c, 'new Set(MENUS.map(m=>m.id)).size'), run(c, 'MENUS.length'), 'IDの重複');
 });
+test('メニュー見直し：表に出るのは66種、ヘディングは隠すが記録は読める、名前変更でもIDは同じ', c => {
+  eq(run(c, 'MENUS.filter(m=>!m.hide).length'), 66);
+  eq(run(c, "menuOf('lift_head').hide"), true);
+  eq(run(c, "SKILLS.some(k=>k.name==='ヘディング')"), false);
+  eq(run(c, "SKILLS_ALL.some(k=>k.name==='ヘディング')"), true);
+  eq(run(c, "menuOf('ladder').name"), 'ステップワーク');
+  eq(run(c, "menuOf('shoot').name"), 'インステップシュート');
+  eq(run(c, "menuOf('jump').lv"), 3);
+  eq(run(c, "['react','df_tackle','df_1v1'].every(id=>menuOf(id).pair)"), true);
+  // どの図解も、中身のない図（未登録のキー）より大きい＝ちゃんと絵がある
+  eq(run(c, "(()=>{const e=diag('__none__').length;return MENUS.filter(m=>diag(m.d).length<e+300).map(m=>m.id)})().join()"), '');
+  // ★1 は各分類に2つ以上
+  eq(run(c, "GRPS.filter(g=>MENUS.filter(m=>m.grp===g.id&&!m.hide&&m.lv===1).length<2).map(g=>g.id).join()"), '');
+});
 test('練習を記録すると EXP・コイン・能力・ログが増える', c => {
   run(c, newPlayer + "draft={menu:'lift',min:30,rec:''};doPractice();");
   ok(run(c, 'S.xp') >= 60, 'EXP'); ok(run(c, 'S.coin') >= 30, 'コイン');
