@@ -71,6 +71,15 @@ test('メニュー見直し：表に出るのは66種、ヘディングは隠す
   // ★1 は各分類に2つ以上
   eq(run(c, "GRPS.filter(g=>MENUS.filter(m=>m.grp===g.id&&!m.hide&&m.lv===1).length<2).map(g=>g.id).join()"), '');
 });
+test('メニュー見直し：記録のしかたが変わった練習は自己ベストをリセット（1回だけ）。新しい選手はリセットしない', c => {
+  const d = run(c, "fixData({c:{name:'a'},best:{dash:9.1,lift:30,shoot:7},logs:[{date:'2026-01-01',menu:'dash',min:10,rec:9.1},{date:'2026-01-01',menu:'lift',min:10,rec:30}]})");
+  eq(d.best.dash, undefined); eq(d.best.lift, 30); eq(d.best.shoot, 7); eq(d.menuV, 2);
+  eq(d.logs[0].rec, undefined); eq(d.logs[1].rec, 30);
+  const d2 = run(c, "fixData({c:{name:'a'},menuV:2,best:{dash:2.5},logs:[]})");
+  eq(d2.best.dash, 2.5);
+  eq(run(c, "menuOf('dash').rec"), '10mのタイム');
+  eq(run(c, "MENUS.filter(m=>!m.hide).every(m=>m.how.length>=3)"), true);
+});
 test('練習を記録すると EXP・コイン・能力・ログが増える', c => {
   run(c, newPlayer + "draft={menu:'lift',min:30,rec:''};doPractice();");
   ok(run(c, 'S.xp') >= 60, 'EXP'); ok(run(c, 'S.coin') >= 30, 'コイン');
