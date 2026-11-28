@@ -102,6 +102,32 @@ test('クイズの記録：1日1回まで（2回目は練習用）、記録は�
   eq(run(c, "quizDoneToday('quiz_rule')"), true);
   ok(run(c, "quizCard(menuOf('quiz_rule'))").includes('今日はもう記録したよ'));
 });
+test('レベルに合わせた練習：おすすめの★・レベル目標・クイズのむずかしさ', c => {
+  run(c, newPlayer);
+  eq(run(c, 'recStar()'), 1); eq(run(c, 'quizTier()'), 1);
+  eq(run(c, "isRec(menuOf('sole_roll'))"), true); eq(run(c, "isRec(menuOf('elastico'))"), false);
+  eq(run(c, "lvGoal(menuOf('lift'))"), 5);
+  run(c, "S.xp=999999"); eq(run(c, 'recStar()'), 3); eq(run(c, 'quizTier()'), 3);
+  eq(run(c, "lvGoal(menuOf('lift'))"), 150); eq(run(c, "lvGoal(menuOf('dash'))"), 2.2);
+  eq(run(c, "lvGoal(menuOf('run'))"), null);
+  eq(run(c, "RULEQ.filter(q=>q.lv===1).length>=5"), true);
+  eq(run(c, "RULEQ.every(q=>q.lv>=1&&q.lv<=3)"), true);
+});
+test('シルバーになった練習の「次の★」がおすすめになる', c => {
+  run(c, newPlayer);
+  eq(run(c, "isRec(menuOf('lift'))"), false);
+  run(c, "for(let k=0;k<7;k++)S.logs.unshift({date:'2026-01-01',menu:'lift_bounce',min:5})");
+  eq(run(c, "isRec(menuOf('lift'))"), true);
+});
+test('レベル目標：はじめて達成したら +30 EXP、同じ段階では1回だけ', c => {
+  run(c, newPlayer);
+  run(c, "draft={menu:'lift',min:5,rec:'6'};doPractice()");
+  ok(run(c, "S.logs[0].xp") >= 40); eq(run(c, "S.lvGoal.lift"), 0);
+  const x1 = run(c, "S.xp");
+  run(c, "draft={menu:'lift',min:5,rec:'6'};doPractice()");
+  ok(run(c, "S.xp") - x1 < 40);
+  eq(run(c, "fixData({c:{name:'a'},lvGoal:5}).lvGoal"), undefined);
+});
 test('練習を記録すると EXP・コイン・能力・ログが増える', c => {
   run(c, newPlayer + "draft={menu:'lift',min:30,rec:''};doPractice();");
   ok(run(c, 'S.xp') >= 60, 'EXP'); ok(run(c, 'S.coin') >= 30, 'コイン');

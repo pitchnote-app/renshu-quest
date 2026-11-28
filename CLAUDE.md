@@ -66,6 +66,7 @@
 - 前の日の記入 `openDay()`・`startDay()`：きろくのカレンダーの日付から。`draft.date` に日付を入れて `doPractice()`（今日のクエスト・HPは対象外）。`S.logs` は新しい順を守る `addLog()`
   - 記入できるのは `PAST_DAYS`（14日）前まで `canFill()`。1日に記録できる練習は合わせて `DAY_MAX_MIN`（180分）まで `dayMin()`
 - クイズ（頭のトレーニング）：メニューに `quiz:'rule'|'look'`。ルールクイズの問題 `RULEQ`（答えがはっきりしたルールだけ）、見る力クイズは `lookQ()` が図を作り `lookSvg()` で描く（図を少しだけ見せて、相手・味方・空いている場所を答える。判断（パス？ドリブル？）は正解が1つでないので出さない）。記録は1日1回 `quizDoneToday()`
+- レベルに合わせた練習：段階 `lvIdx()`（今の練習場所）で、おすすめ👍 `isRec()`（★の目安 `recStar()`＋シルバーになった練習の次の★）、レベル目標🎯 `lvGoal()`（`LV_GOAL`。はじめて達成で +30 EXP、`S.lvGoal`）、クイズのむずかしさ `quizTier()`（ルール問題の `lv`、見る力の秒数 `LOOK_SECS`）
 - クエスト `QPOOL`／ライバル `BOSSES`／宝箱 `openChest()`／月間ロード `roadReward()`／お守り・ふりかえり `dailyCheck()`
 - ショップ `BALLS` `BOOTS` `KITS` `BGS`（`price:-1` は非売品）。交換 `buyItem()` はそのまま装備する／相棒ボルト `buddyLines()`・`BOLT`
 - イラストのキャラ `AVATARS`・`avatarView()`
